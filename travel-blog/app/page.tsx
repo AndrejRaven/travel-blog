@@ -1,5 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
+import HeroBanner from "@/components/sections/HeroBanner";
+import { heroTestData } from "@/lib/hero-test-data";
 
 export default function Home() {
   return (
@@ -7,41 +9,7 @@ export default function Home() {
       {/* NAVIGATION przeniesione globalnie do layoutu */}
 
       {/* HERO */}
-      <section className="mx-auto max-w-7xl px-6 grid grid-cols-1 md:grid-cols-2 gap-10 items-center py-14 md:py-20">
-        <div className="order-2 md:order-1">
-          <h1 className="text-3xl md:text-5xl font-bold tracking-tight mb-4">
-            Odkrywaj świat z nami
-          </h1>
-          <p className="text-gray-600 mb-6">
-            Krótki opis bloga z zachętą do eksploracji. Tutaj dodamy inspirujący
-            tekst o podróżach, historii i przygodach. Placeholder lorem ipsum.
-          </p>
-          <div className="flex items-center gap-3">
-            <Link
-              href="/post/indonezja"
-              className="inline-flex items-center justify-center rounded-md bg-gray-900 text-white px-4 py-2 text-sm hover:bg-gray-800"
-            >
-              przykladowy post
-            </Link>
-            <Link
-              href="#o-nas"
-              className="inline-flex items-center justify-center rounded-md border px-4 py-2 text-sm hover:bg-gray-50"
-            >
-              Dowiedz się więcej
-            </Link>
-          </div>
-        </div>
-        <div className="order-1 md:order-2 flex justify-center">
-          <div className="relative w-full max-w-md aspect-[4/3] overflow-hidden rounded-2xl border bg-gray-50">
-            <Image
-              src="/window.svg"
-              alt="Hero"
-              fill
-              className="object-contain p-6"
-            />
-          </div>
-        </div>
-      </section>
+      <HeroBanner data={heroTestData} />
 
       {/* CATEGORIES */}
       <section id="kategorie" className="mx-auto max-w-7xl px-6 py-12 md:py-16">
