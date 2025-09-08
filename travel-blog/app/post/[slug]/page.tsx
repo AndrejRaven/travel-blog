@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { fetchGroq, Post } from "@/lib/sanity";
 
-type Params = { params: { slug: string } };
+type Params = { params: Promise<{ slug: string }> };
 
 async function getPost(slug: string) {
   const query = `*[_type == "post" && slug.current == $slug][0]{
@@ -16,7 +16,8 @@ async function getPost(slug: string) {
 }
 
 export default async function PostPage({ params }: Params) {
-  const post = await getPost(params.slug);
+  const { slug } = await params;
+  const post = await getPost(slug);
 
   if (!post) {
     return (
