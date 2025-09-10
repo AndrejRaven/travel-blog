@@ -48,10 +48,4 @@ export const headerFallback: HeaderData = {
     isEnabled: true,
     label: 'Menu',
   },
-  ctaButton: {
-    isEnabled: false,
-    label: '',
-    href: '',
-    style: 'primary',
-  },
 };

@@ -66,12 +66,6 @@ export type HeaderData = {
     isEnabled: boolean;
     label: string;
   };
-  ctaButton: {
-    isEnabled: boolean;
-    label?: string;
-    href?: string;
-    style?: 'primary' | 'secondary' | 'outline';
-  };
 };
 
 export async function getHeaderData(): Promise<HeaderData | null> {
@@ -101,12 +95,6 @@ export async function getHeaderData(): Promise<HeaderData | null> {
     mobileMenu {
       isEnabled,
       label
-    },
-    ctaButton {
-      isEnabled,
-      label,
-      href,
-      style
     }
   }`;
   

@@ -66,7 +66,7 @@ export default function MobileMenu({
       </button>
 
       {mobileOpen && (
-        <div className="md:hidden absolute left-0 right-0 top-full mt-2 rounded-lg border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg">
+        <div className="md:hidden absolute left-0 right-0 top-full bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-700 shadow-lg">
           <div className="px-4 py-3 space-y-2 text-gray-700 dark:text-gray-300 text-sm font-sans">
             <a
               href="/"

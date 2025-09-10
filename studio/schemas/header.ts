@@ -168,42 +168,6 @@ export default {
         },
       ],
     },
-    {
-      name: 'ctaButton',
-      title: 'Przycisk CTA',
-      type: 'object',
-      fields: [
-        {
-          name: 'isEnabled',
-          title: 'Włączony',
-          type: 'boolean',
-          initialValue: false,
-        },
-        {
-          name: 'label',
-          title: 'Tekst przycisku',
-          type: 'string',
-        },
-        {
-          name: 'href',
-          title: 'Link',
-          type: 'string',
-        },
-        {
-          name: 'style',
-          title: 'Styl',
-          type: 'string',
-          options: {
-            list: [
-              { title: 'Podstawowy', value: 'primary' },
-              { title: 'Wtórny', value: 'secondary' },
-              { title: 'Outlined', value: 'outline' },
-            ],
-          },
-          initialValue: 'primary',
-        },
-      ],
-    },
   ],
   preview: {
     select: {
