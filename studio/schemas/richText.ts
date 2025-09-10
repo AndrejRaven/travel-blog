@@ -24,16 +24,53 @@ export default {
             type: 'object',
             fields: [
               {
-                title: 'URL',
-                name: 'href',
-                type: 'url',
+                title: 'Typ linku',
+                name: 'linkType',
+                type: 'string',
+                options: {
+                  list: [
+                    { title: 'Wewnętrzny (Internal)', value: 'internal' },
+                    { title: 'Zewnętrzny (External)', value: 'external' },
+                  ],
+                  layout: 'radio',
+                },
+                initialValue: 'internal',
                 validation: (Rule: any) => Rule.required(),
+              },
+              {
+                title: 'URL wewnętrzny',
+                name: 'internalHref',
+                type: 'string',
+                description: 'Ścieżka wewnętrzna (np. /o-nas, /kontakt)',
+                hidden: ({ parent }: any) => parent?.linkType !== 'internal',
+                validation: (Rule: any) => Rule.custom((value: any, context: any) => {
+                  const { parent } = context;
+                  if (parent?.linkType === 'internal' && !value) {
+                    return 'URL wewnętrzny jest wymagany';
+                  }
+                  return true;
+                }),
+              },
+              {
+                title: 'URL zewnętrzny',
+                name: 'externalHref',
+                type: 'url',
+                description: 'Pełny URL (np. https://example.com)',
+                hidden: ({ parent }: any) => parent?.linkType !== 'external',
+                validation: (Rule: any) => Rule.custom((value: any, context: any) => {
+                  const { parent } = context;
+                  if (parent?.linkType === 'external' && !value) {
+                    return 'URL zewnętrzny jest wymagany';
+                  }
+                  return true;
+                }),
               },
               {
                 title: 'Otwórz w nowej karcie',
                 name: 'blank',
                 type: 'boolean',
                 initialValue: false,
+                description: 'Zalecane dla linków zewnętrznych',
               },
             ],
           },
@@ -45,7 +82,8 @@ export default {
               {
                 title: 'Styl',
                 name: 'style',
-                type: 'string',
+                type: 'array',
+                of: [{ type: 'string' }],
                 options: {
                   list: [
                     { title: '🔗 Link Primary', value: 'link-primary' },
@@ -58,7 +96,7 @@ export default {
                     { title: '❌ Error', value: 'error' },
                     { title: '💡 Info', value: 'info' },
                   ],
-                  layout: 'dropdown',
+                  layout: 'grid',
                 },
                 validation: (Rule: any) => Rule.required(),
               },

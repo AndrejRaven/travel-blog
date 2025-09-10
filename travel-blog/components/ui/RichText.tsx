@@ -80,17 +80,38 @@ export default function RichText({
               const linkDef = markDefs.find((def) => def._key === mark);
               console.log("Link mark:", mark, "Def:", linkDef); // Debug
               if (linkDef) {
-                element = (
-                  <Link
-                    key={child._key}
-                    href={linkDef.href || "#"}
-                    className="text-black dark:text-white hover:text-gray-700 dark:hover:text-gray-300 font-medium"
-                    target={linkDef.blank ? "_blank" : undefined}
-                    rel={linkDef.blank ? "noopener noreferrer" : undefined}
-                  >
-                    {element}
-                  </Link>
-                );
+                // Określ URL na podstawie typu linku
+                const href =
+                  linkDef.linkType === "external"
+                    ? linkDef.externalHref || "#"
+                    : linkDef.internalHref || "#";
+
+                // Dla linków zewnętrznych używaj zwykłego <a>, dla wewnętrznych Next.js Link
+                if (linkDef.linkType === "external") {
+                  element = (
+                    <a
+                      key={child._key}
+                      href={href}
+                      className="text-black dark:text-white hover:text-gray-700 dark:hover:text-gray-300 font-medium"
+                      target={linkDef.blank ? "_blank" : undefined}
+                      rel={linkDef.blank ? "noopener noreferrer" : undefined}
+                    >
+                      {element}
+                    </a>
+                  );
+                } else {
+                  element = (
+                    <Link
+                      key={child._key}
+                      href={href}
+                      className="text-black dark:text-white hover:text-gray-700 dark:hover:text-gray-300 font-medium"
+                      target={linkDef.blank ? "_blank" : undefined}
+                      rel={linkDef.blank ? "noopener noreferrer" : undefined}
+                    >
+                      {element}
+                    </Link>
+                  );
+                }
               }
             } else if (
               mark.startsWith("customStyle-") ||

@@ -68,13 +68,15 @@ export const heroTestData: HeroBannerData = {
         {
           _type: 'link',
           _key: 'link-1',
-          href: '#kategorie',
+          linkType: 'internal',
+          internalHref: '#kategorie',
           blank: false
         },
         {
           _type: 'link',
           _key: 'link-2',
-          href: '#najnowsze',
+          linkType: 'internal',
+          internalHref: '#najnowsze',
           blank: false
         }
       ]
@@ -193,7 +195,7 @@ export const backgroundHeroTestData: BackgroundHeroBannerData = {
       _key: "bg-btn-2",
       label: "Poznaj nas",
       href: "#o-nas",
-      variant: "secondary",
+      variant: "outline",
     },
   ],
   layout: {

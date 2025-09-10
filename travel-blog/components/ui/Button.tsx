@@ -15,11 +15,11 @@ type ButtonProps = {
 
 const variantStyles = {
   primary:
-    "border border-gray-900 dark:border-gray-100 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 hover:text-gray-900 dark:hover:text-gray-100 focus:ring-gray-500 dark:focus:ring-gray-400 relative overflow-hidden group before:absolute before:inset-0 before:bg-white dark:before:bg-gray-900 before:-translate-x-full before:transition-transform before:duration-300 before:ease-out hover:before:translate-x-0 before:-z-10 hover:shadow-lg hover:scale-105 transition-all duration-300 ease-out transition-transform duration-150 ease-out uppercase",
+    "bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 hover:text-gray-900 dark:hover:text-gray-100 focus:ring-gray-500 dark:focus:ring-gray-400 relative overflow-hidden group before:absolute before:inset-0 before:bg-white dark:before:bg-gray-900 before:-translate-x-full before:transition-transform before:duration-300 before:ease-out hover:before:translate-x-0 before:-z-10 hover:shadow-lg hover:scale-105 transition-all duration-300 ease-out transition-transform duration-150 ease-out uppercase",
   secondary:
     " dark:border-gray-100 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 hover:text-white dark:hover:text-gray-900 focus:ring-gray-500 dark:focus:ring-gray-400 relative overflow-hidden group before:absolute before:inset-0 before:bg-gray-900 dark:before:bg-gray-100 before:translate-x-full before:transition-transform before:duration-300 before:ease-out hover:before:translate-x-0 before:-z-10 hover:shadow-lg hover:scale-105 transition-all duration-300 ease-out transition-transform duration-150 ease-out uppercase",
   outline:
-    "border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-gray-600 dark:hover:border-gray-400 hover:text-gray-600 dark:hover:text-gray-200 focus:ring-gray-500 dark:focus:ring-gray-400 transition-all duration-300 ease-out hover:shadow-md hover:scale-105 transition-transform duration-150 ease-out uppercase",
+    "border border-gray-300 dark:border-white text-white dark:text-white hover:text-white dark:hover:text-white focus:ring-gray-500 dark:focus:ring-gray-400 transition-all duration-300 ease-out hover:shadow-md hover:scale-105 hover:backdrop-blur-sm transition-transform duration-150 ease-out uppercase",
 };
 
 export default function Button({

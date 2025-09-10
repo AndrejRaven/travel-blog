@@ -13,7 +13,9 @@ export type RichTextBlock = {
   markDefs?: Array<{
     _type: 'link' | 'customStyle';
     _key: string;
-    href?: string;
+    linkType?: 'internal' | 'external';
+    internalHref?: string;
+    externalHref?: string;
     blank?: boolean;
     style?: 'link-primary' | 'link-secondary' | 'margin-top' | 'margin-bottom' | 'highlight' | 'warning' | 'success' | 'error' | 'info';
   }>;
