@@ -27,6 +27,10 @@ async function getPost(slug: string) {
               ...,
               "href": @.href,
               "blank": @.blank
+            },
+            _type == "customStyle" => {
+              ...,
+              "style": @.style
             }
           }
         }

@@ -37,6 +37,33 @@ export default {
               },
             ],
           },
+          {
+            title: '🎨 Custom Style',
+            name: 'customStyle',
+            type: 'object',
+            fields: [
+              {
+                title: 'Styl',
+                name: 'style',
+                type: 'string',
+                options: {
+                  list: [
+                    { title: '🔗 Link Primary', value: 'link-primary' },
+                    { title: '🔗 Link Secondary', value: 'link-secondary' },
+                    { title: '📏 Margin Top', value: 'margin-top' },
+                    { title: '📏 Margin Bottom', value: 'margin-bottom' },
+                    { title: '✨ Highlight', value: 'highlight' },
+                    { title: '⚠️ Warning', value: 'warning' },
+                    { title: '✅ Success', value: 'success' },
+                    { title: '❌ Error', value: 'error' },
+                    { title: '💡 Info', value: 'info' },
+                  ],
+                  layout: 'dropdown',
+                },
+                validation: (Rule: any) => Rule.required(),
+              },
+            ],
+          },
         ],
       },
     },

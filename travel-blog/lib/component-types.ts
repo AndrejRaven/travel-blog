@@ -11,10 +11,11 @@ export type RichTextBlock = {
     marks?: string[];
   }>;
   markDefs?: Array<{
-    _type: 'link';
+    _type: 'link' | 'customStyle';
     _key: string;
-    href: string;
+    href?: string;
     blank?: boolean;
+    style?: 'link-primary' | 'link-secondary' | 'margin-top' | 'margin-bottom' | 'highlight' | 'warning' | 'success' | 'error' | 'info';
   }>;
 };
 
