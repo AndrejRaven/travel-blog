@@ -32,7 +32,11 @@ export type Post = {
   slug?: { current: string };
   publishedAt?: string;
   coverImage?: { asset?: { url?: string } } | string | null;
-  body?: PortableBlock[];
+  components?: Array<{
+    _type: string;
+    _key: string;
+    [key: string]: any;
+  }>;
 };
 
 export type HeaderData = {

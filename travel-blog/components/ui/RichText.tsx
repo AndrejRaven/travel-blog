@@ -1,6 +1,6 @@
 import React from "react";
 import Link from "next/link";
-import { RichTextBlock } from "@/lib/hero-test-data";
+import { RichTextBlock } from "@/lib/component-types";
 
 type Props = {
   blocks: RichTextBlock[];
@@ -120,7 +120,9 @@ export default function RichText({
         return (
           <p
             key={_key}
-            className={`mb-6 text-lg font-sans ${getColorClasses(style)}`}
+            className={`text-lg font-sans ${getColorClasses(
+              style || "normal"
+            )}`}
           >
             {renderChildren()}
           </p>

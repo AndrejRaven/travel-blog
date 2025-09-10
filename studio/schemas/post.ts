@@ -26,10 +26,15 @@ export default {
       type: 'datetime',
     },
     {
-      name: 'body',
-      title: 'Treść',
+      name: 'components',
+      title: 'Komponenty',
       type: 'array',
-      of: [{ type: 'block' }],
+      of: [
+        { type: 'heroBanner' },
+        { type: 'backgroundHeroBanner' },
+        // Tutaj będziemy dodawać kolejne komponenty jak karuzele, blog artykułów, kategorie, embedy YouTube itp.
+      ],
+      description: 'Dodaj komponenty, które będą wyświetlane na stronie posta',
     },
   ],
 }

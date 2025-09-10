@@ -10,9 +10,10 @@ import {
   sections,
   getSectionsFromHeaderData,
 } from "@/components/layout/header/header-data";
-import { getHeaderData, HeaderData, getImageUrl } from "@/lib/sanity";
+import { getHeaderData, HeaderData } from "@/lib/sanity";
 import { headerFallback } from "@/lib/header-fallback";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import Logo from "@/components/ui/Logo";
 
 const Header = () => {
   const [openSections, setOpenSections] = useState({
@@ -69,25 +70,7 @@ const Header = () => {
   return (
     <header className="sticky top-0 z-40 bg-white/80 dark:bg-gray-900/80 backdrop-blur border-b border-gray-100 dark:border-gray-800">
       <div className="relative mx-auto max-w-7xl px-6 py-4 flex items-center justify-between">
-        <a href="/" className="flex items-center gap-2 group">
-          {(() => {
-            const logoUrl = getImageUrl(currentHeaderData.logo);
-            return (
-              <>
-                {logoUrl && (
-                  <img
-                    src={logoUrl}
-                    alt={currentHeaderData.title}
-                    className="h-8 w-8 rounded-full object-cover"
-                  />
-                )}
-                <span className="text-lg font-sans font-semibold tracking-tight transition-colors duration-200 group-hover:text-gray-900 dark:group-hover:text-gray-100">
-                  {currentHeaderData.title}
-                </span>
-              </>
-            );
-          })()}
-        </a>
+        <Logo headerData={currentHeaderData} />
         <div className="flex items-center gap-4">
           <DesktopNav
             sections={currentSections}

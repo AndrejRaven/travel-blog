@@ -2,7 +2,7 @@ import React from "react";
 import Image from "next/image";
 import Button from "@/components/ui/Button";
 import RichText from "@/components/ui/RichText";
-import { BackgroundHeroBannerData } from "@/lib/hero-test-data";
+import { BackgroundHeroBannerData } from "@/lib/component-types";
 
 type Props = {
   data: BackgroundHeroBannerData;
@@ -96,8 +96,7 @@ export default function BackgroundHeroBanner({ data }: Props) {
           }`}
         >
           <div className={getTextStyleClass(layout.textStyle)}>
-            <RichText blocks={data.title} textColor="white" />
-            <RichText blocks={data.description} textColor="white" />
+            <RichText blocks={data.content} textColor="white" />
           </div>
           <div
             className={`flex items-center gap-3 flex-wrap ${
@@ -108,7 +107,7 @@ export default function BackgroundHeroBanner({ data }: Props) {
                 : "justify-start"
             }`}
           >
-            {data.buttons.map((button, index) => (
+            {data.buttons?.map((button, index) => (
               <Button
                 key={index}
                 href={button.href}

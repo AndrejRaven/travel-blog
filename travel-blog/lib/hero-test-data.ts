@@ -1,67 +1,14 @@
-export type HeroButton = {
-  label: string;
-  href: string;
-  variant: 'primary' | 'secondary' | 'outline';
-  external?: boolean;
-};
+// Import typów z component-types
+import { Button, RichTextBlock, HeroBannerData, BackgroundHeroBannerData } from './component-types';
 
-export type RichTextBlock = {
-  _type: 'block';
-  _key: string;
-  style?: 'h1' | 'h2' | 'h3' | 'normal';
-  children: Array<{
-    _type: 'span';
-    _key: string;
-    text: string;
-    marks?: string[];
-  }>;
-  markDefs?: Array<{
-    _type: 'link';
-    _key: string;
-    href: string;
-    blank?: boolean;
-  }>;
-};
+// Alias dla kompatybilności wstecznej
+export type HeroButton = Button;
 
 // Dostępne kolory theme dla hero bannerów
 export type ThemeColorKey = 'background' | 'card' | 'accent' | 'hero' | 'button' | 'navigation';
 
-export type HeroBannerData = {
-  title: RichTextBlock[];
-  description: RichTextBlock[];
-  image: {
-    src: string;
-    alt: string;
-  };
-  buttons: HeroButton[];
-  layout: {
-    imageWidth: 25 | 50 | 75; // Procent szerokości obrazka
-    imagePosition: 'left' | 'right'; // Pozycja obrazka na desktop
-    mobileLayout: 'top' | 'bottom'; // Pozycja obrazka na mobile
-    textSpacing: 'with-spacing' | 'no-spacing'; // Czy tekst ma mieć odstępy
-    height: 25 | 50 | 75; // Wysokość baneru w vh
-    backgroundColor: ThemeColorKey; // Kolor tła baneru z dostępnych theme colors
-  };
-};
-
-export type BackgroundHeroBannerData = {
-  title: RichTextBlock[];
-  description: RichTextBlock[];
-  image: {
-    src: string;
-    alt: string;
-  };
-  buttons: HeroButton[];
-  layout: {
-    height: 25 | 50 | 75; // Wysokość baneru w vh
-    textAlignment: 'left' | 'center' | 'right'; // Wyrównanie tekstu
-    overlayOpacity: 10 | 20 | 30 | 40 | 50 | 60 | 70 | 80 | 90; // Przezroczystość nakładki w %
-    textStyle: 'normal' | 'bold' | 'outline' | 'shadow'; // Styl tekstu dla lepszej widoczności
-  };
-};
-
 export const heroTestData: HeroBannerData = {
-  title: [
+  content: [
     {
       _type: 'block',
       _key: 'title-1',
@@ -80,9 +27,7 @@ export const heroTestData: HeroBannerData = {
           marks: ['strong']
         }
       ]
-    }
-  ],
-  description: [
+    },
     {
       _type: 'block',
       _key: 'desc-1',
@@ -141,11 +86,15 @@ export const heroTestData: HeroBannerData = {
   },
   buttons: [
     {
+      _type: "button",
+      _key: "btn-1",
       label: "Przykładowy post",
       href: "/post/indonezja",
       variant: "primary",
     },
     {
+      _type: "button",
+      _key: "btn-2",
       label: "Dowiedz się więcej",
       href: "#o-nas",
       variant: "secondary",
@@ -193,7 +142,7 @@ export const heroExamples = {
 
 // Dane testowe dla baneru z obrazkiem w tle
 export const backgroundHeroTestData: BackgroundHeroBannerData = {
-  title: [
+  content: [
     {
       _type: 'block',
       _key: 'bg-title-1',
@@ -212,9 +161,7 @@ export const backgroundHeroTestData: BackgroundHeroBannerData = {
           marks: ['strong']
         }
       ]
-    }
-  ],
-  description: [
+    },
     {
       _type: 'block',
       _key: 'bg-desc-1',
@@ -235,11 +182,15 @@ export const backgroundHeroTestData: BackgroundHeroBannerData = {
   },
   buttons: [
     {
+      _type: "button",
+      _key: "bg-btn-1",
       label: "Zobacz nasze podróże",
       href: "/post/indonezja",
       variant: "primary",
     },
     {
+      _type: "button",
+      _key: "bg-btn-2",
       label: "Poznaj nas",
       href: "#o-nas",
       variant: "secondary",

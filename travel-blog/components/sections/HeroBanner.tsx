@@ -2,7 +2,8 @@ import React from "react";
 import Image from "next/image";
 import Button from "@/components/ui/Button";
 import RichText from "@/components/ui/RichText";
-import { HeroBannerData, ThemeColorKey } from "@/lib/hero-test-data";
+import { HeroBannerData } from "@/lib/component-types";
+import { ThemeColorKey } from "@/lib/hero-test-data";
 import { getThemeColorCSS } from "@/lib/theme-colors";
 
 type Props = {
@@ -100,10 +101,9 @@ export default function HeroBanner({ data }: Props) {
         )} px-6 lg:px-12 py-8 lg:py-16 flex items-center`}
       >
         <div className={`${getTextSpacingClass(layout.textSpacing)}`}>
-          <RichText blocks={data.title} />
-          <RichText blocks={data.description} />
+          <RichText blocks={data.content} />
           <div className="flex items-center gap-3 flex-wrap">
-            {data.buttons.map((button, index) => (
+            {data.buttons?.map((button, index) => (
               <Button
                 key={index}
                 href={button.href}
