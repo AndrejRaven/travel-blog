@@ -1,0 +1,46 @@
+# Reguły projektu - Nasz Blog
+
+## System motywów
+
+- Projekt używa systemu motywów z pliku `lib/theme-colors.ts`
+- Zawsze używaj `useTheme()` hook z `lib/use-theme.ts` do zarządzania motywami
+- Kolory motywów są zdefiniowane w `lib/theme-colors.ts` - nie używaj hardkodowanych kolorów
+- Komponenty powinny być responsywne na zmiany motywów
+- Używaj CSS custom properties dla kolorów motywów
+
+## Struktura projektu
+
+- Komponenty UI w `components/ui/`
+- Komponenty layout w `components/layout/`
+- Sekcje w `components/sections/`
+- Logika biznesowa w `lib/`
+- Strony w `app/`
+
+## Konwencje kodu
+
+- Używaj TypeScript
+- Komponenty w PascalCase
+- Pliki w kebab-case
+- Zawsze dodawaj odpowiednie typy
+- Używaj Tailwind CSS z custom properties dla motywów
+
+## Fonty
+
+- **Inter** (`font-sans`) - główny font dla tekstu, nagłówków i interfejsu
+- **Playfair Display** (`font-serif`) - elegancki font dla tytułów i wyróżnień
+- **Source Code Pro** (`font-mono`) - font monospace dla kodu i preformatowanego tekstu
+- Zawsze używaj klas Tailwind: `font-sans`, `font-serif`, `font-mono`
+- Dla nagłówków blogowych preferuj `font-serif` (Playfair Display)
+- Dla tekstu głównego używaj `font-sans` (Inter)
+
+## Sanity CMS
+
+- Schematy w `studio/schemas/`
+- Używaj `sanity.ts` do konfiguracji
+- Komponenty RichText w `components/ui/RichText.tsx`
+
+## Responsywność
+
+- Mobile-first approach
+- Używaj breakpointów Tailwind
+- Testuj na różnych urządzeniach

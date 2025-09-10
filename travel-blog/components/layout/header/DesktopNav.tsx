@@ -13,32 +13,32 @@ type Props = {
 
 export default function DesktopNav({ sections, open, onToggle }: Props) {
   return (
-    <nav className="hidden md:flex items-center gap-6 text-sm text-gray-600">
+    <nav className="hidden md:flex items-center gap-6 text-sm font-sans text-gray-600 dark:text-gray-300">
       <div className="group relative">
         <NavLink
           href="/"
-          className="inline-flex items-center gap-1 transition-colors duration-200 group-hover:text-gray-900"
+          className="inline-flex items-center gap-1 transition-colors duration-200 group-hover:text-gray-900 dark:group-hover:text-gray-100"
         >
           <span>Główna</span>
         </NavLink>
-        <span className="pointer-events-none absolute -bottom-1 left-0 h-[2px] w-0 bg-gray-900 transition-all duration-300 group-hover:w-full" />
+        <span className="pointer-events-none absolute -bottom-1 left-0 h-[2px] w-0 bg-gray-900 dark:bg-gray-100 transition-all duration-300 group-hover:w-full" />
       </div>
 
       <div className="group relative">
         <NavLink
           href="#o-nas"
-          className="inline-flex items-center gap-1 transition-colors duration-200 group-hover:text-gray-900"
+          className="inline-flex items-center gap-1 transition-colors duration-200 group-hover:text-gray-900 dark:group-hover:text-gray-100"
         >
           <span>O nas</span>
         </NavLink>
-        <span className="pointer-events-none absolute -bottom-1 left-0 h-[2px] w-0 bg-gray-900 transition-all duration-300 group-hover:w-full" />
+        <span className="pointer-events-none absolute -bottom-1 left-0 h-[2px] w-0 bg-gray-900 dark:bg-gray-100 transition-all duration-300 group-hover:w-full" />
       </div>
 
       <div className="group relative">
         <button
           aria-haspopup="true"
           aria-expanded="false"
-          className="inline-flex items-center gap-1 transition-colors duration-200 group-hover:text-gray-900"
+          className="inline-flex items-center gap-1 transition-colors duration-200 group-hover:text-gray-900 dark:group-hover:text-gray-100"
         >
           <span>Kategorie</span>
           <ChevronIcon
@@ -46,9 +46,9 @@ export default function DesktopNav({ sections, open, onToggle }: Props) {
             aria-hidden
           />
         </button>
-        <span className="pointer-events-none absolute -bottom-1 left-0 h-[2px] w-0 bg-gray-900 transition-all duration-300 group-hover:w-full" />
+        <span className="pointer-events-none absolute -bottom-1 left-0 h-[2px] w-0 bg-gray-900 dark:bg-gray-100 transition-all duration-300 group-hover:w-full" />
 
-        <div className="invisible opacity-0 translate-y-2 group-hover:visible group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-200 absolute right-0 top-full mt-3 w-[480px] max-w-[calc(100vw-2rem)] rounded-lg border border-gray-100 bg-white shadow-lg">
+        <div className="invisible opacity-0 translate-y-2 group-hover:visible group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-200 absolute right-0 top-full mt-3 w-[480px] max-w-[calc(100vw-2rem)] rounded-lg border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg">
           <div className="p-3">
             {sections.map((s, idx) => (
               <React.Fragment key={s.key}>
@@ -67,11 +67,11 @@ export default function DesktopNav({ sections, open, onToggle }: Props) {
       <div className="group relative">
         <NavLink
           href="#kontakt"
-          className="inline-flex items-center gap-1 transition-colors duration-200 group-hover:text-gray-900"
+          className="inline-flex items-center gap-1 transition-colors duration-200 group-hover:text-gray-900 dark:group-hover:text-gray-100"
         >
           <span>Kontakt</span>
         </NavLink>
-        <span className="pointer-events-none absolute -bottom-1 left-0 h-[2px] w-0 bg-gray-900 transition-all duration-300 group-hover:w-full" />
+        <span className="pointer-events-none absolute -bottom-1 left-0 h-[2px] w-0 bg-gray-900 dark:bg-gray-100 transition-all duration-300 group-hover:w-full" />
       </div>
     </nav>
   );

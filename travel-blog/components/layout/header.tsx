@@ -12,6 +12,7 @@ import {
 } from "@/components/layout/header/header-data";
 import { getHeaderData, HeaderData, getImageUrl } from "@/lib/sanity";
 import { headerFallback } from "@/lib/header-fallback";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
 
 const Header = () => {
   const [openSections, setOpenSections] = useState({
@@ -51,13 +52,14 @@ const Header = () => {
   // Loading state
   if (isLoading) {
     return (
-      <header className="sticky top-0 z-40 bg-white/80 backdrop-blur border-b border-gray-100">
+      <header className="sticky top-0 z-40 bg-white/80 dark:bg-gray-900/80 backdrop-blur border-b border-gray-100 dark:border-gray-800">
         <div className="relative mx-auto max-w-7xl px-6 py-4 flex items-center justify-between">
-          <div className="h-6 w-32 bg-gray-200 rounded animate-pulse" />
-          <div className="hidden md:flex gap-6">
-            <div className="h-4 w-16 bg-gray-200 rounded animate-pulse" />
-            <div className="h-4 w-20 bg-gray-200 rounded animate-pulse" />
-            <div className="h-4 w-24 bg-gray-200 rounded animate-pulse" />
+          <div className="h-6 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+          <div className="hidden md:flex gap-6 items-center">
+            <div className="h-4 w-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+            <div className="h-4 w-20 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+            <div className="h-4 w-24 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+            <div className="h-9 w-9 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
           </div>
         </div>
       </header>
@@ -65,7 +67,7 @@ const Header = () => {
   }
 
   return (
-    <header className="sticky top-0 z-40 bg-white/80 backdrop-blur border-b border-gray-100">
+    <header className="sticky top-0 z-40 bg-white/80 dark:bg-gray-900/80 backdrop-blur border-b border-gray-100 dark:border-gray-800">
       <div className="relative mx-auto max-w-7xl px-6 py-4 flex items-center justify-between">
         <a href="/" className="flex items-center gap-2 group">
           {(() => {
@@ -79,18 +81,21 @@ const Header = () => {
                     className="h-8 w-8 rounded-full object-cover"
                   />
                 )}
-                <span className="text-lg font-semibold tracking-tight transition-colors duration-200 group-hover:text-gray-900">
+                <span className="text-lg font-sans font-semibold tracking-tight transition-colors duration-200 group-hover:text-gray-900 dark:group-hover:text-gray-100">
                   {currentHeaderData.title}
                 </span>
               </>
             );
           })()}
         </a>
-        <DesktopNav
-          sections={currentSections}
-          open={openSections}
-          onToggle={(key) => toggleSection(key as keyof typeof openSections)}
-        />
+        <div className="flex items-center gap-4">
+          <DesktopNav
+            sections={currentSections}
+            open={openSections}
+            onToggle={(key) => toggleSection(key as keyof typeof openSections)}
+          />
+          <ThemeToggle />
+        </div>
         <MobileMenu
           sections={currentSections}
           mobileOpen={mobileOpen}

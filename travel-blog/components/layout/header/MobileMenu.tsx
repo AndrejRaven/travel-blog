@@ -29,7 +29,7 @@ export default function MobileMenu({
         aria-label="Otwórz menu"
         aria-expanded={mobileOpen}
         onClick={onToggleMobile}
-        className="md:hidden inline-flex items-center justify-center rounded-md p-2 text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+        className="md:hidden inline-flex items-center justify-center rounded-md p-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
       >
         <svg
           className={`h-6 w-6 transition-transform duration-200 ${
@@ -66,17 +66,17 @@ export default function MobileMenu({
       </button>
 
       {mobileOpen && (
-        <div className="md:hidden absolute left-0 right-0 top-full mt-2 rounded-lg border border-gray-100 bg-white shadow-lg">
-          <div className="px-4 py-3 space-y-2 text-gray-700 text-sm">
+        <div className="md:hidden absolute left-0 right-0 top-full mt-2 rounded-lg border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg">
+          <div className="px-4 py-3 space-y-2 text-gray-700 dark:text-gray-300 text-sm font-sans">
             <a
               href="/"
-              className="block rounded-md px-2 py-2 hover:bg-gray-50 hover:text-gray-900 transition-colors"
+              className="block rounded-md px-2 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
             >
               Główna
             </a>
             <a
               href="#o-nas"
-              className="block rounded-md px-2 py-2 hover:bg-gray-50 hover:text-gray-900 transition-colors"
+              className="block rounded-md px-2 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
             >
               O nas
             </a>
@@ -86,7 +86,7 @@ export default function MobileMenu({
                 type="button"
                 aria-expanded={mobileCategoriesOpen}
                 onClick={onToggleMobileCategories}
-                className="w-full flex items-center justify-between rounded-md px-2 py-2 text-left font-medium text-gray-900 hover:bg-gray-50 transition-colors"
+                className="w-full flex items-center justify-between rounded-md px-2 py-2 text-left font-sans font-medium text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
               >
                 <span className="inline-flex items-center gap-2">
                   <span>Kategorie</span>
@@ -112,11 +112,11 @@ export default function MobileMenu({
               </div>
             </div>
           </div>
-          <div className="border-t border-gray-100" />
+          <div className="border-t border-gray-100 dark:border-gray-700" />
           <div className="px-4 py-3">
             <a
               href="#kontakt"
-              className="block rounded-md px-2 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors"
+              className="block rounded-md px-2 py-2 text-sm font-sans text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
             >
               Kontakt
             </a>

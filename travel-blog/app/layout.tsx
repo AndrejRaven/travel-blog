@@ -1,17 +1,29 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter, Playfair_Display, Source_Code_Pro } from "next/font/google";
 import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
+import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+// Font główny - Inter - doskonały do czytania
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
+  display: "swap",
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+// Font dla nagłówków - Playfair Display - elegancki i czytelny
+const playfairDisplay = Playfair_Display({
+  variable: "--font-playfair",
   subsets: ["latin"],
+  display: "swap",
+});
+
+// Font monospace - Source Code Pro - dla kodu
+const sourceCodePro = Source_Code_Pro({
+  variable: "--font-source-code",
+  subsets: ["latin"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -28,13 +40,14 @@ export default function RootLayout({
   return (
     <html lang="pl">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${inter.variable} ${playfairDisplay.variable} ${sourceCodePro.variable} antialiased`}
       >
-        <Header />
-        {/* Main content */}
-        {children}
-
-        <Footer />
+        <ThemeProvider>
+          <Header />
+          {/* Main content */}
+          {children}
+          <Footer />
+        </ThemeProvider>
       </body>
     </html>
   );

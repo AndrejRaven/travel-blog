@@ -24,8 +24,8 @@ export default function PostPage() {
   return (
     <main className="mx-auto max-w-3xl px-6 py-10">
       {/* Meta: kategoria, data, czas czytania */}
-      <div className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-gray-600">
-        <span className="inline-flex items-center rounded-full border px-2 py-0.5 text-xs">
+      <div className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm font-sans text-gray-600">
+        <span className="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-sans">
           {post.category}
         </span>
         <span>•</span>
@@ -35,7 +35,7 @@ export default function PostPage() {
       </div>
 
       {/* Tytuł */}
-      <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-6">
+      <h1 className="text-3xl md:text-4xl font-serif font-bold tracking-tight mb-6">
         {post.title}
       </h1>
 
@@ -50,7 +50,7 @@ export default function PostPage() {
       </div>
 
       {/* Treść – placeholder */}
-      <article className="prose prose-gray max-w-none">
+      <article className="prose prose-gray max-w-none font-sans">
         {post.body.map((paragraph, idx) => (
           <p key={idx}>{paragraph}</p>
         ))}
@@ -58,9 +58,9 @@ export default function PostPage() {
 
       {/* Stopka artykułu – nawigacja / udostępnienia */}
       <hr className="my-10 border-gray-200" />
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-sm text-gray-600">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-sm font-sans text-gray-600">
         <div className="flex items-center gap-3">
-          <span className="font-medium">Udostępnij:</span>
+          <span className="font-sans font-medium">Udostępnij:</span>
           <a href="#" className="hover:text-gray-900">
             Facebook
           </a>

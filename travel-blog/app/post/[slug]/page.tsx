@@ -22,8 +22,10 @@ export default async function PostPage({ params }: Params) {
   if (!post) {
     return (
       <main className="mx-auto max-w-3xl px-6 py-10">
-        <h1 className="text-2xl font-semibold">Nie znaleziono posta</h1>
-        <p className="text-gray-600">
+        <h1 className="text-2xl font-serif font-semibold">
+          Nie znaleziono posta
+        </h1>
+        <p className="text-gray-600 font-sans">
           Sprawdź adres URL lub wróć na stronę główną.
         </p>
       </main>
@@ -41,14 +43,14 @@ export default async function PostPage({ params }: Params) {
   return (
     <main className="mx-auto max-w-3xl px-6 py-10">
       {/* Meta */}
-      <div className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-gray-600">
+      <div className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm font-sans text-gray-600">
         {formattedDate ? (
           <time dateTime={post.publishedAt}>{formattedDate}</time>
         ) : null}
       </div>
 
       {/* Tytuł */}
-      <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-6">
+      <h1 className="text-3xl md:text-4xl font-serif font-bold tracking-tight mb-6">
         {post.title}
       </h1>
 
@@ -65,7 +67,7 @@ export default async function PostPage({ params }: Params) {
       ) : null}
 
       {/* Treść – prosty render tekstu z blocków */}
-      <article className="prose prose-gray max-w-none">
+      <article className="prose prose-gray max-w-none font-sans">
         {Array.isArray(post.body) && post.body.length > 0 ? (
           post.body.map((block) => {
             if (block._type === "block") {
@@ -77,7 +79,7 @@ export default async function PostPage({ params }: Params) {
             return null;
           })
         ) : (
-          <p className="text-gray-600">Brak treści.</p>
+          <p className="text-gray-600 font-sans">Brak treści.</p>
         )}
       </article>
     </main>

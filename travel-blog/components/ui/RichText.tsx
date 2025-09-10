@@ -5,9 +5,43 @@ import { RichTextBlock } from "@/lib/hero-test-data";
 type Props = {
   blocks: RichTextBlock[];
   className?: string;
+  textColor?: "default" | "white";
 };
 
-export default function RichText({ blocks, className = "" }: Props) {
+export default function RichText({
+  blocks,
+  className = "",
+  textColor = "default",
+}: Props) {
+  // Funkcja do generowania klas kolorów
+  const getColorClasses = (style: string) => {
+    if (textColor === "white") {
+      switch (style) {
+        case "h1":
+          return "text-white";
+        case "h2":
+          return "text-white";
+        case "h3":
+          return "text-white";
+        case "normal":
+        default:
+          return "text-white";
+      }
+    } else {
+      switch (style) {
+        case "h1":
+          return "text-gray-900 dark:text-gray-100";
+        case "h2":
+          return "text-gray-900 dark:text-gray-100";
+        case "h3":
+          return "text-gray-900 dark:text-gray-100";
+        case "normal":
+        default:
+          return "text-gray-600 dark:text-gray-300";
+      }
+    }
+  };
+
   const renderBlock = (block: RichTextBlock) => {
     const { _key, style, children, markDefs = [] } = block;
 
@@ -30,7 +64,7 @@ export default function RichText({ blocks, className = "" }: Props) {
                   <Link
                     key={child._key}
                     href={linkDef.href}
-                    className="text-blue-600 hover:text-blue-800 underline"
+                    className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 underline"
                     target={linkDef.blank ? "_blank" : undefined}
                     rel={linkDef.blank ? "noopener noreferrer" : undefined}
                   >
@@ -52,27 +86,42 @@ export default function RichText({ blocks, className = "" }: Props) {
         return (
           <h1
             key={_key}
-            className="text-3xl md:text-5xl font-bold tracking-tight mb-4"
+            className={`text-3xl md:text-5xl font-serif font-bold tracking-tight mb-4 ${getColorClasses(
+              style
+            )}`}
           >
             {renderChildren()}
           </h1>
         );
       case "h2":
         return (
-          <h2 key={_key} className="text-2xl md:text-3xl font-semibold mb-4">
+          <h2
+            key={_key}
+            className={`text-2xl md:text-3xl font-serif font-semibold mb-4 ${getColorClasses(
+              style
+            )}`}
+          >
             {renderChildren()}
           </h2>
         );
       case "h3":
         return (
-          <h3 key={_key} className="text-xl md:text-2xl font-semibold mb-3">
+          <h3
+            key={_key}
+            className={`text-xl md:text-2xl font-serif font-semibold mb-3 ${getColorClasses(
+              style
+            )}`}
+          >
             {renderChildren()}
           </h3>
         );
       case "normal":
       default:
         return (
-          <p key={_key} className="text-gray-600 mb-6 text-lg">
+          <p
+            key={_key}
+            className={`mb-6 text-lg font-sans ${getColorClasses(style)}`}
+          >
             {renderChildren()}
           </p>
         );
