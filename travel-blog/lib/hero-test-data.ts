@@ -195,7 +195,7 @@ export const backgroundHeroTestData: BackgroundHeroBannerData = {
       _key: "bg-btn-2",
       label: "Poznaj nas",
       href: "#o-nas",
-      variant: "outline",
+      variant: "outlinewhite",
     },
   ],
   layout: {

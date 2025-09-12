@@ -1,0 +1,256 @@
+{
+  "mainMenu": [
+    {
+      "label": "Podróże - świat",
+      "hasDropdown": true,
+      "dropdownSections": [
+        {
+          "title": "Podróże na własną rękę - porady",
+          "emoji": "🧭",
+          "items": [
+            {
+              "label": "Planowanie podróży",
+              "href": "/poradniki/planowanie",
+              "isExternal": false
+            },
+            {
+              "label": "Transport",
+              "href": "/poradniki/transport",
+              "isExternal": false
+            },
+            {
+              "label": "Zakwaterowanie",
+              "href": "/poradniki/zakwaterowanie",
+              "isExternal": false
+            }
+          ]
+        },
+        {
+          "title": "Co warto zobaczyć",
+          "emoji": "🌍",
+          "items": [
+            {
+              "label": "Azja",
+              "href": "/miejsca/azja",
+              "isExternal": false,
+              "hasSubmenu": true,
+              "submenuItems": [
+                {
+                  "label": "Tajlandia",
+                  "href": "/miejsca/azja/tajlandia",
+                  "isExternal": false
+                },
+                {
+                  "label": "Indonezja",
+                  "href": "/miejsca/azja/indonezja",
+                  "isExternal": false
+                },
+                {
+                  "label": "Japonia",
+                  "href": "/miejsca/azja/japonia",
+                  "isExternal": false
+                }
+              ]
+            },
+            {
+              "label": "Europa",
+              "href": "/miejsca/europa",
+              "isExternal": false,
+              "hasSubmenu": true,
+              "submenuItems": [
+                {
+                  "label": "Włochy",
+                  "href": "/miejsca/europa/wlochy",
+                  "isExternal": false
+                },
+                {
+                  "label": "Francja",
+                  "href": "/miejsca/europa/francja",
+                  "isExternal": false
+                },
+                {
+                  "label": "Hiszpania",
+                  "href": "/miejsca/europa/hiszpania",
+                  "isExternal": false
+                }
+              ]
+            },
+            {
+              "label": "Afryka",
+              "href": "/miejsca/afryka",
+              "isExternal": false,
+              "hasSubmenu": true,
+              "submenuItems": [
+                {
+                  "label": "Maroko",
+                  "href": "/miejsca/afryka/maroko",
+                  "isExternal": false
+                },
+                {
+                  "label": "Egipt",
+                  "href": "/miejsca/afryka/egipt",
+                  "isExternal": false
+                }
+              ]
+            },
+            {
+              "label": "Ameryka Północna",
+              "href": "/miejsca/ameryka-polnocna",
+              "isExternal": false,
+              "hasSubmenu": true,
+              "submenuItems": [
+                {
+                  "label": "USA",
+                  "href": "/miejsca/ameryka-polnocna/usa",
+                  "isExternal": false
+                },
+                {
+                  "label": "Kanada",
+                  "href": "/miejsca/ameryka-polnocna/kanada",
+                  "isExternal": false
+                }
+              ]
+            },
+            {
+              "label": "Ameryka Południowa",
+              "href": "/miejsca/ameryka-poludniowa",
+              "isExternal": false,
+              "hasSubmenu": true,
+              "submenuItems": [
+                {
+                  "label": "Brazylia",
+                  "href": "/miejsca/ameryka-poludniowa/brazylia",
+                  "isExternal": false
+                },
+                {
+                  "label": "Peru",
+                  "href": "/miejsca/ameryka-poludniowa/peru",
+                  "isExternal": false
+                },
+                {
+                  "label": "Chile",
+                  "href": "/miejsca/ameryka-poludniowa/chile",
+                  "isExternal": false
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "Podróże - Polska",
+      "href": "/polska",
+      "isExternal": false,
+      "hasDropdown": false
+    },
+    {
+      "label": "Recenzje produktów",
+      "href": "/recenzje",
+      "isExternal": false,
+      "hasDropdown": false
+    },
+    {
+      "label": "Porady praktyczne podczas podróżowania",
+      "hasDropdown": true,
+      "dropdownSections": [
+        {
+          "title": "Koszty naszych podróży",
+          "emoji": "💰",
+          "items": [
+            {
+              "label": "Budżet na podróż",
+              "href": "/poradniki/budzet",
+              "isExternal": false
+            },
+            {
+              "label": "Jak oszczędzać w podróży",
+              "href": "/poradniki/oszczedzanie",
+              "isExternal": false
+            },
+            {
+              "label": "Koszty transportu",
+              "href": "/poradniki/koszty-transportu",
+              "isExternal": false
+            }
+          ]
+        },
+        {
+          "title": "Inne porady",
+          "emoji": "💡",
+          "items": [
+            {
+              "label": "Bezpieczeństwo w podróży",
+              "href": "/poradniki/bezpieczenstwo",
+              "isExternal": false
+            },
+            {
+              "label": "Sprzęt i pakowanie",
+              "href": "/poradniki/sprzet",
+              "isExternal": false
+            },
+            {
+              "label": "Dokumenty i wizy",
+              "href": "/poradniki/dokumenty",
+              "isExternal": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "O nas",
+      "hasDropdown": true,
+      "dropdownSections": [
+        {
+          "title": "Info o nas",
+          "emoji": "👥",
+          "items": [
+            {
+              "label": "Nasza historia",
+              "href": "/o-nas/historia",
+              "isExternal": false
+            },
+            {
+              "label": "Kim jesteśmy",
+              "href": "/o-nas/kim-jestesmy",
+              "isExternal": false
+            }
+          ]
+        },
+        {
+          "title": "Kontakt",
+          "emoji": "📧",
+          "items": [
+            {
+              "label": "Napisz do nas",
+              "href": "/kontakt",
+              "isExternal": false
+            },
+            {
+              "label": "Media społecznościowe",
+              "href": "/kontakt/social-media",
+              "isExternal": false
+            }
+          ]
+        },
+        {
+          "title": "Wsparcie",
+          "emoji": "🤝",
+          "items": [
+            {
+              "label": "Wesprzyj nas",
+              "href": "/wsparcie",
+              "isExternal": false
+            },
+            {
+              "label": "Współpraca",
+              "href": "/wsparcie/wspolpraca",
+              "isExternal": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

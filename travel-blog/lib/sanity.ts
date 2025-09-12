@@ -39,6 +39,29 @@ export type Post = {
   }>;
 };
 
+
+export type SubmenuItem = {
+  label: string;
+  href: string;
+  isExternal?: boolean;
+};
+
+export type DropdownItem = {
+  label: string;
+  href?: string;
+  isExternal?: boolean;
+  hasSubmenu?: boolean;
+  submenuItems?: SubmenuItem[];
+};
+
+export type MenuItem = {
+  label: string;
+  href?: string;
+  isExternal?: boolean;
+  hasDropdown?: boolean;
+  dropdownItems?: DropdownItem[];
+};
+
 export type HeaderData = {
   _id: string;
   title: string;
@@ -48,11 +71,7 @@ export type HeaderData = {
       url: string;
     };
   } | null;
-  mainNavigation: Array<{
-    label: string;
-    href: string;
-    isExternal?: boolean;
-  }>;
+  mainMenu?: MenuItem[];
   categoriesDropdown: {
     label: string;
     sections: Array<{
@@ -82,7 +101,23 @@ export async function getHeaderData(): Promise<HeaderData | null> {
         url
       }
     },
-    mainNavigation,
+    mainMenu[] {
+      label,
+      href,
+      isExternal,
+      hasDropdown,
+      dropdownItems[] {
+        label,
+        href,
+        isExternal,
+        hasSubmenu,
+        submenuItems[] {
+          label,
+          href,
+          isExternal
+        }
+      }
+    },
     categoriesDropdown {
       label,
       sections[] {

@@ -9,6 +9,7 @@ import MobileMenu from "@/components/layout/header/MobileMenu";
 import {
   sections,
   getSectionsFromHeaderData,
+  getMainMenuFromHeaderData,
 } from "@/components/layout/header/header-data";
 import { getHeaderData, HeaderData } from "@/lib/sanity";
 import { headerFallback } from "@/lib/header-fallback";
@@ -50,6 +51,7 @@ const Header = () => {
   // Użyj danych z Sanity lub fallback
   const currentHeaderData = headerData || headerFallback;
   const currentSections = getSectionsFromHeaderData(headerData);
+  const currentMainMenu = getMainMenuFromHeaderData(headerData);
   // Loading state
   if (isLoading) {
     return (
@@ -74,6 +76,7 @@ const Header = () => {
         <div className="flex items-center gap-4">
           <DesktopNav
             sections={currentSections}
+            mainMenu={currentMainMenu}
             open={openSections}
             onToggle={(key) => toggleSection(key as keyof typeof openSections)}
           />
@@ -81,6 +84,7 @@ const Header = () => {
         </div>
         <MobileMenu
           sections={currentSections}
+          mainMenu={currentMainMenu}
           mobileOpen={mobileOpen}
           mobileCategoriesOpen={mobileCategoriesOpen}
           onToggleMobile={() =>

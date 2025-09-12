@@ -1,7 +1,7 @@
-import { HeaderData } from '@/lib/sanity';
+import { HeaderData, MenuItem, DropdownSection, DropdownItem, SubmenuItem } from '@/lib/sanity';
 import { headerFallback } from '@/lib/header-fallback';
 
-export type MenuItem = {
+export type LegacyMenuItem = {
   label: string;
   href: string;
   isExternal?: boolean;
@@ -13,7 +13,7 @@ export type Section = {
   key: SectionKey;
   title: string;
   emoji: string;
-  items: MenuItem[];
+  items: LegacyMenuItem[];
 };
 
 // Funkcja do konwersji danych z Sanity na format używany w komponentach
@@ -32,6 +32,15 @@ export function getSectionsFromHeaderData(headerData: HeaderData | null): Sectio
       isExternal: item.isExternal || false,
     })),
   }));
+}
+
+// Funkcja do pobierania nowego menu z Sanity
+export function getMainMenuFromHeaderData(headerData: HeaderData | null): MenuItem[] {
+  if (!headerData?.mainMenu) {
+    return [];
+  }
+
+  return headerData.mainMenu;
 }
 
 // Fallback data dla kompatybilności wstecznej

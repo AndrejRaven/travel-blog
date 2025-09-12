@@ -24,6 +24,15 @@
 - Zawsze dodawaj odpowiednie typy
 - Używaj Tailwind CSS z custom properties dla motywów
 
+## Komponenty UI
+
+- ZAWSZE używaj istniejących komponentów z `components/ui/` zamiast tworzenia nowych
+- Dla przycisków używaj `Button` z odpowiednimi wariantami (primary, secondary, outline, youtube)
+- Dla linków wewnętrznych używaj `Link` z Next.js
+- Dla linków zewnętrznych używaj `Button` z `external` prop
+- Sprawdzaj dostępne komponenty przed implementacją nowych elementów
+- Komponenty UI mają wbudowane style motywów i responsywność
+
 ## Fonty
 
 - **Inter** (`font-sans`) - główny font dla tekstu, nagłówków i interfejsu

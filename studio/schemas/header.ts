@@ -18,14 +18,14 @@ export default {
       description: 'Logo wyświetlane w headerze',
     },
     {
-      name: 'mainNavigation',
-      title: 'Główna nawigacja',
+      name: 'mainMenu',
+      title: 'Główne menu',
       type: 'array',
       of: [
         {
           type: 'object',
-          name: 'navItem',
-          title: 'Element nawigacji',
+          name: 'menuItem',
+          title: 'Element menu',
           fields: [
             {
               name: 'label',
@@ -37,14 +37,109 @@ export default {
               name: 'href',
               title: 'Link',
               type: 'string',
-              validation: (Rule: any) => Rule.required(),
+              description: 'Opcjonalny link dla elementu menu (tylko dla elementów bez dropdowna)',
+              hidden: ({ parent }: any) => parent?.hasDropdown,
             },
             {
               name: 'isExternal',
               title: 'Link zewnętrzny',
               type: 'boolean',
-              description: 'Zaznacz jeśli link prowadzi poza stronę',
               initialValue: false,
+              hidden: ({ parent }: any) => parent?.hasDropdown,
+            },
+            {
+              name: 'hasDropdown',
+              title: 'Ma dropdown',
+              type: 'boolean',
+              initialValue: false,
+              description: 'Zaznacz jeśli element ma rozwijane podmenu',
+            },
+            {
+              name: 'dropdownItems',
+              title: 'Elementy dropdowna',
+              type: 'array',
+              of: [
+                {
+                  type: 'object',
+                  name: 'dropdownItem',
+                  title: 'Element dropdowna',
+                  fields: [
+                    {
+                      name: 'label',
+                      title: 'Tytuł',
+                      type: 'string',
+                      validation: (Rule: any) => Rule.required(),
+                    },
+                    {
+                      name: 'href',
+                      title: 'Link',
+                      type: 'string',
+                      description: 'Opcjonalny link dla elementu dropdowna (tylko dla elementów bez podmenu)',
+                      hidden: ({ parent }: any) => parent?.hasSubmenu,
+                    },
+                    {
+                      name: 'isExternal',
+                      title: 'Link zewnętrzny',
+                      type: 'boolean',
+                      initialValue: false,
+                      hidden: ({ parent }: any) => parent?.hasSubmenu,
+                    },
+                    {
+                      name: 'hasSubmenu',
+                      title: 'Ma podmenu',
+                      type: 'boolean',
+                      initialValue: false,
+                      description: 'Zaznacz jeśli element ma dodatkowe podmenu',
+                    },
+                    {
+                      name: 'submenuItems',
+                      title: 'Elementy podmenu',
+                      type: 'array',
+                      of: [
+                        {
+                          type: 'object',
+                          name: 'submenuItem',
+                          title: 'Element podmenu',
+                          fields: [
+                            {
+                              name: 'label',
+                              title: 'Tytuł',
+                              type: 'string',
+                              validation: (Rule: any) => Rule.required(),
+                            },
+                            {
+                              name: 'href',
+                              title: 'Link',
+                              type: 'string',
+                              validation: (Rule: any) => Rule.required(),
+                            },
+                            {
+                              name: 'isExternal',
+                              title: 'Link zewnętrzny',
+                              type: 'boolean',
+                              initialValue: false,
+                            },
+                          ],
+                          preview: {
+                            select: {
+                              title: 'label',
+                              subtitle: 'href',
+                            },
+                          },
+                        },
+                      ],
+                      hidden: ({ parent }: any) => !parent?.hasSubmenu,
+                    },
+                  ],
+                  preview: {
+                    select: {
+                      title: 'label',
+                      subtitle: 'href',
+                    },
+                  },
+                },
+              ],
+              hidden: ({ parent }: any) => !parent?.hasDropdown,
             },
           ],
           preview: {
@@ -55,99 +150,7 @@ export default {
           },
         },
       ],
-      description: 'Główne elementy nawigacji (Główna, O nas, Kontakt)',
-    },
-    {
-      name: 'categoriesDropdown',
-      title: 'Dropdown Kategorie',
-      type: 'object',
-      fields: [
-        {
-          name: 'label',
-          title: 'Etykieta dropdowna',
-          type: 'string',
-          initialValue: 'Kategorie',
-          validation: (Rule: any) => Rule.required(),
-        },
-        {
-          name: 'sections',
-          title: 'Sekcje kategorii',
-          type: 'array',
-          of: [
-            {
-              type: 'object',
-              name: 'categorySection',
-              title: 'Sekcja kategorii',
-              fields: [
-                {
-                  name: 'key',
-                  title: 'Klucz sekcji',
-                  type: 'string',
-                  validation: (Rule: any) => Rule.required(),
-                  description: 'Unikalny identyfikator (np. places, guides, culture)',
-                },
-                {
-                  name: 'title',
-                  title: 'Tytuł sekcji',
-                  type: 'string',
-                  validation: (Rule: any) => Rule.required(),
-                },
-                {
-                  name: 'emoji',
-                  title: 'Emoji',
-                  type: 'string',
-                  validation: (Rule: any) => Rule.required().max(2),
-                  description: 'Emoji dla sekcji (max 2 znaki)',
-                },
-                {
-                  name: 'items',
-                  title: 'Elementy sekcji',
-                  type: 'array',
-                  of: [
-                    {
-                      type: 'object',
-                      name: 'categoryItem',
-                      title: 'Element kategorii',
-                      fields: [
-                        {
-                          name: 'label',
-                          title: 'Etykieta',
-                          type: 'string',
-                          validation: (Rule: any) => Rule.required(),
-                        },
-                        {
-                          name: 'href',
-                          title: 'Link',
-                          type: 'string',
-                          validation: (Rule: any) => Rule.required(),
-                        },
-                        {
-                          name: 'isExternal',
-                          title: 'Link zewnętrzny',
-                          type: 'boolean',
-                          initialValue: false,
-                        },
-                      ],
-                      preview: {
-                        select: {
-                          title: 'label',
-                          subtitle: 'href',
-                        },
-                      },
-                    },
-                  ],
-                },
-              ],
-              preview: {
-                select: {
-                  title: 'title',
-                  subtitle: 'emoji',
-                },
-              },
-            },
-          ],
-        },
-      ],
+      description: 'Główne elementy menu z możliwością dropdownów',
     },
     {
       name: 'mobileMenu',
@@ -172,7 +175,7 @@ export default {
   preview: {
     select: {
       title: 'title',
-      subtitle: 'mainNavigation.0.label',
+      subtitle: 'mainMenu.0.label',
     },
   },
 }

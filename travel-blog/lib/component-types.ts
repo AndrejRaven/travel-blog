@@ -26,7 +26,7 @@ export type Button = {
   _key: string;
   label: string;
   href: string;
-  variant: 'primary' | 'secondary' | 'outline';
+  variant: 'primary' | 'secondary' | 'outline' | 'outlinewhite' | 'youtube';
   external?: boolean;
 };
 
