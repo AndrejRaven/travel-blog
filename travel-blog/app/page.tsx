@@ -7,6 +7,7 @@ import Newsletter from "@/components/sections/Newsletter";
 import Button from "@/components/ui/Button";
 import CustomLink from "@/components/ui/Link";
 import SectionHeader from "@/components/shared/SectionHeader";
+import Popup from "@/components/ui/Popup";
 import { backgroundHeroTestData } from "@/lib/hero-test-data";
 
 export default function Home() {
@@ -284,6 +285,9 @@ export default function Home() {
       </div>
 
       {/* FOOTER przeniesiony globalnie do layoutu */}
+
+      {/* POPUP DEMO - pojawia się po przewinięciu 60% strony, cooldown 60 minut */}
+      <Popup scrollThreshold={60} cooldownMinutes={60} />
     </div>
   );
 }

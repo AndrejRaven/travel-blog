@@ -2,11 +2,41 @@
 
 ## System motywów
 
-- Projekt używa systemu motywów z pliku `lib/theme-colors.ts`
-- Zawsze używaj `useTheme()` hook z `lib/use-theme.ts` do zarządzania motywami
-- Kolory motywów są zdefiniowane w `lib/theme-colors.ts` - nie używaj hardkodowanych kolorów
-- Komponenty powinny być responsywne na zmiany motywów
-- Używaj CSS custom properties dla kolorów motywów
+- Projekt używa Tailwind CSS z klasą `dark:` do zarządzania motywami
+- **ZAWSZE używaj Tailwind classes z `dark:` prefix** zamiast inline styles
+- **NIE używaj `useTheme()` hook** - Tailwind automatycznie przełącza motywy
+- **NIE używaj inline styles** - używaj tylko Tailwind classes
+- Motywy przełączane są przez klasę `dark` w HTML (automatycznie przez ThemeProvider)
+
+### Przykłady użycia motywów:
+
+```tsx
+// ✅ DOBRZE - Tailwind classes
+<div className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">
+  <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+    Tytuł
+  </h1>
+  <p className="text-gray-600 dark:text-gray-300">
+    Opis
+  </p>
+</div>
+
+// ❌ ŹLE - inline styles z useTheme
+const { theme } = useTheme();
+<div style={{ backgroundColor: theme === 'dark' ? '#1e293b' : '#ffffff' }}>
+
+// ❌ ŹLE - hardkodowane kolory
+<div className="bg-white text-black">
+```
+
+### Standardowe kolory motywów:
+
+- **Tła**: `bg-white dark:bg-gray-800` (karty), `bg-gray-50 dark:bg-gray-900` (sekcje)
+- **Tekst główny**: `text-gray-900 dark:text-gray-100`
+- **Tekst drugorzędny**: `text-gray-600 dark:text-gray-300`
+- **Tekst pomocniczy**: `text-gray-500 dark:text-gray-400`
+- **Ramki**: `border-gray-200 dark:border-gray-700`
+- **Hover**: `hover:bg-gray-100 dark:hover:bg-gray-700`
 
 ## Struktura projektu
 
@@ -22,7 +52,9 @@
 - Komponenty w PascalCase
 - Pliki w kebab-case
 - Zawsze dodawaj odpowiednie typy
-- Używaj Tailwind CSS z custom properties dla motywów
+- **ZAWSZE używaj Tailwind CSS z `dark:` prefix dla motywów**
+- **NIE używaj inline styles** - tylko Tailwind classes
+- **NIE używaj `useTheme()` hook** - Tailwind automatycznie przełącza motywy
 
 ## Komponenty UI
 
