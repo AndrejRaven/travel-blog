@@ -62,14 +62,26 @@ export default function InstagramSection() {
   const [isTransitioning, setIsTransitioning] = useState(false);
 
   return (
-    <section className="py-12 md:py-16">
+    <div
+      role="complementary"
+      aria-labelledby="instagram-heading"
+      itemScope
+      itemType="https://schema.org/ItemList"
+    >
       <div className="mx-auto max-w-7xl px-0 md:px-6">
         {/* HEADER */}
         <div className="flex flex-col space-y-4 mb-8 px-6 md:px-0 md:flex-row md:items-center md:justify-between md:space-y-0">
-          <SectionHeader
-            title="Śledź nas na Instagramie"
-            description="Najnowsze zdjęcia z naszych podróży"
-          />
+          <div>
+            <h2
+              id="instagram-heading"
+              className="text-2xl md:text-3xl font-serif font-bold mb-2"
+            >
+              Śledź nas na Instagramie
+            </h2>
+            <p className="text-lg text-gray-600 dark:text-gray-300">
+              Najnowsze zdjęcia z naszych podróży
+            </p>
+          </div>
           <Button
             href="https://instagram.com"
             variant="outline"
@@ -138,10 +150,12 @@ export default function InstagramSection() {
 
               return (
                 <SwiperSlide key={post.id}>
-                  <div
+                  <article
                     className={`relative group transition-all duration-500 rounded-2xl ease-out overflow-hidden ${
                       isActive ? "scale-100 z-10" : "scale-90 opacity-30"
                     }`}
+                    itemScope
+                    itemType="https://schema.org/ImageObject"
                   >
                     <div className="relative aspect-square">
                       <Image
@@ -149,6 +163,7 @@ export default function InstagramSection() {
                         alt={post.caption}
                         fill
                         className={`object-cover transition-all duration-500 group-hover:scale-105 transform-gpu will-change-transform `}
+                        itemProp="contentUrl"
                       />
 
                       {/* OVERLAY Z INFORMACJAMI */}
@@ -182,13 +197,16 @@ export default function InstagramSection() {
                               <span className="text-sm">@naszblog</span>
                             </div>
                           </div>
-                          <p className="text-sm leading-relaxed">
+                          <p
+                            className="text-sm leading-relaxed"
+                            itemProp="description"
+                          >
                             {post.caption}
                           </p>
                         </div>
                       </div>
                     </div>
-                  </div>
+                  </article>
                 </SwiperSlide>
               );
             })}
@@ -209,6 +227,6 @@ export default function InstagramSection() {
           }
         ></div>
       </div>
-    </section>
+    </div>
   );
 }

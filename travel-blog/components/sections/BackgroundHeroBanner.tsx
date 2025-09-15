@@ -54,10 +54,12 @@ export default function BackgroundHeroBanner({ data }: Props) {
   };
 
   return (
-    <section
+    <div
       className={`relative w-full ${getHeightClass(
         layout.height
       )} overflow-hidden`}
+      role="complementary"
+      aria-labelledby="section-heading"
     >
       {/* Obraz w tle */}
       <div className="absolute inset-0 w-full h-full">
@@ -95,6 +97,9 @@ export default function BackgroundHeroBanner({ data }: Props) {
               : "flex flex-col items-start text-left"
           }`}
         >
+          <h2 id="section-heading" className="sr-only">
+            {data.content?.[0]?.children?.[0]?.text || "Sekcja treści"}
+          </h2>
           <div className={getTextStyleClass(layout.textStyle)}>
             <RichText blocks={data.content} textColor="white" />
           </div>
@@ -120,6 +125,6 @@ export default function BackgroundHeroBanner({ data }: Props) {
           </div>
         </div>
       </div>
-    </section>
+    </div>
   );
 }

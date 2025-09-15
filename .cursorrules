@@ -28,10 +28,37 @@
 
 - ZAWSZE używaj istniejących komponentów z `components/ui/` zamiast tworzenia nowych
 - Dla przycisków używaj `Button` z odpowiednimi wariantami (primary, secondary, outline, youtube)
-- Dla linków wewnętrznych używaj `Link` z Next.js
+- Dla linków wewnętrznych używaj `Link` z `@/components/ui/Link` (NIE next/link)
 - Dla linków zewnętrznych używaj `Button` z `external` prop
 - Sprawdzaj dostępne komponenty przed implementacją nowych elementów
 - Komponenty UI mają wbudowane style motywów i responsywność
+
+## Komponenty Shared
+
+- ZAWSZE używaj komponentów z `components/shared/` dla powtarzających się elementów
+- `PageLayout` - główny layout dla stron z opcjami maxWidth (sm, md, lg, xl, 2xl, 4xl, 6xl)
+- `PageHeader` - standardowy nagłówek dla wszystkich stron (title, subtitle)
+- `InfoCard` - kolorowe karty informacyjne z wariantami (blue, green, yellow, red, purple, gray)
+- `BackToHome` - przycisk powrotu do strony głównej
+- `SectionHeader` - nagłówki sekcji z opcjami wyrównania
+
+## Komponenty Sections
+
+- Używaj komponentów z `components/sections/` dla sekcji treści
+- `HeroBanner` - baner hero z opcjami layoutu i kolorów
+- `BackgroundHeroBanner` - baner hero z obrazem w tle
+- `InstagramSection` - sekcja z Instagram
+- `EmbedYoutube` - osadzanie filmów YouTube
+- `Newsletter` - formularz zapisu do newslettera
+
+## Dostępne komponenty UI
+
+- `Button` - przyciski z wariantami (primary, secondary, outline, youtube)
+- `Link` - linki z wariantami (arrow, underline) - ZAWSZE używaj zamiast next/link
+- `RichText` - renderowanie treści z Sanity CMS
+- `ThemeToggle` - przełącznik motywów
+- `Logo` - logo aplikacji
+- `ComponentRenderer` - renderer komponentów z Sanity
 
 ## Fonty
 
@@ -53,3 +80,77 @@
 - Mobile-first approach
 - Używaj breakpointów Tailwind
 - Testuj na różnych urządzeniach
+
+## Refaktoryzacja i DRY
+
+- ZAWSZE używaj istniejących komponentów zamiast duplikowania kodu
+- Przed implementacją nowego elementu sprawdź czy nie ma podobnego komponentu
+- Używaj `PageLayout` jako podstawy dla wszystkich stron
+- `PageHeader` + `InfoCard` + `BackToHome` tylko dla stron informacyjnych
+- Wszystkie linki wewnętrzne muszą używać `@/components/ui/Link`
+- Wszystkie linki zewnętrzne muszą używać `Button` z `external` prop
+- Kolorowe karty informacyjne używają `InfoCard` z odpowiednim wariantem
+
+## Struktura stron
+
+### Strony informacyjne (Polityka, Regulamin, Kontakt, Wsparcie)
+
+```tsx
+import PageLayout from "@/components/shared/PageLayout";
+import PageHeader from "@/components/shared/PageHeader";
+import InfoCard from "@/components/shared/InfoCard";
+import BackToHome from "@/components/shared/BackToHome";
+
+export default function StronaInformacyjna() {
+  return (
+    <PageLayout maxWidth="4xl">
+      <PageHeader title="Tytuł" subtitle="Podtytuł" />
+
+      <InfoCard variant="blue">{/* Treść */}</InfoCard>
+
+      <BackToHome className="mt-12" />
+    </PageLayout>
+  );
+}
+```
+
+### Strony kategorii
+
+```tsx
+import PageLayout from "@/components/shared/PageLayout";
+import PageHeader from "@/components/shared/PageHeader";
+
+export default function Kategoria() {
+  return (
+    <PageLayout maxWidth="6xl">
+      <PageHeader title="Nazwa kategorii" subtitle="Opis kategorii" />
+
+      {/* Lista postów */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* Posty */}
+      </div>
+    </PageLayout>
+  );
+}
+```
+
+### Strony postów
+
+```tsx
+import PageLayout from "@/components/shared/PageLayout";
+
+export default function Post() {
+  return (
+    <PageLayout maxWidth="4xl">
+      {/* Nagłówek postu */}
+      <header className="mb-8">
+        <h1 className="text-4xl font-serif font-bold">Tytuł postu</h1>
+        <p className="text-gray-600 dark:text-gray-400 mt-2">Data publikacji</p>
+      </header>
+
+      {/* Treść postu */}
+      <article className="prose prose-lg max-w-none">{/* Treść */}</article>
+    </PageLayout>
+  );
+}
+```

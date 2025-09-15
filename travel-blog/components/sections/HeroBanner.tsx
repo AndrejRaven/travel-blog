@@ -84,13 +84,14 @@ export default function HeroBanner({ data }: Props) {
   };
 
   return (
-    <section
+    <div
       className={`w-full grid grid-cols-1 lg:grid-cols-12 gap-0 ${getHeightClass(
         layout.height
       )}`}
       style={{
         backgroundColor: getThemeColorCSS(layout.backgroundColor),
       }}
+      role="banner"
     >
       {/* Tekst */}
       <div
@@ -135,6 +136,6 @@ export default function HeroBanner({ data }: Props) {
           />
         </div>
       </div>
-    </section>
+    </div>
   );
 }

@@ -44,7 +44,6 @@ export default function RichText({
 
   const renderBlock = (block: RichTextBlock) => {
     const { _key, style, children = [], markDefs = [] } = block;
-    console.log("Rendering block:", { _key, style, children, markDefs }); // Debug
 
     // Renderuj children z markami
     const renderChildren = () => {
@@ -67,7 +66,6 @@ export default function RichText({
 
         // Aplikuj marki (bold, italic, link, custom style, etc.)
         if (child.marks) {
-          console.log("Child marks:", child.marks); // Debug
           child.marks.forEach((mark) => {
             if (mark === "strong") {
               element = <strong key={child._key}>{element}</strong>;
@@ -78,7 +76,6 @@ export default function RichText({
               markDefs.some((def) => def._key === mark && def._type === "link")
             ) {
               const linkDef = markDefs.find((def) => def._key === mark);
-              console.log("Link mark:", mark, "Def:", linkDef); // Debug
               if (linkDef) {
                 // Określ URL na podstawie typu linku
                 const href =
@@ -120,7 +117,6 @@ export default function RichText({
               )
             ) {
               const customStyleDef = markDefs.find((def) => def._key === mark);
-              console.log("Custom style mark:", mark, "Def:", customStyleDef); // Debug
               if (customStyleDef && customStyleDef.style) {
                 const getCustomStyleClasses = (style: string) => {
                   switch (style) {
@@ -158,7 +154,6 @@ export default function RichText({
               }
             } else {
               // Fallback dla nieznanych marków
-              console.log("Unknown mark:", mark);
             }
           });
         }

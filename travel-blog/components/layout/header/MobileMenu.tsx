@@ -100,8 +100,8 @@ export default function MobileMenu({
                           onClick={() => toggleDropdown(menuItem.label)}
                           className="w-full flex items-center justify-between rounded-md px-2 py-2 text-left font-sans text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                         >
-                          <span className="inline-flex items-center gap-2">
-                            <span>{menuItem.label}</span>
+                          <span className="inline-flex items-center">
+                            {menuItem.label}
                           </span>
                           <ToggleChevron
                             isOpen={openDropdowns[menuItem.label]}
