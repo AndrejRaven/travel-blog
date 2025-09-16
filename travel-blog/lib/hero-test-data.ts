@@ -4,9 +4,6 @@ import { Button, RichTextBlock, HeroBannerData, BackgroundHeroBannerData } from 
 // Alias dla kompatybilności wstecznej
 export type HeroButton = Button;
 
-// Dostępne kolory theme dla hero bannerów
-export type ThemeColorKey = 'background' | 'card' | 'accent' | 'hero' | 'button' | 'navigation';
-
 export const heroTestData: HeroBannerData = {
   content: [
     {
@@ -108,18 +105,18 @@ export const heroTestData: HeroBannerData = {
     mobileLayout: 'top',
     textSpacing: 'with-spacing',
     height: 75,
-    backgroundColor: 'card', // Dostępne: 'background', 'card', 'accent', 'hero', 'button', 'navigation'
+    backgroundColor: 'card',
   },
 };
 
-// Przykłady innych konfiguracji hero bannerów z różnymi kolorami
+// Przykłady innych konfiguracji hero bannerów
 export const heroExamples = {
   // Hero z tłem sekcji
   sectionBackground: {
     ...heroTestData,
     layout: {
       ...heroTestData.layout,
-      backgroundColor: 'background' as ThemeColorKey,
+      backgroundColor: 'background',
     }
   },
   
@@ -128,7 +125,7 @@ export const heroExamples = {
     ...heroTestData,
     layout: {
       ...heroTestData.layout,
-      backgroundColor: 'card' as ThemeColorKey,
+      backgroundColor: 'card',
     }
   },
   
@@ -137,7 +134,7 @@ export const heroExamples = {
     ...heroTestData,
     layout: {
       ...heroTestData.layout,
-      backgroundColor: 'accent' as ThemeColorKey,
+      backgroundColor: 'accent',
     }
   },
 };
@@ -201,7 +198,9 @@ export const backgroundHeroTestData: BackgroundHeroBannerData = {
   layout: {
     height: 75,
     textAlignment: 'left',
-    overlayOpacity: 10,
+    overlayOpacity: 30,
     textStyle: 'shadow',
+    showScrollIndicator: true,
+    showBottomGradient: false,
   },
 };

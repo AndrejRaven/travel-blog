@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { X } from "lucide-react";
 import Image from "next/image";
 import Button from "./Button";
 
@@ -121,19 +122,7 @@ export default function Popup({
             className="absolute right-4 top-4 rounded-full p-1 transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
             aria-label="Zamknij popup"
           >
-            <svg
-              className="h-5 w-5 text-gray-500 dark:text-gray-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
+            <X className="h-5 w-5 text-gray-500 dark:text-gray-400" />
           </button>
 
           {/* Channel Image */}

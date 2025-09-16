@@ -47,7 +47,7 @@ export type HeroBanner = {
     mobileLayout: 'top' | 'bottom';
     textSpacing: 'with-spacing' | 'no-spacing';
     height: 25 | 50 | 75;
-    backgroundColor: 'background' | 'card' | 'accent' | 'hero' | 'button' | 'navigation';
+    backgroundColor: string;
   };
 };
 
@@ -67,11 +67,13 @@ export type BackgroundHeroBanner = {
     textAlignment: 'left' | 'center' | 'right';
     overlayOpacity: 10 | 20 | 30 | 40 | 50 | 60 | 70 | 80 | 90;
     textStyle: 'normal' | 'bold' | 'outline' | 'shadow';
+    showScrollIndicator?: boolean;
+    showBottomGradient?: boolean;
   };
 };
 
 // Union type dla wszystkich komponentów
-export type PostComponent = HeroBanner | BackgroundHeroBanner;
+export type PostComponent = HeroBanner | BackgroundHeroBanner | TextContent | ImageCollage;
 
 // Typ dla danych komponentu (bez _type i _key)
 // Typy dla danych komponentu (kompatybilne z istniejącymi komponentami)
@@ -88,7 +90,7 @@ export type HeroBannerData = {
     mobileLayout: 'top' | 'bottom';
     textSpacing: 'with-spacing' | 'no-spacing';
     height: 25 | 50 | 75;
-    backgroundColor: 'background' | 'card' | 'accent' | 'hero' | 'button' | 'navigation';
+    backgroundColor: string;
   };
 };
 
@@ -104,5 +106,54 @@ export type BackgroundHeroBannerData = {
     textAlignment: 'left' | 'center' | 'right';
     overlayOpacity: 10 | 20 | 30 | 40 | 50 | 60 | 70 | 80 | 90;
     textStyle: 'normal' | 'bold' | 'outline' | 'shadow';
+    showScrollIndicator?: boolean;
+    showBottomGradient?: boolean;
+  };
+};
+
+export type TextContent = {
+  _type: 'textContent';
+  _key: string;
+  content: RichTextBlock[];
+  layout: {
+    maxWidth: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '4xl' | '6xl' | 'full';
+    padding: 'none' | 'sm' | 'md' | 'lg' | 'xl';
+    textSize: 'sm' | 'base' | 'lg' | 'xl';
+  };
+};
+
+export type TextContentData = {
+  content: RichTextBlock[];
+  layout: {
+    maxWidth: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '4xl' | '6xl' | 'full';
+    padding: 'none' | 'sm' | 'md' | 'lg' | 'xl';
+    textSize: 'sm' | 'base' | 'lg' | 'xl';
+  };
+};
+
+export type ImageCollage = {
+  _type: 'imageCollage';
+  _key: string;
+  images: Array<{
+    asset?: {
+      _id: string;
+      url: string;
+    };
+    alt?: string;
+  }>;
+  layout: {
+    maxWidth: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '4xl' | '6xl' | 'full';
+    thumbnailCount: 2 | 3 | 4;
+  };
+};
+
+export type ImageCollageData = {
+  images: Array<{
+    src: string;
+    alt: string;
+  }>;
+  layout: {
+    maxWidth: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '4xl' | '6xl' | 'full';
+    thumbnailCount: 2 | 3 | 4;
   };
 };

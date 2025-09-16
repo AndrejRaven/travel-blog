@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo, memo } from "react";
 import ChevronIcon from "@/components/ui/icons/ChevronIcon";
 import CircleIcon from "@/components/ui/icons/CircleIcon";
 import ToggleChevron from "@/components/ui/ToggleChevron";
@@ -11,12 +11,12 @@ import {
   getSectionsFromHeaderData,
   getMainMenuFromHeaderData,
 } from "@/components/layout/header/header-data";
-import { getHeaderData, HeaderData } from "@/lib/sanity";
-import { headerFallback } from "@/lib/header-fallback";
+import { HeaderData } from "@/lib/sanity";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import Logo from "@/components/ui/Logo";
+import { getCachedHeaderData, fetchHeaderData } from "@/lib/header-cache";
 
-const Header = () => {
+const Header = memo(function Header() {
   const [openSections, setOpenSections] = useState({
     places: false,
     guides: false,
@@ -24,50 +24,44 @@ const Header = () => {
   });
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mobileCategoriesOpen, setMobileCategoriesOpen] = useState(false);
-  const [headerData, setHeaderData] = useState<HeaderData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [headerData, setHeaderData] = useState<HeaderData | null>(
+    getCachedHeaderData()
+  );
 
-  // Pobierz dane header z Sanity
+  // Pobierz dane header z cache
   useEffect(() => {
-    const fetchHeader = async () => {
-      try {
-        const data = await getHeaderData();
-        setHeaderData(data);
-      } catch (error) {
-        console.error("Error fetching header data:", error);
-        setHeaderData(null);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+    console.log("🔄 Header useEffect - initial headerData:", headerData);
 
-    fetchHeader();
-  }, []);
+    // Jeśli mamy już dane w cache, ustaw je
+    const cachedData = getCachedHeaderData();
+    if (cachedData) {
+      console.log("✅ Header: Using cached data");
+      setHeaderData(cachedData);
+      return;
+    }
+
+    // Pobierz dane w tle
+    console.log("🚀 Header: Fetching data from API");
+    fetchHeaderData().then((data) => {
+      console.log("📥 Header: Received data:", data ? "SUCCESS" : "NULL");
+      setHeaderData(data);
+    });
+  }, []); // Pusta dependency array - uruchamia się tylko raz
 
   const toggleSection = useCallback((key: keyof typeof openSections) => {
     setOpenSections((prev) => ({ ...prev, [key]: !prev[key] }));
   }, []);
 
-  // Użyj danych z Sanity lub fallback
-  const currentHeaderData = headerData || headerFallback;
-  const currentSections = getSectionsFromHeaderData(headerData);
-  const currentMainMenu = getMainMenuFromHeaderData(headerData);
-  // Loading state
-  if (isLoading) {
-    return (
-      <header className="sticky top-0 z-40 bg-white/80 dark:bg-gray-900/80 backdrop-blur border-b border-gray-100 dark:border-gray-800">
-        <div className="relative mx-auto max-w-7xl px-6 py-4 flex items-center justify-between">
-          <div className="h-6 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
-          <div className="hidden md:flex gap-6 items-center">
-            <div className="h-4 w-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
-            <div className="h-4 w-20 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
-            <div className="h-4 w-24 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
-            <div className="h-9 w-9 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
-          </div>
-        </div>
-      </header>
-    );
-  }
+  // Użyj danych z Sanity lub placeholder - memoized
+  const currentHeaderData = useMemo(() => headerData, [headerData]);
+  const currentSections = useMemo(
+    () => getSectionsFromHeaderData(headerData),
+    [headerData]
+  );
+  const currentMainMenu = useMemo(
+    () => getMainMenuFromHeaderData(headerData),
+    [headerData]
+  );
 
   return (
     <header className="sticky top-0 z-40 bg-white/80 dark:bg-gray-900/80 backdrop-blur border-b border-gray-100 dark:border-gray-800">
@@ -110,6 +104,6 @@ const Header = () => {
       </div>
     </header>
   );
-};
+});
 
 export default Header;

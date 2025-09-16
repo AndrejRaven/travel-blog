@@ -3,6 +3,8 @@ import { Inter, Playfair_Display, Source_Code_Pro } from "next/font/google";
 import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
+import CookieBanner from "@/components/ui/CookieBanner";
+import ScrollToTop from "@/components/ui/ScrollToTop";
 import "./globals.css";
 
 // Font główny - Inter - doskonały do czytania
@@ -70,6 +72,8 @@ export default function RootLayout({
           {/* Main content */}
           {children}
           <Footer />
+          <CookieBanner />
+          <ScrollToTop />
         </ThemeProvider>
       </body>
     </html>

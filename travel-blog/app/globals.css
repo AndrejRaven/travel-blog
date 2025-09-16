@@ -78,13 +78,6 @@
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
   
-  /* Theme colors - będą dynamicznie zmieniane przez JavaScript */
-  --color-background: #f8fafc;
-  --color-card: #ffffff;
-  --color-accent: #f1f5f9;
-  --color-hero: #f8fafc;
-  --color-button: #f8fafc;
-  --color-navigation: #ffffff;
 }
 
 .dark {
@@ -120,13 +113,6 @@
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
   
-  /* Theme colors dla dark mode - będą dynamicznie zmieniane przez JavaScript */
-  --color-background: #0f172a;
-  --color-card: #1e293b;
-  --color-accent: #334155;
-  --color-hero: #0f172a;
-  --color-button: #1e293b;
-  --color-navigation: #0f172a;
 }
 
 @layer base {

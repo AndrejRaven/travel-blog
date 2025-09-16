@@ -1,8 +1,11 @@
-import React from "react";
+"use client";
+
+import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Button from "@/components/ui/Button";
 import RichText from "@/components/ui/RichText";
 import { BackgroundHeroBannerData } from "@/lib/component-types";
+import { ChevronDown } from "lucide-react";
 
 type Props = {
   data: BackgroundHeroBannerData;
@@ -10,6 +13,54 @@ type Props = {
 
 export default function BackgroundHeroBanner({ data }: Props) {
   const { layout } = data;
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [isInView, setIsInView] = useState(false);
+  const [showScrollButton, setShowScrollButton] = useState(true);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Intersection Observer - animacja uruchamia się gdy komponent wchodzi w viewport
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setIsInView(true);
+            // Małe opóźnienie dla płynniejszego efektu
+            setTimeout(() => {
+              setIsLoaded(true);
+            }, 200);
+          }
+        });
+      },
+      {
+        threshold: 0.1, // Uruchamia się gdy 10% komponentu jest widoczne
+        rootMargin: "0px 0px -50px 0px", // Dodatkowy margines od dołu
+      }
+    );
+
+    if (containerRef.current) {
+      observer.observe(containerRef.current);
+    }
+
+    return () => {
+      if (containerRef.current) {
+        observer.unobserve(containerRef.current);
+      }
+    };
+  }, []);
+
+  // Auto-hide przycisk po przewinięciu
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 100) {
+        setShowScrollButton(false);
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   // Klasy dla wysokości baneru
   const getHeightClass = (height: number | "auto") => {
@@ -55,6 +106,7 @@ export default function BackgroundHeroBanner({ data }: Props) {
 
   return (
     <div
+      ref={containerRef}
       className={`relative w-full ${getHeightClass(
         layout.height
       )} overflow-hidden`}
@@ -62,20 +114,29 @@ export default function BackgroundHeroBanner({ data }: Props) {
       aria-labelledby="section-heading"
     >
       {/* Obraz w tle */}
-      <div className="absolute inset-0 w-full h-full">
+      <div className="absolute inset-0 w-full h-full bg-gray-900 dark:bg-gray-800">
+        {/* Placeholder podczas ładowania */}
+        {!imageLoaded && (
+          <div className="absolute inset-0 bg-gradient-to-br from-gray-300 to-gray-400 dark:from-gray-700 dark:to-gray-800 animate-pulse" />
+        )}
+
         <Image
           src={data.image.src}
-          alt={data.image.alt}
+          alt={data.image.alt || "Tło hero"}
           fill
-          className="object-cover"
+          className={`object-cover transition-opacity duration-1000 ${
+            imageLoaded && isInView ? "opacity-100" : "opacity-0"
+          }`}
           priority
+          sizes="100vw"
+          onLoad={() => setImageLoaded(true)}
         />
       </div>
 
       {/* Nakładka przyciemniająca */}
       <div
-        className="absolute inset-0 w-full h-full"
-        style={getOverlayStyle(layout.overlayOpacity)}
+        className="absolute inset-0 w-full h-full bg-black"
+        style={{ opacity: Math.min((layout.overlayOpacity || 30) / 100, 0.6) }}
       />
 
       {/* Zawartość tekstowa */}
@@ -89,7 +150,11 @@ export default function BackgroundHeroBanner({ data }: Props) {
         }`}
       >
         <div
-          className={`max-w-4xl w-full space-y-6 ${
+          className={`max-w-4xl w-full space-y-6 transition-all duration-1000 ease-out ${
+            isLoaded && isInView
+              ? "opacity-100 translate-y-0"
+              : "opacity-0 translate-y-8"
+          } ${
             layout.textAlignment === "center"
               ? "flex flex-col items-center text-center"
               : layout.textAlignment === "right"
@@ -104,7 +169,11 @@ export default function BackgroundHeroBanner({ data }: Props) {
             <RichText blocks={data.content} textColor="white" />
           </div>
           <div
-            className={`flex items-center gap-3 flex-wrap ${
+            className={`flex items-center gap-3 flex-wrap transition-all duration-1000 ease-out delay-300 ${
+              isLoaded && isInView
+                ? "opacity-100 translate-y-0"
+                : "opacity-0 translate-y-4"
+            } ${
               layout.textAlignment === "center"
                 ? "justify-center"
                 : layout.textAlignment === "right"
@@ -118,6 +187,7 @@ export default function BackgroundHeroBanner({ data }: Props) {
                 href={button.href}
                 variant={button.variant}
                 external={button.external}
+                className="transition-all duration-300 hover:scale-105 hover:shadow-lg"
               >
                 {button.label}
               </Button>
@@ -125,6 +195,42 @@ export default function BackgroundHeroBanner({ data }: Props) {
           </div>
         </div>
       </div>
+
+      {/* Wskaźnik przewijania - pokazuje że można przewinąć w dół */}
+      {layout.showScrollIndicator && showScrollButton && (
+        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-20 hidden md:block">
+          <button
+            onClick={() => {
+              // Przewiń do następnej sekcji (główna treść)
+              const nextSection = document.querySelector("[data-main-content]");
+              if (nextSection) {
+                nextSection.scrollIntoView({
+                  behavior: "smooth",
+                  block: "start",
+                });
+              } else {
+                // Fallback - przewiń o wysokość viewport
+                window.scrollBy({
+                  top: window.innerHeight * 0.8,
+                  behavior: "smooth",
+                });
+              }
+              // Ukryj przycisk po kliknięciu
+              setShowScrollButton(false);
+            }}
+            className="flex flex-col items-center space-y-1 text-white/70 hover:text-white transition-all duration-300 cursor-pointer group focus:outline-none rounded-lg p-2 hover:bg-white/5"
+            aria-label="Zobacz więcej treści"
+          >
+            <span className="text-xs font-medium">Zobacz więcej</span>
+            <ChevronDown className="w-4 h-4 animate-pulse group-hover:animate-none" />
+          </button>
+        </div>
+      )}
+
+      {/* Gradient na dole sugerujący kontynuację treści */}
+      {layout.showBottomGradient && (
+        <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-white dark:from-gray-900 to-transparent pointer-events-none" />
+      )}
     </div>
   );
 }

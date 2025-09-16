@@ -17,6 +17,7 @@ export interface YouTubeChannelInfo {
 
 const YOUTUBE_CHANNEL_ID = "UCUUm2vkbs-W7KulrJZIpNDA";
 const YOUTUBE_RSS_URL = `https://www.youtube.com/feeds/videos.xml?channel_id=${YOUTUBE_CHANNEL_ID}`;
+const YOUTUBE_API_URL = '/api/youtube';
 
 /**
  * Pobiera najnowszy film z kanału YouTube poprzez RSS feed (server-side)
@@ -111,13 +112,15 @@ export async function getLatestYouTubeVideo(): Promise<YouTubeVideo | null> {
  */
 export async function getLatestYouTubeVideoClient(): Promise<YouTubeVideo | null> {
   try {
-    const response = await fetch(YOUTUBE_RSS_URL);
+    console.log('🎬 Fetching YouTube data from API...');
+    const response = await fetch(YOUTUBE_API_URL);
 
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
     const xmlText = await response.text();
+    console.log('✅ YouTube API response received, length:', xmlText.length);
     
     // Parsowanie XML za pomocą DOMParser (działa w przeglądarce)
     const parser = new DOMParser();
@@ -125,15 +128,22 @@ export async function getLatestYouTubeVideoClient(): Promise<YouTubeVideo | null
 
     // Pobierz wszystkie filmy
     const entries = xmlDoc.querySelectorAll("entry");
+    console.log('📹 Found entries:', entries.length);
     
     // Szukaj pierwszego długiego filmu (nie short)
     for (const entry of entries) {
       // Wyciągnij ID filmu z URL
       const videoUrl = entry.querySelector("link")?.getAttribute("href");
-      if (!videoUrl) continue;
+      if (!videoUrl) {
+        console.log('⚠️ No video URL found for entry');
+        continue;
+      }
 
       const videoId = videoUrl.split("v=")[1]?.split("&")[0];
-      if (!videoId) continue;
+      if (!videoId) {
+        console.log('⚠️ Could not extract video ID from URL:', videoUrl);
+        continue;
+      }
 
       // Wyciągnij inne dane
       const title = entry.querySelector("title")?.textContent || "Brak tytułu";
@@ -141,14 +151,19 @@ export async function getLatestYouTubeVideoClient(): Promise<YouTubeVideo | null
       const publishedAt = entry.querySelector("published")?.textContent || "";
       const channelTitle = entry.querySelector("author name")?.textContent || "Vlogi z Drogi";
 
+      console.log('🎬 Processing video:', { videoId, title, isShort: false });
+
       // Sprawdź czy to nie jest short (tytuł lub URL zawiera shorts)
       const isShort = title.toLowerCase().includes('#shorts') || 
                      title.toLowerCase().includes('shorts') ||
                      title.includes('#Shorts') ||
                      videoUrl.includes('/shorts/');
 
+      console.log('📊 Video analysis:', { title, isShort, videoUrl });
+
       // Jeśli to nie jest short, zwróć film
       if (!isShort) {
+        console.log('✅ Found non-short video:', videoId);
         return {
           id: videoId,
           title,
@@ -157,6 +172,8 @@ export async function getLatestYouTubeVideoClient(): Promise<YouTubeVideo | null
           thumbnailUrl: `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`,
           channelTitle,
         };
+      } else {
+        console.log('⏭️ Skipping short video:', title);
       }
     }
 

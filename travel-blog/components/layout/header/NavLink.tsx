@@ -1,4 +1,5 @@
 import React from "react";
+import Link from "@/components/ui/Link";
 
 type NavLinkProps = {
   href: string;
@@ -27,8 +28,8 @@ export default function NavLink({
   }
 
   return (
-    <a href={href} className={className}>
+    <Link href={href} className={className}>
       {children}
-    </a>
+    </Link>
   );
 }

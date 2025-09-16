@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "@/components/ui/Link";
 
 export default function PostPage() {
   // Placeholder danych posta – do podmiany danymi z Sanity
@@ -61,24 +62,24 @@ export default function PostPage() {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-sm font-sans text-gray-600">
         <div className="flex items-center gap-3">
           <span className="font-sans font-medium">Udostępnij:</span>
-          <a href="#" className="hover:text-gray-900">
+          <a href="#" className="hover:text-gray-900 dark:hover:text-gray-100">
             Facebook
           </a>
-          <a href="#" className="hover:text-gray-900">
+          <a href="#" className="hover:text-gray-900 dark:hover:text-gray-100">
             X
           </a>
-          <a href="#" className="hover:text-gray-900">
+          <a href="#" className="hover:text-gray-900 dark:hover:text-gray-100">
             LinkedIn
           </a>
         </div>
         <nav className="flex items-center gap-3">
-          <a href="#" className="hover:underline">
+          <Link href="#" variant="underline">
             ← Poprzedni
-          </a>
-          <span className="text-gray-300">|</span>
-          <a href="#" className="hover:underline">
+          </Link>
+          <span className="text-gray-300 dark:text-gray-600">|</span>
+          <Link href="#" variant="underline">
             Następny →
-          </a>
+          </Link>
         </nav>
       </div>
     </main>

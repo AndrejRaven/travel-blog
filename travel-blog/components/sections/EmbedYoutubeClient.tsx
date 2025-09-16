@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { getLatestYouTubeVideoClient, type YouTubeVideo } from "@/lib/youtube";
+import { Play } from "lucide-react";
 
 interface EmbedYoutubeClientProps {
   title?: string;
@@ -20,6 +21,39 @@ export default function EmbedYoutubeClient({
   const [videoData, setVideoData] = useState<YouTubeVideo | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [isInView, setIsInView] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Intersection Observer - animacja uruchamia się gdy komponent wchodzi w viewport
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setIsInView(true);
+            setTimeout(() => {
+              setIsLoaded(true);
+            }, 200);
+          }
+        });
+      },
+      {
+        threshold: 0.1,
+        rootMargin: "0px 0px -50px 0px",
+      }
+    );
+
+    if (containerRef.current) {
+      observer.observe(containerRef.current);
+    }
+
+    return () => {
+      if (containerRef.current) {
+        observer.unobserve(containerRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     const fetchLatestVideo = async () => {
@@ -52,8 +86,14 @@ export default function EmbedYoutubeClient({
 
   if (isLoading) {
     return (
-      <div className="mx-auto max-w-7xl px-6">
-        <div className="mb-8">
+      <div ref={containerRef} className="mx-auto max-w-7xl px-6">
+        <div
+          className={`mb-8 transition-all duration-1000 ease-out ${
+            isLoaded && isInView
+              ? "opacity-100 translate-y-0"
+              : "opacity-0 translate-y-8"
+          }`}
+        >
           <h2 className="text-2xl md:text-3xl font-serif font-bold mb-2">
             Ładowanie najnowszego filmu...
           </h2>
@@ -61,17 +101,17 @@ export default function EmbedYoutubeClient({
             Pobieramy najnowszy film z naszego kanału YouTube
           </p>
         </div>
-        <div className="relative w-full max-w-4xl mx-auto mb-8">
+        <div
+          className={`relative w-full max-w-4xl mx-auto mb-8 transition-all duration-1000 ease-out delay-300 ${
+            isLoaded && isInView
+              ? "opacity-100 translate-y-0 scale-100"
+              : "opacity-0 translate-y-8 scale-95"
+          }`}
+        >
           <div className="relative aspect-video rounded-2xl overflow-hidden shadow-2xl bg-gray-200 dark:bg-gray-700 animate-pulse">
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="w-16 h-16 bg-gray-300 dark:bg-gray-600 rounded-full flex items-center justify-center">
-                <svg
-                  className="w-8 h-8 text-gray-500"
-                  fill="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path d="M8 5v14l11-7z" />
-                </svg>
+                <Play className="w-8 h-8 text-gray-500" />
               </div>
             </div>
           </div>
@@ -82,8 +122,14 @@ export default function EmbedYoutubeClient({
 
   if (error) {
     return (
-      <div className="mx-auto max-w-7xl px-6">
-        <div className="mb-8">
+      <div ref={containerRef} className="mx-auto max-w-7xl px-6">
+        <div
+          className={`mb-8 transition-all duration-1000 ease-out ${
+            isLoaded && isInView
+              ? "opacity-100 translate-y-0"
+              : "opacity-0 translate-y-8"
+          }`}
+        >
           <h2 className="text-2xl md:text-3xl font-serif font-bold mb-2">
             {title}
           </h2>
@@ -92,7 +138,13 @@ export default function EmbedYoutubeClient({
           </p>
           <p className="text-red-600 dark:text-red-400 mt-2">{error}</p>
         </div>
-        <div className="relative w-full max-w-4xl mx-auto mb-8">
+        <div
+          className={`relative w-full max-w-4xl mx-auto mb-8 transition-all duration-1000 ease-out delay-300 ${
+            isLoaded && isInView
+              ? "opacity-100 translate-y-0 scale-100"
+              : "opacity-0 translate-y-8 scale-95"
+          }`}
+        >
           <div className="relative aspect-video rounded-2xl overflow-hidden shadow-2xl bg-gray-200 dark:bg-gray-700">
             <div className="absolute inset-0 flex items-center justify-center">
               <p className="text-gray-500 dark:text-gray-400">
@@ -107,13 +159,20 @@ export default function EmbedYoutubeClient({
 
   return (
     <figure
+      ref={containerRef}
       aria-labelledby="video-heading"
       itemScope
       itemType="https://schema.org/VideoObject"
     >
       <div className="mx-auto max-w-7xl px-6">
         {/* HEADER */}
-        <div className="mb-8">
+        <div
+          className={`mb-8 transition-all duration-1000 ease-out ${
+            isLoaded && isInView
+              ? "opacity-100 translate-y-0"
+              : "opacity-0 translate-y-8"
+          }`}
+        >
           <h2
             id="video-heading"
             className="text-2xl md:text-3xl font-serif font-bold mb-2"
@@ -126,8 +185,14 @@ export default function EmbedYoutubeClient({
         </div>
 
         {/* VIDEO CONTAINER */}
-        <div className="relative w-full max-w-4xl mx-auto mb-8">
-          <div className="relative aspect-video rounded-2xl overflow-hidden shadow-2xl">
+        <div
+          className={`relative w-full max-w-4xl mx-auto mb-8 transition-all duration-1000 ease-out delay-300 ${
+            isLoaded && isInView
+              ? "opacity-100 translate-y-0 scale-100"
+              : "opacity-0 translate-y-8 scale-95"
+          }`}
+        >
+          <div className="relative aspect-video rounded-2xl overflow-hidden shadow-2xl transition-transform duration-300 hover:scale-105">
             <iframe
               src={`https://www.youtube.com/embed/${resolvedVideoId}?rel=0&modestbranding=1&showinfo=0`}
               title={displayTitle}

@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect } from "react";
-import { generateThemeCSS } from "@/lib/theme-colors";
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
@@ -21,12 +20,6 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       } else {
         document.documentElement.classList.remove("dark");
       }
-
-      // Ustaw CSS custom properties dla theme colors
-      const themeCSS = generateThemeCSS(theme as "light" | "dark");
-      Object.entries(themeCSS).forEach(([property, value]) => {
-        document.documentElement.style.setProperty(property, value);
-      });
     };
 
     // Ustaw początkowy theme

@@ -5,7 +5,7 @@
 - Projekt używa Tailwind CSS z klasą `dark:` do zarządzania motywami
 - **ZAWSZE używaj Tailwind classes z `dark:` prefix** zamiast inline styles
 - **NIE używaj `useTheme()` hook** - Tailwind automatycznie przełącza motywy
-- **NIE używaj inline styles** - używaj tylko Tailwind classes
+- **NIE używaj inline styles** - używaj tylko Tailwind classes (z wyjątkami dla wartości dynamicznych)
 - Motywy przełączane są przez klasę `dark` w HTML (automatycznie przez ThemeProvider)
 
 ### Przykłady użycia motywów:
@@ -53,7 +53,7 @@ const { theme } = useTheme();
 - Pliki w kebab-case
 - Zawsze dodawaj odpowiednie typy
 - **ZAWSZE używaj Tailwind CSS z `dark:` prefix dla motywów**
-- **NIE używaj inline styles** - tylko Tailwind classes
+- **NIE używaj inline styles** - tylko Tailwind classes (z wyjątkami dla wartości dynamicznych)
 - **NIE używaj `useTheme()` hook** - Tailwind automatycznie przełącza motywy
 
 ## Komponenty UI
@@ -64,6 +64,16 @@ const { theme } = useTheme();
 - Dla linków zewnętrznych używaj `Button` z `external` prop
 - Sprawdzaj dostępne komponenty przed implementacją nowych elementów
 - Komponenty UI mają wbudowane style motywów i responsywność
+
+## Ikonki
+
+- **ZAWSZE używaj ikonek z `lucide-react`** zamiast własnych SVG lub innych bibliotek
+- Importuj ikonki: `import { IconName } from "lucide-react"`
+- Używaj klas Tailwind do stylowania: `className="w-4 h-4 text-gray-600 dark:text-gray-400"`
+- **NIE używaj** własnych SVG ikonek (oprócz tych z Sanity CMS)
+- **NIE używaj** innych bibliotek ikonek (react-icons, heroicons, etc.)
+- Dla ikonek social media używaj: `Facebook`, `Youtube`, `Instagram`, `Linkedin`, `Twitter`
+- Dla ikonek UI używaj: `Home`, `Menu`, `X`, `ChevronDown`, `ChevronUp`, `ArrowRight`, `Mail`, `Heart`, `FileText`
 
 ## Komponenty Shared
 
@@ -106,6 +116,68 @@ const { theme } = useTheme();
 - Schematy w `studio/schemas/`
 - Używaj `sanity.ts` do konfiguracji
 - Komponenty RichText w `components/ui/RichText.tsx`
+
+## Tailwind CSS - Ważne reguły
+
+### Dynamiczne klasy - NIE RÓB TEGO!
+
+- **NIE używaj dynamicznego generowania klas Tailwind** - Tailwind musi znać wszystkie klasy w czasie kompilacji
+- **NIE używaj template literals** do tworzenia klas dynamicznie
+- **NIE używaj zmiennych** w nazwach klas
+
+```tsx
+// ❌ ŹLE - dynamiczne klasy (nie działają!)
+const opacity = 50;
+<div className={`bg-opacity-${opacity}`}>
+
+// ❌ ŹLE - template literals z zmiennymi
+const size = 'lg';
+<div className={`text-${size}`}>
+
+// ❌ ŹLE - interpolacja w klasach
+<div className={`bg-${color}-500`}>
+```
+
+### Jak rozwiązywać dynamiczne style:
+
+```tsx
+// ✅ DOBRZE - używaj inline styles dla wartości dynamicznych
+<div style={{ opacity: opacity / 100 }}>
+
+// ✅ DOBRZE - używaj mapowania dla ograniczonej liczby opcji
+const sizeClasses = {
+  sm: 'text-sm',
+  md: 'text-base',
+  lg: 'text-lg'
+};
+<div className={sizeClasses[size]}>
+
+// ✅ DOBRZE - używaj warunków dla znanych wartości
+<div className={isActive ? 'bg-green-500' : 'bg-gray-500'}>
+
+// ✅ DOBRZE - używaj CSS custom properties dla wartości dynamicznych
+<div style={{ '--opacity': opacity / 100 }} className="bg-black opacity-[var(--opacity)]">
+
+// ✅ DOBRZE - przykład z BackgroundHeroBanner
+<div
+  className="absolute inset-0 w-full h-full bg-black"
+  style={{ opacity: (layout.overlayOpacity || 30) / 100 }}
+>
+```
+
+### Kiedy używać inline styles:
+
+- **Wartości dynamiczne** (opacity, width, height, transform)
+- **Kolory z API** (hex, rgb, hsl)
+- **Animacje** (keyframes, duration)
+- **Responsywność** (breakpointy niestandardowe)
+
+### Kiedy używać Tailwind classes:
+
+- **Wszystkie standardowe style** (kolory, rozmiary, spacing)
+- **Responsywność** (sm:, md:, lg:, xl:)
+- **Motywy** (dark:, light:)
+- **Stany** (hover:, focus:, active:)
 
 ## Responsywność
 

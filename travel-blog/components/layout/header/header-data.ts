@@ -1,5 +1,4 @@
 import { HeaderData, MenuItem, DropdownSection, DropdownItem, SubmenuItem } from '@/lib/sanity';
-import { headerFallback } from '@/lib/header-fallback';
 
 export type LegacyMenuItem = {
   label: string;
@@ -19,7 +18,7 @@ export type Section = {
 // Funkcja do konwersji danych z Sanity na format używany w komponentach
 export function getSectionsFromHeaderData(headerData: HeaderData | null): Section[] {
   if (!headerData?.categoriesDropdown?.sections) {
-    return headerFallback.categoriesDropdown.sections as Section[];
+    return [];
   }
 
   return headerData.categoriesDropdown.sections.map(section => ({
@@ -43,7 +42,7 @@ export function getMainMenuFromHeaderData(headerData: HeaderData | null): MenuIt
   return headerData.mainMenu;
 }
 
-// Fallback data dla kompatybilności wstecznej
-export const sections: Section[] = headerFallback.categoriesDropdown.sections as Section[];
+// Puste sections - dane będą pobierane z Sanity
+export const sections: Section[] = [];
 
 

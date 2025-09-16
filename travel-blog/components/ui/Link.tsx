@@ -1,7 +1,7 @@
 import React from "react";
 import NextLink from "next/link";
 
-type LinkVariant = "arrow" | "underline";
+type LinkVariant = "default" | "arrow" | "underline";
 
 type LinkProps = {
   children: React.ReactNode;
@@ -12,6 +12,8 @@ type LinkProps = {
 };
 
 const variantStyles = {
+  default:
+    "text-sm font-sans text-gray-900 dark:text-gray-100 hover:text-gray-600 dark:hover:text-gray-300 transition-colors duration-200",
   arrow:
     "inline-flex items-center gap-1 text-sm font-sans font-medium text-gray-900 dark:text-gray-100 hover:text-gray-600 dark:hover:text-gray-300 transition-all duration-300 group hover:scale-105",
   underline:
@@ -21,7 +23,7 @@ const variantStyles = {
 export default function Link({
   children,
   href,
-  variant = "arrow",
+  variant = "default",
   className = "",
   external = false,
 }: LinkProps) {

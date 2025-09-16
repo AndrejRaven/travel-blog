@@ -1,6 +1,7 @@
 import React from "react";
 import ToggleChevron from "@/components/ui/ToggleChevron";
 import CircleIcon from "@/components/ui/icons/CircleIcon";
+import Link from "@/components/ui/Link";
 import { Section } from "@/components/layout/header/header-data";
 
 type Props = {
@@ -35,7 +36,7 @@ export default function MobileSection({ section, isOpen, onToggle }: Props) {
       >
         {section.items.map((item) => (
           <li key={item.href}>
-            <a
+            <Link
               href={item.href}
               className="flex items-center gap-2 rounded-md px-2 py-1.5 font-sans hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
             >
@@ -44,7 +45,7 @@ export default function MobileSection({ section, isOpen, onToggle }: Props) {
                 aria-hidden
               />
               <span>{item.label}</span>
-            </a>
+            </Link>
           </li>
         ))}
       </ul>

@@ -32,6 +32,8 @@ export default {
       of: [
         { type: 'heroBanner' },
         { type: 'backgroundHeroBanner' },
+        { type: 'textContent' },
+        { type: 'imageCollage' },
         // Tutaj będziemy dodawać kolejne komponenty jak karuzele, blog artykułów, kategorie, embedy YouTube itp.
       ],
       description: 'Dodaj komponenty, które będą wyświetlane na stronie posta',
