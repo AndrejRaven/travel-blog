@@ -1,46 +1,16 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import Button from "@/components/ui/Button";
 import { Mail, Lock, Info, Download } from "lucide-react";
+import { useAnimation } from "@/lib/useAnimation";
+import { ANIMATION_PRESETS } from "@/lib/animations";
 
 export default function Newsletter() {
   const [email, setEmail] = useState("");
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [isLoaded, setIsLoaded] = useState(false);
-  const [isInView, setIsInView] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  // Intersection Observer - animacja uruchamia się gdy komponent wchodzi w viewport
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setIsInView(true);
-            setTimeout(() => {
-              setIsLoaded(true);
-            }, 200);
-          }
-        });
-      },
-      {
-        threshold: 0.1,
-        rootMargin: "0px 0px -50px 0px",
-      }
-    );
-
-    if (containerRef.current) {
-      observer.observe(containerRef.current);
-    }
-
-    return () => {
-      if (containerRef.current) {
-        observer.unobserve(containerRef.current);
-      }
-    };
-  }, []);
+  const { isLoaded, isInView, containerRef } = useAnimation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,11 +33,10 @@ export default function Newsletter() {
         className="mx-auto max-w-4xl px-6 py-16 bg-gray-50 dark:bg-gray-900"
       >
         <div
-          className={`text-center transition-all duration-1000 ease-out ${
-            isLoaded && isInView
-              ? "opacity-100 translate-y-0 scale-100"
-              : "opacity-0 translate-y-8 scale-95"
-          }`}
+          className={`text-center ${ANIMATION_PRESETS.image(
+            isLoaded && isInView,
+            "none"
+          )}`}
         >
           <div className="w-16 h-16 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mx-auto mb-4 transition-transform duration-300 hover:scale-110">
             <Mail className="w-8 h-8 text-green-600 dark:text-green-400" />
@@ -97,11 +66,9 @@ export default function Newsletter() {
       className="mx-auto max-w-4xl px-6 py-16 bg-gray-50 dark:bg-gray-900"
     >
       <div
-        className={`text-center mb-8 transition-all duration-1000 ease-out ${
+        className={`text-center mb-8 ${ANIMATION_PRESETS.sectionHeader(
           isLoaded && isInView
-            ? "opacity-100 translate-y-0"
-            : "opacity-0 translate-y-8"
-        }`}
+        )}`}
       >
         <h2 className="text-2xl md:text-3xl font-serif font-semibold text-gray-900 dark:text-gray-100 mb-4">
           Nie przegap żadnego artykułu!
@@ -114,11 +81,10 @@ export default function Newsletter() {
 
       <form
         onSubmit={handleSubmit}
-        className={`max-w-md mx-auto transition-all duration-1000 ease-out delay-300 ${
-          isLoaded && isInView
-            ? "opacity-100 translate-y-0"
-            : "opacity-0 translate-y-8"
-        }`}
+        className={`max-w-md mx-auto ${ANIMATION_PRESETS.text(
+          isLoaded && isInView,
+          "long"
+        )}`}
       >
         <div className="flex flex-col sm:flex-row gap-3">
           <input
@@ -153,11 +119,10 @@ export default function Newsletter() {
       </form>
 
       <div
-        className={`mt-8 flex items-center justify-center space-x-6 text-sm text-gray-500 dark:text-gray-400 transition-all duration-1000 ease-out delay-500 ${
-          isLoaded && isInView
-            ? "opacity-100 translate-y-0"
-            : "opacity-0 translate-y-4"
-        }`}
+        className={`mt-8 flex items-center justify-center space-x-6 text-sm text-gray-500 dark:text-gray-400 ${ANIMATION_PRESETS.subtle(
+          isLoaded && isInView,
+          "longest"
+        )}`}
       >
         <div className="flex items-center space-x-2 transition-all duration-300 hover:scale-105">
           <Lock className="w-4 h-4" />

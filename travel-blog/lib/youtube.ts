@@ -112,7 +112,6 @@ export async function getLatestYouTubeVideo(): Promise<YouTubeVideo | null> {
  */
 export async function getLatestYouTubeVideoClient(): Promise<YouTubeVideo | null> {
   try {
-    console.log('🎬 Fetching YouTube data from API...');
     const response = await fetch(YOUTUBE_API_URL);
 
     if (!response.ok) {
@@ -120,7 +119,6 @@ export async function getLatestYouTubeVideoClient(): Promise<YouTubeVideo | null
     }
 
     const xmlText = await response.text();
-    console.log('✅ YouTube API response received, length:', xmlText.length);
     
     // Parsowanie XML za pomocą DOMParser (działa w przeglądarce)
     const parser = new DOMParser();
@@ -128,20 +126,17 @@ export async function getLatestYouTubeVideoClient(): Promise<YouTubeVideo | null
 
     // Pobierz wszystkie filmy
     const entries = xmlDoc.querySelectorAll("entry");
-    console.log('📹 Found entries:', entries.length);
     
     // Szukaj pierwszego długiego filmu (nie short)
     for (const entry of entries) {
       // Wyciągnij ID filmu z URL
       const videoUrl = entry.querySelector("link")?.getAttribute("href");
       if (!videoUrl) {
-        console.log('⚠️ No video URL found for entry');
         continue;
       }
 
       const videoId = videoUrl.split("v=")[1]?.split("&")[0];
       if (!videoId) {
-        console.log('⚠️ Could not extract video ID from URL:', videoUrl);
         continue;
       }
 
@@ -151,7 +146,6 @@ export async function getLatestYouTubeVideoClient(): Promise<YouTubeVideo | null
       const publishedAt = entry.querySelector("published")?.textContent || "";
       const channelTitle = entry.querySelector("author name")?.textContent || "Vlogi z Drogi";
 
-      console.log('🎬 Processing video:', { videoId, title, isShort: false });
 
       // Sprawdź czy to nie jest short (tytuł lub URL zawiera shorts)
       const isShort = title.toLowerCase().includes('#shorts') || 
@@ -159,11 +153,9 @@ export async function getLatestYouTubeVideoClient(): Promise<YouTubeVideo | null
                      title.includes('#Shorts') ||
                      videoUrl.includes('/shorts/');
 
-      console.log('📊 Video analysis:', { title, isShort, videoUrl });
 
       // Jeśli to nie jest short, zwróć film
       if (!isShort) {
-        console.log('✅ Found non-short video:', videoId);
         return {
           id: videoId,
           title,
@@ -173,7 +165,6 @@ export async function getLatestYouTubeVideoClient(): Promise<YouTubeVideo | null
           channelTitle,
         };
       } else {
-        console.log('⏭️ Skipping short video:', title);
       }
     }
 

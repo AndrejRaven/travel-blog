@@ -5,6 +5,11 @@ import Image from "next/image";
 import Button from "@/components/ui/Button";
 import RichText from "@/components/ui/RichText";
 import { HeroBannerData } from "@/lib/component-types";
+import {
+  ANIMATION_PRESETS,
+  ANIMATION_CLASSES,
+  HOVER_EFFECTS,
+} from "@/lib/animations";
 
 type Props = {
   data: HeroBannerData;
@@ -12,8 +17,8 @@ type Props = {
 
 export default function HeroBanner({ data }: Props) {
   const { layout } = data;
-  const [isLoaded, setIsLoaded] = useState(false);
   const [isInView, setIsInView] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Intersection Observer - animacja uruchamia się gdy komponent wchodzi w viewport
@@ -23,9 +28,6 @@ export default function HeroBanner({ data }: Props) {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
             setIsInView(true);
-            setTimeout(() => {
-              setIsLoaded(true);
-            }, 200);
           }
         });
       },
@@ -45,6 +47,25 @@ export default function HeroBanner({ data }: Props) {
       }
     };
   }, []);
+
+  // Sprawdzanie czy jesteśmy na mobile
+  useEffect(() => {
+    const checkIsMobile = () => {
+      setIsMobile(window.innerWidth < 1024); // lg breakpoint
+    };
+
+    checkIsMobile();
+    window.addEventListener("resize", checkIsMobile);
+    return () => window.removeEventListener("resize", checkIsMobile);
+  }, []);
+
+  // Wybierz odpowiedni obrazek - mobile ma priorytet jeśli istnieje
+  const getCurrentImage = () => {
+    if (isMobile && data.mobileImage) {
+      return data.mobileImage;
+    }
+    return data.image;
+  };
 
   // Oblicz kolumny dla tekstu i obrazka
   const imageColumns = (layout.imageWidth / 25) * 3; // 25% = 3 kolumny, 50% = 6 kolumn, 75% = 9 kolumn
@@ -135,27 +156,17 @@ export default function HeroBanner({ data }: Props) {
         <div
           className={`${getTextSpacingClass(
             layout.textSpacing
-          )} transition-all duration-1000 ease-out ${
-            isLoaded && isInView
-              ? "opacity-100 translate-y-0"
-              : "opacity-0 translate-y-8"
-          }`}
+          )} ${ANIMATION_PRESETS.text(isInView, "none")}`}
         >
           <RichText blocks={data.content} />
-          <div
-            className={`flex items-center gap-3 flex-wrap transition-all duration-1000 ease-out delay-300 ${
-              isLoaded && isInView
-                ? "opacity-100 translate-y-0"
-                : "opacity-0 translate-y-4"
-            }`}
-          >
+          <div className={`flex items-center gap-3 flex-wrap`}>
             {data.buttons?.map((button, index) => (
               <Button
                 key={index}
                 href={button.href}
                 variant={button.variant}
                 external={button.external}
-                className="transition-all duration-300 hover:scale-105 hover:shadow-lg"
+                className={`${ANIMATION_CLASSES.hover} ${HOVER_EFFECTS.basic}`}
               >
                 {button.label}
               </Button>
@@ -173,17 +184,16 @@ export default function HeroBanner({ data }: Props) {
         )} w-full h-64 lg:h-full`}
       >
         <div
-          className={`relative w-full h-full overflow-hidden transition-all duration-1000 ease-out delay-200 ${
-            isLoaded && isInView
-              ? "opacity-100 translate-x-0"
-              : "opacity-0 translate-x-8"
-          }`}
+          className={`relative w-full h-full overflow-hidden ${ANIMATION_PRESETS.sideElement(
+            isInView,
+            "medium"
+          )}`}
         >
           <Image
-            src={data.image.src}
-            alt={data.image.alt}
+            src={getCurrentImage().src}
+            alt={getCurrentImage().alt}
             fill
-            className="object-cover transition-transform duration-300 hover:scale-105"
+            className={`object-cover ${ANIMATION_CLASSES.hover} ${HOVER_EFFECTS.transform}`}
             priority
           />
         </div>

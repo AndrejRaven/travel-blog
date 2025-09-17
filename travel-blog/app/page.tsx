@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React from "react";
 import BackgroundHeroBanner from "@/components/sections/BackgroundHeroBanner";
 import InstagramSection from "@/components/sections/InstagramSection";
 import EmbedYoutube from "@/components/sections/EmbedYoutube";
@@ -12,56 +12,23 @@ import YouTubeChannel from "@/components/sections/YouTubeChannel";
 import SupportSection from "@/components/sections/SupportSection";
 import Popup from "@/components/ui/Popup";
 import { backgroundHeroTestData } from "@/lib/hero-test-data";
+import { useAnimation } from "@/lib/useAnimation";
 
 export default function Home() {
-  const [isLoaded, setIsLoaded] = useState(false);
-  const [isInView, setIsInView] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  // Intersection Observer - animacja uruchamia się gdy komponent wchodzi w viewport
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setIsInView(true);
-            setTimeout(() => {
-              setIsLoaded(true);
-            }, 200);
-          }
-        });
-      },
-      {
-        threshold: 0.05,
-        rootMargin: "0px 0px -100px 0px",
-      }
-    );
-
-    if (containerRef.current) {
-      observer.observe(containerRef.current);
-    }
-
-    return () => {
-      if (containerRef.current) {
-        observer.unobserve(containerRef.current);
-      }
-    };
-  }, []);
+  const { isLoaded, isInView, containerRef } = useAnimation();
 
   return (
-    <div
-      ref={containerRef}
-      className="min-h-screen font-sans text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900"
-    >
+    <div className="min-h-screen font-sans text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900">
       <BackgroundHeroBanner data={backgroundHeroTestData} />
 
       {/* MAIN CONTENT WITH ASIDE */}
       <div
+        ref={containerRef}
         data-main-content
         className={`mx-auto max-w-7xl px-6 py-12 md:py-16 transition-all duration-1000 ease-out ${
           isLoaded && isInView
             ? "opacity-100 translate-y-0"
-            : "opacity-30 translate-y-4"
+            : "opacity-0 translate-y-8"
         }`}
       >
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">

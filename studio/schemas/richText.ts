@@ -1,3 +1,5 @@
+import { AlignLeft, AlignCenter, AlignRight, AlignJustify } from 'lucide-react';
+
 export default {
   name: 'richText',
   type: 'array',
@@ -16,6 +18,26 @@ export default {
           { title: 'Pogrubiony', value: 'strong' },
           { title: 'Kursywa', value: 'em' },
           { title: 'Podkreślenie', value: 'underline' },
+          { 
+            title: 'Do lewej', 
+            value: 'left',
+            icon: AlignLeft
+          },
+          { 
+            title: 'Wyśrodkuj', 
+            value: 'center',
+            icon: AlignCenter
+          },
+          { 
+            title: 'Do prawej', 
+            value: 'right',
+            icon: AlignRight
+          },
+          { 
+            title: 'Wyjustuj', 
+            value: 'justify',
+            icon: AlignJustify
+          },
         ],
         annotations: [
           {
@@ -71,34 +93,6 @@ export default {
                 type: 'boolean',
                 initialValue: false,
                 description: 'Zalecane dla linków zewnętrznych',
-              },
-            ],
-          },
-          {
-            title: '🎨 Custom Style',
-            name: 'customStyle',
-            type: 'object',
-            fields: [
-              {
-                title: 'Styl',
-                name: 'style',
-                type: 'array',
-                of: [{ type: 'string' }],
-                options: {
-                  list: [
-                    { title: '🔗 Link Primary', value: 'link-primary' },
-                    { title: '🔗 Link Secondary', value: 'link-secondary' },
-                    { title: '📏 Margin Top', value: 'margin-top' },
-                    { title: '📏 Margin Bottom', value: 'margin-bottom' },
-                    { title: '✨ Highlight', value: 'highlight' },
-                    { title: '⚠️ Warning', value: 'warning' },
-                    { title: '✅ Success', value: 'success' },
-                    { title: '❌ Error', value: 'error' },
-                    { title: '💡 Info', value: 'info' },
-                  ],
-                  layout: 'grid',
-                },
-                validation: (Rule: any) => Rule.required(),
               },
             ],
           },

@@ -40,6 +40,12 @@ export type HeroBanner = {
       url: string;
     };
   };
+  mobileImage?: {
+    asset?: {
+      _id: string;
+      url: string;
+    };
+  };
   buttons?: Button[];
   layout: {
     imageWidth: 25 | 50 | 75;
@@ -56,6 +62,12 @@ export type BackgroundHeroBanner = {
   _key: string;
   content: RichTextBlock[];
   image: {
+    asset?: {
+      _id: string;
+      url: string;
+    };
+  };
+  mobileImage?: {
     asset?: {
       _id: string;
       url: string;
@@ -83,6 +95,10 @@ export type HeroBannerData = {
     src: string;
     alt: string;
   };
+  mobileImage?: {
+    src: string;
+    alt: string;
+  };
   buttons?: Button[];
   layout: {
     imageWidth: 25 | 50 | 75;
@@ -97,6 +113,10 @@ export type HeroBannerData = {
 export type BackgroundHeroBannerData = {
   content: RichTextBlock[];
   image: {
+    src: string;
+    alt: string;
+  };
+  mobileImage?: {
     src: string;
     alt: string;
   };

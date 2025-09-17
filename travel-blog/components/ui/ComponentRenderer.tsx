@@ -18,8 +18,6 @@ type Props = {
 
 export default function ComponentRenderer({ component }: Props) {
   // Debug - sprawdź typ komponentu
-  console.log("ComponentRenderer - component type:", component._type);
-  console.log("ComponentRenderer - component data:", component);
 
   // Konwersja danych z Sanity na format oczekiwany przez komponenty
   const convertToComponentData = (comp: PostComponent) => {
@@ -47,6 +45,15 @@ export default function ComponentRenderer({ component }: Props) {
             alt: "Brak obrazu",
           };
       baseData.image = image;
+    }
+
+    // Dodaj mobileImage tylko jeśli komponent je ma
+    if ("mobileImage" in comp && comp.mobileImage?.asset) {
+      const mobileImage = {
+        src: getImageUrl(comp.mobileImage) || "",
+        alt: comp.content?.[0]?.children?.[0]?.text || "Obraz mobile",
+      };
+      baseData.mobileImage = mobileImage;
     }
 
     return baseData;
@@ -82,8 +89,6 @@ export default function ComponentRenderer({ component }: Props) {
         images:
           component.images?.map((img) => {
             const src = getImageUrl(img) || "";
-            console.log("ImageCollage - img:", img);
-            console.log("ImageCollage - src:", src);
             return {
               src,
               alt: img.alt || "Zdjęcie",
@@ -91,7 +96,6 @@ export default function ComponentRenderer({ component }: Props) {
           }) || [],
         layout: component.layout,
       };
-      console.log("ImageCollage - collageData:", collageData);
       return <ImageCollage data={collageData} />;
     }
 

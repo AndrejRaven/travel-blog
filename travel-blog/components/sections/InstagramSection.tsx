@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import React from "react";
 import Button from "@/components/ui/Button";
 import SectionHeader from "@/components/shared/SectionHeader";
@@ -10,6 +10,8 @@ import { Pagination, Autoplay } from "swiper/modules";
 import "swiper/css";
 import { Instagram, Heart } from "lucide-react";
 import "swiper/css/pagination";
+import { useAnimation } from "@/lib/useAnimation";
+import { ANIMATION_PRESETS } from "@/lib/animations";
 
 interface InstagramPost {
   id: string;
@@ -61,39 +63,7 @@ export default function InstagramSection() {
   const [activeSlide, setActiveSlide] = useState(0);
   const [realIndex, setRealIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
-  const [isLoaded, setIsLoaded] = useState(false);
-  const [isInView, setIsInView] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  // Intersection Observer - animacja uruchamia się gdy komponent wchodzi w viewport
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setIsInView(true);
-            setTimeout(() => {
-              setIsLoaded(true);
-            }, 200);
-          }
-        });
-      },
-      {
-        threshold: 0.1,
-        rootMargin: "0px 0px -50px 0px",
-      }
-    );
-
-    if (containerRef.current) {
-      observer.observe(containerRef.current);
-    }
-
-    return () => {
-      if (containerRef.current) {
-        observer.unobserve(containerRef.current);
-      }
-    };
-  }, []);
+  const { isLoaded, isInView, containerRef } = useAnimation();
 
   return (
     <div
@@ -106,11 +76,9 @@ export default function InstagramSection() {
       <div className="mx-auto max-w-7xl px-0 md:px-6">
         {/* HEADER */}
         <div
-          className={`flex flex-col space-y-4 mb-8 px-6 md:px-0 md:flex-row md:items-center md:justify-between md:space-y-0 transition-all duration-1000 ease-out ${
+          className={`flex flex-col space-y-4 mb-8 px-6 md:px-0 md:flex-row md:items-center md:justify-between md:space-y-0 ${ANIMATION_PRESETS.sectionHeader(
             isLoaded && isInView
-              ? "opacity-100 translate-y-0"
-              : "opacity-0 translate-y-8"
-          }`}
+          )}`}
         >
           <div>
             <h2
@@ -136,11 +104,10 @@ export default function InstagramSection() {
 
         {/* SWIPER CAROUSEL */}
         <div
-          className={`relative transition-all duration-1000 ease-out delay-300 ${
-            isLoaded && isInView
-              ? "opacity-100 translate-y-0 scale-100"
-              : "opacity-0 translate-y-8 scale-95"
-          }`}
+          className={`relative ${ANIMATION_PRESETS.image(
+            isLoaded && isInView,
+            "long"
+          )}`}
         >
           <Swiper
             modules={[Pagination, Autoplay]}

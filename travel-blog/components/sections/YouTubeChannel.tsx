@@ -1,7 +1,9 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React from "react";
 import Button from "@/components/ui/Button";
+import { useAnimation } from "@/lib/useAnimation";
+import { ANIMATION_PRESETS } from "@/lib/animations";
 
 interface YouTubeChannelProps {
   title?: string;
@@ -20,39 +22,7 @@ export default function YouTubeChannel({
   buttonText = "Przejdź na kanał",
   buttonVariant = "youtube",
 }: YouTubeChannelProps) {
-  const [isLoaded, setIsLoaded] = useState(false);
-  const [isInView, setIsInView] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  // Intersection Observer - animacja uruchamia się gdy komponent wchodzi w viewport
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setIsInView(true);
-            setTimeout(() => {
-              setIsLoaded(true);
-            }, 200);
-          }
-        });
-      },
-      {
-        threshold: 0.1,
-        rootMargin: "0px 0px -50px 0px",
-      }
-    );
-
-    if (containerRef.current) {
-      observer.observe(containerRef.current);
-    }
-
-    return () => {
-      if (containerRef.current) {
-        observer.unobserve(containerRef.current);
-      }
-    };
-  }, []);
+  const { isLoaded, isInView, containerRef } = useAnimation();
 
   return (
     <section
@@ -60,22 +30,19 @@ export default function YouTubeChannel({
       className="rounded-xl border border-gray-200 dark:border-gray-700 p-6 bg-white dark:bg-gray-800"
     >
       <h3
-        className={`text-lg font-serif font-semibold text-gray-900 dark:text-gray-100 mb-4 transition-all duration-1000 ease-out ${
+        className={`text-lg font-serif font-semibold text-gray-900 dark:text-gray-100 mb-4 ${ANIMATION_PRESETS.sectionHeader(
           isLoaded && isInView
-            ? "opacity-100 translate-y-0"
-            : "opacity-0 translate-y-8"
-        }`}
+        )}`}
       >
         {title}
       </h3>
 
       <div className="space-y-4">
         <div
-          className={`flex items-center space-x-3 transition-all duration-1000 ease-out delay-200 ${
-            isLoaded && isInView
-              ? "opacity-100 translate-y-0"
-              : "opacity-0 translate-y-8"
-          }`}
+          className={`flex items-center space-x-3 ${ANIMATION_PRESETS.text(
+            isLoaded && isInView,
+            "short"
+          )}`}
         >
           <div className="w-10 h-10 bg-red-600 rounded-full flex items-center justify-center transition-transform duration-300 hover:scale-110">
             <svg
@@ -97,22 +64,17 @@ export default function YouTubeChannel({
         </div>
 
         <p
-          className={`text-xs text-gray-600 dark:text-gray-300 transition-all duration-1000 ease-out delay-300 ${
-            isLoaded && isInView
-              ? "opacity-100 translate-y-0"
-              : "opacity-0 translate-y-8"
-          }`}
+          className={`text-xs text-gray-600 dark:text-gray-300 ${ANIMATION_PRESETS.text(
+            isLoaded && isInView,
+            "medium"
+          )}`}
         >
           Obejrzyj nasze najnowsze filmy z podróży i dowiedz się więcej o
           miejscach, które odwiedzamy.
         </p>
 
         <div
-          className={`transition-all duration-1000 ease-out delay-400 ${
-            isLoaded && isInView
-              ? "opacity-100 translate-y-0"
-              : "opacity-0 translate-y-8"
-          }`}
+          className={ANIMATION_PRESETS.button(isLoaded && isInView, "longer")}
         >
           <Button
             href={channelHref}

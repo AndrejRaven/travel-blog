@@ -45,7 +45,38 @@ export default function RichText({
   const renderBlock = (block: RichTextBlock) => {
     const { _key, style, children = [], markDefs = [] } = block;
 
-    // Renderuj children z markami
+    // Sprawdź czy blok ma wyrównanie tekstu
+    const getTextAlignClass = () => {
+      if (!children || children.length === 0) return "";
+
+      // Sprawdź czy którykolwiek z children ma mark wyrównania
+      const hasTextAlign = children.some((child: any) => {
+        return (
+          child.marks &&
+          child.marks.some((mark: any) =>
+            ["left", "center", "right", "justify"].includes(mark)
+          )
+        );
+      });
+
+      if (!hasTextAlign) return "";
+
+      // Znajdź pierwszy mark wyrównania
+      for (const child of children) {
+        if (child.marks) {
+          for (const mark of child.marks) {
+            if (mark === "left") return "text-left";
+            if (mark === "center") return "text-center";
+            if (mark === "right") return "text-right";
+            if (mark === "justify") return "text-justify";
+          }
+        }
+      }
+
+      return "";
+    };
+
+    // Renderuj children z markami (bez wyrównania)
     const renderChildren = () => {
       // Jeśli nie ma children lub children jest pusty, zwróć pusty element
       if (!children || children.length === 0) {
@@ -62,15 +93,34 @@ export default function RichText({
       }
 
       return children.map((child) => {
+        // Sprawdź czy dziecko ma marki (oprócz wyrównania)
+        const hasNonAlignMarks =
+          child.marks &&
+          child.marks.some(
+            (mark: any) =>
+              !["left", "center", "right", "justify"].includes(mark)
+          );
+
+        // Jeśli nie ma żadnych marków (oprócz wyrównania), zwróć tekst bezpośrednio
+        if (!hasNonAlignMarks) {
+          return child.text || "";
+        }
+
+        // Jeśli ma marki, utwórz element i aplikuj marki
         let element = <span key={child._key}>{child.text || ""}</span>;
 
-        // Aplikuj marki (bold, italic, link, custom style, etc.)
+        // Aplikuj marki (bold, italic, link, custom style, text align, etc.)
         if (child.marks) {
           child.marks.forEach((mark) => {
             if (mark === "strong") {
               element = <strong key={child._key}>{element}</strong>;
             } else if (mark === "em") {
               element = <em key={child._key}>{element}</em>;
+            } else if (mark === "underline") {
+              element = <u key={child._key}>{element}</u>;
+            } else if (["left", "center", "right", "justify"].includes(mark)) {
+              // Marki wyrównania są obsługiwane na poziomie bloku, więc je pomijamy
+              // Nie tworzymy dodatkowych elementów HTML
             } else if (
               mark.startsWith("link-") ||
               markDefs.some((def) => def._key === mark && def._type === "link")
@@ -118,29 +168,70 @@ export default function RichText({
             ) {
               const customStyleDef = markDefs.find((def) => def._key === mark);
               if (customStyleDef && customStyleDef.style) {
-                const getCustomStyleClasses = (style: string) => {
-                  switch (style) {
-                    case "link-primary":
-                      return "text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium";
-                    case "link-secondary":
-                      return "text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-300 font-medium";
-                    case "margin-top":
-                      return "block mt-4";
-                    case "margin-bottom":
-                      return "block mb-4";
-                    case "highlight":
-                      return "bg-yellow-200 dark:bg-yellow-800 px-1 py-0.5 rounded";
-                    case "warning":
-                      return "text-orange-600 dark:text-orange-400 font-medium";
-                    case "success":
-                      return "text-green-600 dark:text-green-400 font-medium";
-                    case "error":
-                      return "text-red-600 dark:text-red-400 font-medium";
-                    case "info":
-                      return "text-blue-600 dark:text-blue-400 font-medium";
-                    default:
-                      return "";
+                const getCustomStyleClasses = (styleObj: any) => {
+                  // Obsługa nowej struktury obiektowej z tablicami
+                  if (typeof styleObj === "object" && styleObj !== null) {
+                    const { links = [], margins = [], colors = [] } = styleObj;
+                    const allStyles = [...links, ...margins, ...colors];
+
+                    // Generuj klasy dla wszystkich wybranych stylów
+                    const classes = allStyles
+                      .map((style: string) => {
+                        switch (style) {
+                          case "link-primary":
+                            return "text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium";
+                          case "link-secondary":
+                            return "text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-300 font-medium";
+                          case "margin-top":
+                            return "block mt-4";
+                          case "margin-bottom":
+                            return "block mb-4";
+                          case "highlight":
+                            return "bg-yellow-200 dark:bg-yellow-800 px-1 py-0.5 rounded";
+                          case "warning":
+                            return "text-orange-600 dark:text-orange-400 font-medium";
+                          case "success":
+                            return "text-green-600 dark:text-green-400 font-medium";
+                          case "error":
+                            return "text-red-600 dark:text-red-400 font-medium";
+                          case "info":
+                            return "text-blue-600 dark:text-blue-400 font-medium";
+                          default:
+                            return "";
+                        }
+                      })
+                      .filter(Boolean);
+
+                    return classes.join(" ");
                   }
+
+                  // Fallback dla starej struktury (string)
+                  if (typeof styleObj === "string") {
+                    switch (styleObj) {
+                      case "link-primary":
+                        return "text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium";
+                      case "link-secondary":
+                        return "text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-300 font-medium";
+                      case "margin-top":
+                        return "block mt-4";
+                      case "margin-bottom":
+                        return "block mb-4";
+                      case "highlight":
+                        return "bg-yellow-200 dark:bg-yellow-800 px-1 py-0.5 rounded";
+                      case "warning":
+                        return "text-orange-600 dark:text-orange-400 font-medium";
+                      case "success":
+                        return "text-green-600 dark:text-green-400 font-medium";
+                      case "error":
+                        return "text-red-600 dark:text-red-400 font-medium";
+                      case "info":
+                        return "text-blue-600 dark:text-blue-400 font-medium";
+                      default:
+                        return "";
+                    }
+                  }
+
+                  return "";
                 };
 
                 const styleClasses = getCustomStyleClasses(
@@ -163,6 +254,8 @@ export default function RichText({
     };
 
     // Renderuj odpowiedni tag HTML na podstawie style
+    const textAlignClass = getTextAlignClass();
+
     switch (style) {
       case "h1":
         return (
@@ -170,7 +263,7 @@ export default function RichText({
             key={_key}
             className={`text-3xl md:text-5xl font-serif font-bold tracking-tight mb-4 ${getColorClasses(
               style
-            )}`}
+            )} ${textAlignClass}`}
           >
             {renderChildren()}
           </h1>
@@ -181,7 +274,7 @@ export default function RichText({
             key={_key}
             className={`text-2xl md:text-3xl font-serif font-semibold mb-4 ${getColorClasses(
               style
-            )}`}
+            )} ${textAlignClass}`}
           >
             {renderChildren()}
           </h2>
@@ -192,7 +285,7 @@ export default function RichText({
             key={_key}
             className={`text-xl md:text-2xl font-serif font-semibold mb-3 ${getColorClasses(
               style
-            )}`}
+            )} ${textAlignClass}`}
           >
             {renderChildren()}
           </h3>
@@ -204,7 +297,7 @@ export default function RichText({
             key={_key}
             className={`text-lg font-sans ${getColorClasses(
               style || "normal"
-            )}`}
+            )} ${textAlignClass}`}
           >
             {renderChildren()}
           </p>

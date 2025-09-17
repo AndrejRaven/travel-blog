@@ -14,7 +14,6 @@ export function useAnalytics() {
     //   page_path: url,
     // });
     
-    console.log("Analytics: Page view tracked", url);
   };
 
   const trackEvent = (eventName: string, parameters?: Record<string, any>) => {
@@ -23,7 +22,6 @@ export function useAnalytics() {
     // Tutaj możesz dodać kod Google Analytics
     // gtag('event', eventName, parameters);
     
-    console.log("Analytics: Event tracked", eventName, parameters);
   };
 
   const trackConversion = (conversionId: string, value?: number) => {
@@ -35,7 +33,6 @@ export function useAnalytics() {
     //   value: value,
     // });
     
-    console.log("Analytics: Conversion tracked", conversionId, value);
   };
 
   return {
@@ -55,7 +52,6 @@ export function useFacebookPixel() {
     // Tutaj możesz dodać kod Facebook Pixel
     // fbq('track', 'PageView');
     
-    console.log("Facebook Pixel: Page view tracked");
   };
 
   const trackPurchase = (value: number, currency: string = "PLN") => {
@@ -67,7 +63,6 @@ export function useFacebookPixel() {
     //   currency: currency,
     // });
     
-    console.log("Facebook Pixel: Purchase tracked", value, currency);
   };
 
   const trackCustomEvent = (eventName: string, parameters?: Record<string, any>) => {
@@ -76,7 +71,6 @@ export function useFacebookPixel() {
     // Tutaj możesz dodać kod Facebook Pixel
     // fbq('trackCustom', eventName, parameters);
     
-    console.log("Facebook Pixel: Custom event tracked", eventName, parameters);
   };
 
   return {
@@ -97,7 +91,6 @@ export function useGoogleTagManager() {
     // window.dataLayer = window.dataLayer || [];
     // window.dataLayer.push(data);
     
-    console.log("GTM: Data pushed to dataLayer", data);
   };
 
   const trackEvent = (eventName: string, parameters?: Record<string, any>) => {

@@ -1,12 +1,14 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import SectionHeader from "@/components/shared/SectionHeader";
 import {
   resolveVideoId,
   getLatestYouTubeVideoClient,
   type YouTubeVideo,
 } from "@/lib/youtube";
+import { useAnimation } from "@/lib/useAnimation";
+import { ANIMATION_PRESETS } from "@/lib/animations";
 
 interface EmbedYoutubeProps {
   title?: string;
@@ -21,41 +23,9 @@ export default function EmbedYoutube({
   videoId,
   useLatestVideo = false,
 }: EmbedYoutubeProps) {
-  const [isLoaded, setIsLoaded] = useState(false);
-  const [isInView, setIsInView] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  // Intersection Observer - animacja uruchamia się gdy komponent wchodzi w viewport
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setIsInView(true);
-            setTimeout(() => {
-              setIsLoaded(true);
-            }, 200);
-          }
-        });
-      },
-      {
-        threshold: 0.1,
-        rootMargin: "0px 0px -50px 0px",
-      }
-    );
-
-    if (containerRef.current) {
-      observer.observe(containerRef.current);
-    }
-
-    return () => {
-      if (containerRef.current) {
-        observer.unobserve(containerRef.current);
-      }
-    };
-  }, []);
+  const { isLoaded, isInView, containerRef } = useAnimation();
   // Rozwiąż videoId - jeśli to "latest" lub useLatestVideo jest true, pobierz najnowszy film
   const [resolvedVideoId, setResolvedVideoId] = useState(videoId);
   const [videoData, setVideoData] = useState<YouTubeVideo | null>(null);
@@ -63,18 +33,14 @@ export default function EmbedYoutube({
   useEffect(() => {
     const fetchLatestVideo = async () => {
       if (videoId === "latest" || useLatestVideo) {
-        console.log("🎬 Fetching latest YouTube video...");
         setIsLoading(true);
         setError(null);
         try {
           const latestVideo = await getLatestYouTubeVideoClient();
-          console.log("📹 Latest video result:", latestVideo);
           if (latestVideo) {
             setVideoData(latestVideo);
             setResolvedVideoId(latestVideo.id);
-            console.log("✅ Video loaded successfully:", latestVideo.id);
           } else {
-            console.log("❌ No video data returned");
             setError("Nie udało się pobrać najnowszego filmu");
           }
         } catch (error) {

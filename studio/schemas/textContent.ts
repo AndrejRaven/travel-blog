@@ -8,88 +8,9 @@ export default defineType({
     defineField({
       name: "content",
       title: "Treść",
-      type: "array",
-      of: [
-        {
-          type: "block",
-          styles: [
-            { title: "Normalny", value: "normal" },
-            { title: "H1", value: "h1" },
-            { title: "H2", value: "h2" },
-            { title: "H3", value: "h3" },
-          ],
-          marks: {
-            decorators: [
-              { title: "Pogrubiony", value: "strong" },
-              { title: "Kursywa", value: "em" },
-            ],
-            annotations: [
-              {
-                name: "link",
-                type: "object",
-                title: "Link",
-                fields: [
-                  {
-                    name: "linkType",
-                    type: "string",
-                    title: "Typ linku",
-                    options: {
-                      list: [
-                        { title: "Wewnętrzny", value: "internal" },
-                        { title: "Zewnętrzny", value: "external" },
-                      ],
-                    },
-                    initialValue: "internal",
-                  },
-                  {
-                    name: "internalHref",
-                    type: "string",
-                    title: "Link wewnętrzny",
-                    hidden: ({ parent }) => parent?.linkType !== "internal",
-                  },
-                  {
-                    name: "externalHref",
-                    type: "url",
-                    title: "Link zewnętrzny",
-                    hidden: ({ parent }) => parent?.linkType !== "external",
-                  },
-                  {
-                    name: "blank",
-                    type: "boolean",
-                    title: "Otwórz w nowej karcie",
-                    initialValue: false,
-                  },
-                ],
-              },
-              {
-                name: "customStyle",
-                type: "object",
-                title: "Niestandardowy styl",
-                fields: [
-                  {
-                    name: "style",
-                    type: "string",
-                    title: "Styl",
-                    options: {
-                      list: [
-                        { title: "Link podstawowy", value: "link-primary" },
-                        { title: "Link drugorzędny", value: "link-secondary" },
-                        { title: "Margines górny", value: "margin-top" },
-                        { title: "Margines dolny", value: "margin-bottom" },
-                        { title: "Podświetlenie", value: "highlight" },
-                        { title: "Ostrzeżenie", value: "warning" },
-                        { title: "Sukces", value: "success" },
-                        { title: "Błąd", value: "error" },
-                        { title: "Informacja", value: "info" },
-                      ],
-                    },
-                  },
-                ],
-              },
-            ],
-          },
-        },
-      ],
+      type: "richText",
+      validation: (Rule: any) => Rule.required(),
+      description: "Treść tekstowa z możliwością formatowania, linków i custom styles.",
     }),
     defineField({
       name: "layout",

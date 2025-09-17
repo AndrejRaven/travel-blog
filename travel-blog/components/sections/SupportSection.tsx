@@ -1,8 +1,10 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React from "react";
 import Image from "next/image";
 import Button from "@/components/ui/Button";
+import { useProgressiveAnimation } from "@/lib/useAnimation";
+import { ANIMATION_PRESETS } from "@/lib/animations";
 
 interface SupportOption {
   id: string;
@@ -53,39 +55,8 @@ export default function SupportSection({
   supportOptions = defaultSupportOptions,
   thankYouMessage = "Dziękujemy za wsparcie! ❤️",
 }: SupportSectionProps) {
-  const [isLoaded, setIsLoaded] = useState(false);
-  const [isInView, setIsInView] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  // Intersection Observer - animacja uruchamia się gdy komponent wchodzi w viewport
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setIsInView(true);
-            setTimeout(() => {
-              setIsLoaded(true);
-            }, 200);
-          }
-        });
-      },
-      {
-        threshold: 0.1,
-        rootMargin: "0px 0px -50px 0px",
-      }
-    );
-
-    if (containerRef.current) {
-      observer.observe(containerRef.current);
-    }
-
-    return () => {
-      if (containerRef.current) {
-        observer.unobserve(containerRef.current);
-      }
-    };
-  }, []);
+  const { isLoaded, isInView, containerRef, getItemClass } =
+    useProgressiveAnimation(supportOptions.length);
 
   return (
     <section
@@ -93,38 +64,25 @@ export default function SupportSection({
       className="rounded-xl border border-gray-200 dark:border-gray-700 p-6 bg-white dark:bg-gray-800"
     >
       <h3
-        className={`text-lg font-serif font-semibold text-gray-900 dark:text-gray-100 mb-4 transition-all duration-1000 ease-out ${
+        className={`text-lg font-serif font-semibold text-gray-900 dark:text-gray-100 mb-4 ${ANIMATION_PRESETS.sectionHeader(
           isLoaded && isInView
-            ? "opacity-100 translate-y-0"
-            : "opacity-0 translate-y-8"
-        }`}
+        )}`}
       >
         {title}
       </h3>
 
       <div className="space-y-4">
         <p
-          className={`text-xs text-gray-600 dark:text-gray-300 transition-all duration-1000 ease-out delay-200 ${
-            isLoaded && isInView
-              ? "opacity-100 translate-y-0"
-              : "opacity-0 translate-y-8"
-          }`}
+          className={`text-xs text-gray-600 dark:text-gray-300 ${ANIMATION_PRESETS.text(
+            isLoaded && isInView,
+            "short"
+          )}`}
         >
           {description}
         </p>
 
         {supportOptions.map((option, index) => (
-          <div
-            key={option.id}
-            className={`transition-all duration-1000 ease-out ${
-              isLoaded && isInView
-                ? "opacity-100 translate-y-0"
-                : "opacity-0 translate-y-8"
-            }`}
-            style={{
-              transitionDelay: `${300 + index * 150}ms`,
-            }}
-          >
+          <div key={option.id} className={getItemClass(index)}>
             <Button
               href={option.href}
               variant={option.variant || "outline"}
@@ -150,11 +108,10 @@ export default function SupportSection({
         ))}
 
         <p
-          className={`text-xs text-gray-500 dark:text-gray-400 text-center transition-all duration-1000 ease-out delay-500 ${
-            isLoaded && isInView
-              ? "opacity-100 translate-y-0"
-              : "opacity-0 translate-y-8"
-          }`}
+          className={`text-xs text-gray-500 dark:text-gray-400 text-center ${ANIMATION_PRESETS.subtle(
+            isLoaded && isInView,
+            "longest"
+          )}`}
         >
           {thankYouMessage}
         </p>

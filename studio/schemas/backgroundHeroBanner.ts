@@ -12,10 +12,18 @@ export default {
     },
     {
       name: 'image',
-      title: 'Obraz w tle',
+      title: 'Obraz w tle (desktop)',
       type: 'image',
       options: { hotspot: true },
       validation: (Rule: any) => Rule.required(),
+      description: 'Obraz wyświetlany na desktop i jako fallback na mobile',
+    },
+    {
+      name: 'mobileImage',
+      title: 'Obraz w tle (mobile)',
+      type: 'image',
+      options: { hotspot: true },
+      description: 'Opcjonalny obraz specjalnie dla mobile. Jeśli nie zostanie wybrany, będzie używany obraz desktop.',
     },
     {
       name: 'buttons',

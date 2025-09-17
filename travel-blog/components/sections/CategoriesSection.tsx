@@ -1,8 +1,10 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React from "react";
 import Image from "next/image";
 import Link from "@/components/ui/Link";
+import { useProgressiveAnimation } from "@/lib/useAnimation";
+import { ANIMATION_PRESETS } from "@/lib/animations";
 
 interface Category {
   id: string;
@@ -59,39 +61,8 @@ export default function CategoriesSection({
   title = "Kategorie artykułów",
   showBackground = true,
 }: CategoriesSectionProps) {
-  const [isLoaded, setIsLoaded] = useState(false);
-  const [isInView, setIsInView] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  // Intersection Observer - animacja uruchamia się gdy komponent wchodzi w viewport
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setIsInView(true);
-            setTimeout(() => {
-              setIsLoaded(true);
-            }, 200);
-          }
-        });
-      },
-      {
-        threshold: 0.1,
-        rootMargin: "0px 0px -50px 0px",
-      }
-    );
-
-    if (containerRef.current) {
-      observer.observe(containerRef.current);
-    }
-
-    return () => {
-      if (containerRef.current) {
-        observer.unobserve(containerRef.current);
-      }
-    };
-  }, []);
+  const { isLoaded, isInView, containerRef, getItemClass } =
+    useProgressiveAnimation(categories.length);
 
   return (
     <section
@@ -102,11 +73,9 @@ export default function CategoriesSection({
       }`}
     >
       <h2
-        className={`text-2xl md:text-3xl font-serif font-semibold mb-6 text-gray-900 dark:text-gray-100 transition-all duration-1000 ease-out ${
+        className={`text-2xl md:text-3xl font-serif font-semibold mb-6 text-gray-900 dark:text-gray-100 ${ANIMATION_PRESETS.sectionHeader(
           isLoaded && isInView
-            ? "opacity-100 translate-y-0"
-            : "opacity-0 translate-y-8"
-        }`}
+        )}`}
       >
         {title}
       </h2>
@@ -116,14 +85,9 @@ export default function CategoriesSection({
           <Link
             key={category.id}
             href={category.href}
-            className={`group rounded-xl border border-gray-200 dark:border-gray-700 p-5 hover:shadow-lg transition-all duration-500 hover:scale-105 bg-white dark:bg-gray-800 ${
-              isLoaded && isInView
-                ? "opacity-100 translate-y-0"
-                : "opacity-0 translate-y-8"
-            }`}
-            style={{
-              transitionDelay: `${(index + 1) * 150}ms`,
-            }}
+            className={`group rounded-xl border border-gray-200 dark:border-gray-700 p-5 hover:shadow-lg transition-all duration-500 hover:scale-105 bg-white dark:bg-gray-800 ${getItemClass(
+              index
+            )}`}
           >
             <div className="flex items-center justify-between">
               <div>

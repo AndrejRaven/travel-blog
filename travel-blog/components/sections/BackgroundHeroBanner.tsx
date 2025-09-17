@@ -6,6 +6,11 @@ import Button from "@/components/ui/Button";
 import RichText from "@/components/ui/RichText";
 import { BackgroundHeroBannerData } from "@/lib/component-types";
 import { ChevronDown } from "lucide-react";
+import {
+  ANIMATION_PRESETS,
+  ANIMATION_CLASSES,
+  HOVER_EFFECTS,
+} from "@/lib/animations";
 
 type Props = {
   data: BackgroundHeroBannerData;
@@ -13,10 +18,10 @@ type Props = {
 
 export default function BackgroundHeroBanner({ data }: Props) {
   const { layout } = data;
-  const [isLoaded, setIsLoaded] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [isInView, setIsInView] = useState(false);
   const [showScrollButton, setShowScrollButton] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Intersection Observer - animacja uruchamia się gdy komponent wchodzi w viewport
@@ -26,10 +31,6 @@ export default function BackgroundHeroBanner({ data }: Props) {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
             setIsInView(true);
-            // Małe opóźnienie dla płynniejszego efektu
-            setTimeout(() => {
-              setIsLoaded(true);
-            }, 200);
           }
         });
       },
@@ -62,6 +63,25 @@ export default function BackgroundHeroBanner({ data }: Props) {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  // Sprawdzanie czy jesteśmy na mobile
+  useEffect(() => {
+    const checkIsMobile = () => {
+      setIsMobile(window.innerWidth < 1024); // lg breakpoint
+    };
+
+    checkIsMobile();
+    window.addEventListener("resize", checkIsMobile);
+    return () => window.removeEventListener("resize", checkIsMobile);
+  }, []);
+
+  // Wybierz odpowiedni obrazek - mobile ma priorytet jeśli istnieje
+  const getCurrentImage = () => {
+    if (isMobile && data.mobileImage) {
+      return data.mobileImage;
+    }
+    return data.image;
+  };
+
   // Klasy dla wysokości baneru
   const getHeightClass = (height: number | "auto") => {
     switch (height) {
@@ -78,13 +98,6 @@ export default function BackgroundHeroBanner({ data }: Props) {
       default:
         return "h-[60vh]";
     }
-  };
-
-  // Style dla nakładki
-  const getOverlayStyle = (opacity: number) => {
-    return {
-      backgroundColor: `rgba(0, 0, 0, ${opacity / 100})`,
-    };
   };
 
   // Klasy dla stylu tekstu
@@ -121,10 +134,10 @@ export default function BackgroundHeroBanner({ data }: Props) {
         )}
 
         <Image
-          src={data.image.src}
-          alt={data.image.alt || "Tło hero"}
+          src={getCurrentImage().src}
+          alt={getCurrentImage().alt || "Tło hero"}
           fill
-          className={`object-cover transition-opacity duration-1000 ${
+          className={`object-cover ${ANIMATION_CLASSES.main} ${
             imageLoaded && isInView ? "opacity-100" : "opacity-0"
           }`}
           priority
@@ -150,11 +163,10 @@ export default function BackgroundHeroBanner({ data }: Props) {
         }`}
       >
         <div
-          className={`max-w-4xl w-full space-y-6 transition-all duration-1000 ease-out ${
-            isLoaded && isInView
-              ? "opacity-100 translate-y-0"
-              : "opacity-0 translate-y-8"
-          } ${
+          className={`max-w-4xl w-full space-y-6 ${ANIMATION_PRESETS.text(
+            isInView,
+            "none"
+          )} ${
             layout.textAlignment === "center"
               ? "flex flex-col items-center text-center"
               : layout.textAlignment === "right"
@@ -169,11 +181,10 @@ export default function BackgroundHeroBanner({ data }: Props) {
             <RichText blocks={data.content} textColor="white" />
           </div>
           <div
-            className={`flex items-center gap-3 flex-wrap transition-all duration-1000 ease-out delay-300 ${
-              isLoaded && isInView
-                ? "opacity-100 translate-y-0"
-                : "opacity-0 translate-y-4"
-            } ${
+            className={`flex items-center gap-3 flex-wrap ${ANIMATION_PRESETS.button(
+              isInView,
+              "long"
+            )} ${
               layout.textAlignment === "center"
                 ? "justify-center"
                 : layout.textAlignment === "right"
@@ -187,7 +198,7 @@ export default function BackgroundHeroBanner({ data }: Props) {
                 href={button.href}
                 variant={button.variant}
                 external={button.external}
-                className="transition-all duration-300 hover:scale-105 hover:shadow-lg"
+                className={`${ANIMATION_CLASSES.hover} ${HOVER_EFFECTS.basic}`}
               >
                 {button.label}
               </Button>
@@ -218,7 +229,7 @@ export default function BackgroundHeroBanner({ data }: Props) {
               // Ukryj przycisk po kliknięciu
               setShowScrollButton(false);
             }}
-            className="flex flex-col items-center space-y-1 text-white/70 hover:text-white transition-all duration-300 cursor-pointer group focus:outline-none rounded-lg p-2 hover:bg-white/5"
+            className={`flex flex-col items-center space-y-1 text-white/70 hover:text-white ${ANIMATION_CLASSES.hover} cursor-pointer group focus:outline-none rounded-lg p-2 hover:bg-white/5`}
             aria-label="Zobacz więcej treści"
           >
             <span className="text-xs font-medium">Zobacz więcej</span>

@@ -30,20 +30,15 @@ const Header = memo(function Header() {
 
   // Pobierz dane header z cache
   useEffect(() => {
-    console.log("🔄 Header useEffect - initial headerData:", headerData);
-
     // Jeśli mamy już dane w cache, ustaw je
     const cachedData = getCachedHeaderData();
     if (cachedData) {
-      console.log("✅ Header: Using cached data");
       setHeaderData(cachedData);
       return;
     }
 
     // Pobierz dane w tle
-    console.log("🚀 Header: Fetching data from API");
     fetchHeaderData().then((data) => {
-      console.log("📥 Header: Received data:", data ? "SUCCESS" : "NULL");
       setHeaderData(data);
     });
   }, []); // Pusta dependency array - uruchamia się tylko raz

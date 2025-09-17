@@ -1,9 +1,11 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React from "react";
 import Image from "next/image";
 import Link from "@/components/ui/Link";
 import SectionHeader from "@/components/shared/SectionHeader";
+import { useProgressiveAnimation } from "@/lib/useAnimation";
+import { ANIMATION_PRESETS } from "@/lib/animations";
 
 interface Article {
   id: number;
@@ -58,41 +60,9 @@ export default function LatestArticles({
   viewAllHref = "#",
   maxArticles = 3,
 }: LatestArticlesProps) {
-  const [isLoaded, setIsLoaded] = useState(false);
-  const [isInView, setIsInView] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  // Intersection Observer - animacja uruchamia się gdy komponent wchodzi w viewport
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setIsInView(true);
-            setTimeout(() => {
-              setIsLoaded(true);
-            }, 200);
-          }
-        });
-      },
-      {
-        threshold: 0.1,
-        rootMargin: "0px 0px -50px 0px",
-      }
-    );
-
-    if (containerRef.current) {
-      observer.observe(containerRef.current);
-    }
-
-    return () => {
-      if (containerRef.current) {
-        observer.unobserve(containerRef.current);
-      }
-    };
-  }, []);
-
   const displayedArticles = articles.slice(0, maxArticles);
+  const { isLoaded, isInView, containerRef, getItemClass } =
+    useProgressiveAnimation(displayedArticles.length);
 
   return (
     <section
@@ -101,11 +71,9 @@ export default function LatestArticles({
       className="mx-auto max-w-7xl px-6"
     >
       <div
-        className={`flex items-end justify-between mb-6 transition-all duration-1000 ease-out ${
+        className={`flex items-end justify-between mb-6 ${ANIMATION_PRESETS.sectionHeader(
           isLoaded && isInView
-            ? "opacity-100 translate-y-0"
-            : "opacity-0 translate-y-8"
-        }`}
+        )}`}
       >
         <SectionHeader title="Najnowsze artykuły" />
         {showViewAll && (
@@ -119,14 +87,9 @@ export default function LatestArticles({
         {displayedArticles.map((article, index) => (
           <article
             key={article.id}
-            className={`rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-hidden hover:shadow-lg transition-all duration-500 hover:scale-105 ${
-              isLoaded && isInView
-                ? "opacity-100 translate-y-0"
-                : "opacity-0 translate-y-8"
-            }`}
-            style={{
-              transitionDelay: `${(index + 1) * 200}ms`,
-            }}
+            className={`rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-hidden hover:shadow-lg transition-all duration-500 hover:scale-105 ${getItemClass(
+              index
+            )}`}
           >
             <div className="relative aspect-[16/10] bg-gray-50 dark:bg-gray-700">
               <Image

@@ -5,7 +5,6 @@ const YOUTUBE_RSS_URL = `https://www.youtube.com/feeds/videos.xml?channel_id=${Y
 
 export async function GET() {
   try {
-    console.log('🎬 Fetching YouTube RSS feed...');
     
     const response = await fetch(YOUTUBE_RSS_URL, {
       headers: {
@@ -19,7 +18,6 @@ export async function GET() {
     }
 
     const xmlText = await response.text();
-    console.log('✅ YouTube RSS fetched successfully, length:', xmlText.length);
 
     return new NextResponse(xmlText, {
       headers: {

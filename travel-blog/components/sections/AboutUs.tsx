@@ -1,8 +1,10 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React from "react";
 import Image from "next/image";
 import Button from "@/components/ui/Button";
+import { useAnimation } from "@/lib/useAnimation";
+import { ANIMATION_PRESETS } from "@/lib/animations";
 
 interface AboutUsProps {
   title?: string;
@@ -27,39 +29,7 @@ export default function AboutUs({
   contactHref = "#kontakt",
   contactText = "Skontaktuj się z nami",
 }: AboutUsProps) {
-  const [isLoaded, setIsLoaded] = useState(false);
-  const [isInView, setIsInView] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  // Intersection Observer - animacja uruchamia się gdy komponent wchodzi w viewport
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setIsInView(true);
-            setTimeout(() => {
-              setIsLoaded(true);
-            }, 200);
-          }
-        });
-      },
-      {
-        threshold: 0.1,
-        rootMargin: "0px 0px -50px 0px",
-      }
-    );
-
-    if (containerRef.current) {
-      observer.observe(containerRef.current);
-    }
-
-    return () => {
-      if (containerRef.current) {
-        observer.unobserve(containerRef.current);
-      }
-    };
-  }, []);
+  const { isLoaded, isInView, containerRef } = useAnimation();
 
   return (
     <section
@@ -68,22 +38,19 @@ export default function AboutUs({
       className="rounded-xl border border-gray-200 dark:border-gray-700 p-6 bg-white dark:bg-gray-800"
     >
       <h2
-        className={`text-xl font-serif font-semibold text-gray-900 dark:text-gray-100 mb-4 transition-all duration-1000 ease-out ${
+        className={`text-xl font-serif font-semibold text-gray-900 dark:text-gray-100 mb-4 ${ANIMATION_PRESETS.sectionHeader(
           isLoaded && isInView
-            ? "opacity-100 translate-y-0"
-            : "opacity-0 translate-y-8"
-        }`}
+        )}`}
       >
         {title}
       </h2>
 
       {/* ZDJĘCIE */}
       <div
-        className={`relative w-full aspect-square overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 mb-4 transition-all duration-1000 ease-out delay-200 ${
-          isLoaded && isInView
-            ? "opacity-100 translate-y-0 scale-100"
-            : "opacity-0 translate-y-8 scale-95"
-        }`}
+        className={`relative w-full aspect-square overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 mb-4 ${ANIMATION_PRESETS.image(
+          isLoaded && isInView,
+          "medium"
+        )}`}
       >
         <Image
           src={image}
@@ -95,11 +62,10 @@ export default function AboutUs({
 
       {/* OPIS */}
       <div
-        className={`space-y-3 mb-4 transition-all duration-1000 ease-out delay-300 ${
-          isLoaded && isInView
-            ? "opacity-100 translate-y-0"
-            : "opacity-0 translate-y-8"
-        }`}
+        className={`space-y-3 mb-4 ${ANIMATION_PRESETS.text(
+          isLoaded && isInView,
+          "long"
+        )}`}
       >
         {description.map((paragraph, index) => (
           <p
@@ -115,11 +81,7 @@ export default function AboutUs({
       </div>
 
       <div
-        className={`transition-all duration-1000 ease-out delay-500 ${
-          isLoaded && isInView
-            ? "opacity-100 translate-y-0"
-            : "opacity-0 translate-y-8"
-        }`}
+        className={ANIMATION_PRESETS.button(isLoaded && isInView, "longest")}
       >
         <Button
           href={contactHref}
