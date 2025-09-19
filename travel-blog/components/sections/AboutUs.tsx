@@ -5,6 +5,7 @@ import Image from "next/image";
 import Button from "@/components/ui/Button";
 import { useAnimation } from "@/lib/useAnimation";
 import { ANIMATION_PRESETS } from "@/lib/animations";
+import AnimatedSection from "@/components/shared/AnimatedSection";
 
 interface AboutUsProps {
   title?: string;
@@ -29,28 +30,20 @@ export default function AboutUs({
   contactHref = "#kontakt",
   contactText = "Skontaktuj się z nami",
 }: AboutUsProps) {
-  const { isLoaded, isInView, containerRef } = useAnimation();
-
   return (
-    <section
-      ref={containerRef}
+    <AnimatedSection
       id="o-nas"
       className="rounded-xl border border-gray-200 dark:border-gray-700 p-6 bg-white dark:bg-gray-800"
     >
-      <h2
-        className={`text-xl font-serif font-semibold text-gray-900 dark:text-gray-100 mb-4 ${ANIMATION_PRESETS.sectionHeader(
-          isLoaded && isInView
-        )}`}
-      >
+      <h2 className="text-xl font-serif font-semibold text-gray-900 dark:text-gray-100 mb-4">
         {title}
       </h2>
 
       {/* ZDJĘCIE */}
-      <div
-        className={`relative w-full aspect-square overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 mb-4 ${ANIMATION_PRESETS.image(
-          isLoaded && isInView,
-          "medium"
-        )}`}
+      <AnimatedSection
+        animationType="image"
+        animationDelay="medium"
+        className="relative w-full aspect-square overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 mb-4"
       >
         <Image
           src={image}
@@ -58,14 +51,13 @@ export default function AboutUs({
           fill
           className="object-cover transition-transform duration-300 hover:scale-105"
         />
-      </div>
+      </AnimatedSection>
 
       {/* OPIS */}
-      <div
-        className={`space-y-3 mb-4 ${ANIMATION_PRESETS.text(
-          isLoaded && isInView,
-          "long"
-        )}`}
+      <AnimatedSection
+        animationType="text"
+        animationDelay="long"
+        className="space-y-3 mb-4"
       >
         {description.map((paragraph, index) => (
           <p
@@ -78,11 +70,9 @@ export default function AboutUs({
             {paragraph}
           </p>
         ))}
-      </div>
+      </AnimatedSection>
 
-      <div
-        className={ANIMATION_PRESETS.button(isLoaded && isInView, "longest")}
-      >
+      <AnimatedSection animationType="button" animationDelay="longest">
         <Button
           href={contactHref}
           variant="outline"
@@ -90,7 +80,7 @@ export default function AboutUs({
         >
           {contactText}
         </Button>
-      </div>
-    </section>
+      </AnimatedSection>
+    </AnimatedSection>
   );
 }

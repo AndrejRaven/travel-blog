@@ -2,8 +2,7 @@
 
 import React from "react";
 import Button from "@/components/ui/Button";
-import { useAnimation } from "@/lib/useAnimation";
-import { ANIMATION_PRESETS } from "@/lib/animations";
+import AnimatedSection from "@/components/shared/AnimatedSection";
 
 interface YouTubeChannelProps {
   title?: string;
@@ -22,27 +21,17 @@ export default function YouTubeChannel({
   buttonText = "Przejdź na kanał",
   buttonVariant = "youtube",
 }: YouTubeChannelProps) {
-  const { isLoaded, isInView, containerRef } = useAnimation();
-
   return (
-    <section
-      ref={containerRef}
-      className="rounded-xl border border-gray-200 dark:border-gray-700 p-6 bg-white dark:bg-gray-800"
-    >
-      <h3
-        className={`text-lg font-serif font-semibold text-gray-900 dark:text-gray-100 mb-4 ${ANIMATION_PRESETS.sectionHeader(
-          isLoaded && isInView
-        )}`}
-      >
+    <AnimatedSection className="rounded-xl border border-gray-200 dark:border-gray-700 p-6 bg-white dark:bg-gray-800">
+      <h3 className="text-lg font-serif font-semibold text-gray-900 dark:text-gray-100 mb-4">
         {title}
       </h3>
 
       <div className="space-y-4">
-        <div
-          className={`flex items-center space-x-3 ${ANIMATION_PRESETS.text(
-            isLoaded && isInView,
-            "short"
-          )}`}
+        <AnimatedSection
+          animationType="text"
+          animationDelay="short"
+          className="flex items-center space-x-3"
         >
           <div className="w-10 h-10 bg-red-600 rounded-full flex items-center justify-center transition-transform duration-300 hover:scale-110">
             <svg
@@ -61,21 +50,16 @@ export default function YouTubeChannel({
               {channelDescription}
             </p>
           </div>
-        </div>
+        </AnimatedSection>
 
-        <p
-          className={`text-xs text-gray-600 dark:text-gray-300 ${ANIMATION_PRESETS.text(
-            isLoaded && isInView,
-            "medium"
-          )}`}
-        >
-          Obejrzyj nasze najnowsze filmy z podróży i dowiedz się więcej o
-          miejscach, które odwiedzamy.
-        </p>
+        <AnimatedSection animationType="text" animationDelay="medium">
+          <p className="text-xs text-gray-600 dark:text-gray-300">
+            Obejrzyj nasze najnowsze filmy z podróży i dowiedz się więcej o
+            miejscach, które odwiedzamy.
+          </p>
+        </AnimatedSection>
 
-        <div
-          className={ANIMATION_PRESETS.button(isLoaded && isInView, "longer")}
-        >
+        <AnimatedSection animationType="button" animationDelay="longer">
           <Button
             href={channelHref}
             variant={buttonVariant}
@@ -84,8 +68,8 @@ export default function YouTubeChannel({
           >
             {buttonText}
           </Button>
-        </div>
+        </AnimatedSection>
       </div>
-    </section>
+    </AnimatedSection>
   );
 }

@@ -10,16 +10,43 @@ import {
   ANIMATION_CLASSES,
   HOVER_EFFECTS,
 } from "@/lib/animations";
+import {
+  getMaxWidthClass,
+  getPaddingClass,
+  getMarginClass,
+  getAlignmentClass,
+  getBackgroundColorClass,
+  getBorderRadiusClass,
+  getShadowClass,
+  getHeightClass,
+  useResponsiveImage,
+  generateSectionId,
+} from "@/lib/section-utils";
 
 type Props = {
   data: HeroBannerData;
 };
 
 export default function HeroBanner({ data }: Props) {
-  const { layout } = data;
+  const { container, layout } = data;
+
+  // Zabezpieczenie na wypadek gdyby container był undefined
+  if (!container || !layout) {
+    console.error("HeroBanner: Missing container or layout data", {
+      container,
+      layout,
+    });
+    return null;
+  }
+
   const [isInView, setIsInView] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const { isMobile, getCurrentImage } = useResponsiveImage();
+
+  // Generuj ID na podstawie tytułu treści
+  const sectionId = container.contentTitle
+    ? generateSectionId(container.contentTitle)
+    : undefined;
 
   // Intersection Observer - animacja uruchamia się gdy komponent wchodzi w viewport
   useEffect(() => {
@@ -48,25 +75,6 @@ export default function HeroBanner({ data }: Props) {
     };
   }, []);
 
-  // Sprawdzanie czy jesteśmy na mobile
-  useEffect(() => {
-    const checkIsMobile = () => {
-      setIsMobile(window.innerWidth < 1024); // lg breakpoint
-    };
-
-    checkIsMobile();
-    window.addEventListener("resize", checkIsMobile);
-    return () => window.removeEventListener("resize", checkIsMobile);
-  }, []);
-
-  // Wybierz odpowiedni obrazek - mobile ma priorytet jeśli istnieje
-  const getCurrentImage = () => {
-    if (isMobile && data.mobileImage) {
-      return data.mobileImage;
-    }
-    return data.image;
-  };
-
   // Oblicz kolumny dla tekstu i obrazka
   const imageColumns = (layout.imageWidth / 25) * 3; // 25% = 3 kolumny, 50% = 6 kolumn, 75% = 9 kolumn
   const textColumns = 12 - imageColumns;
@@ -93,20 +101,6 @@ export default function HeroBanner({ data }: Props) {
   // Klasy dla odstępów tekstu
   const getTextSpacingClass = (spacing: "with-spacing" | "no-spacing") => {
     return spacing === "with-spacing" ? "space-y-4" : "space-y-0";
-  };
-
-  // Klasy dla wysokości baneru
-  const getHeightClass = (height: number) => {
-    switch (height) {
-      case 25:
-        return "lg:min-h-[25vh]";
-      case 50:
-        return "lg:min-h-[50vh]";
-      case 75:
-        return "lg:min-h-[75vh]";
-      default:
-        return "lg:min-h-[60vh]";
-    }
   };
 
   // Klasy dla kolumn tekstu
@@ -139,63 +133,77 @@ export default function HeroBanner({ data }: Props) {
 
   return (
     <div
+      id={sectionId}
       ref={containerRef}
-      className={`w-full grid grid-cols-1 lg:grid-cols-12 gap-0 ${getHeightClass(
-        layout.height
-      )} bg-gray-50 dark:bg-gray-900`}
+      className={`w-full ${getMaxWidthClass(
+        container.maxWidth
+      )} ${getPaddingClass(container.padding)} ${getMarginClass(
+        container.margin
+      )} ${getAlignmentClass(container.alignment)} ${getBorderRadiusClass(
+        container.borderRadius
+      )} ${getShadowClass(container.shadow)} mx-auto overflow-hidden`}
       role="banner"
     >
-      {/* Tekst */}
       <div
-        className={`${getMobileTextOrder(
-          layout.mobileLayout
-        )} ${getTextPositionClass(layout.imagePosition)} ${getTextColumnClass(
-          textColumns
-        )} px-6 lg:px-12 py-8 lg:py-16 flex items-center`}
+        className={`grid grid-cols-1 lg:grid-cols-12 gap-0 ${getHeightClass(
+          container.height
+        )} ${getBackgroundColorClass(
+          container.backgroundColor
+        )} ${getBorderRadiusClass(container.borderRadius)}`}
       >
+        {/* Tekst */}
         <div
-          className={`${getTextSpacingClass(
-            layout.textSpacing
-          )} ${ANIMATION_PRESETS.text(isInView, "none")}`}
+          className={`${getMobileTextOrder(
+            layout.mobileLayout
+          )} ${getTextPositionClass(layout.imagePosition)} ${getTextColumnClass(
+            textColumns
+          )} px-6 lg:px-12 py-8 lg:py-16 flex items-center`}
         >
-          <RichText blocks={data.content} />
-          <div className={`flex items-center gap-3 flex-wrap`}>
-            {data.buttons?.map((button, index) => (
-              <Button
-                key={index}
-                href={button.href}
-                variant={button.variant}
-                external={button.external}
-                className={`${ANIMATION_CLASSES.hover} ${HOVER_EFFECTS.basic}`}
-              >
-                {button.label}
-              </Button>
-            ))}
+          <div
+            className={`${getTextSpacingClass(
+              layout.textSpacing
+            )} ${ANIMATION_PRESETS.text(isInView, "none")}`}
+          >
+            <RichText blocks={data.content} />
+            <div className={`flex items-center gap-3 flex-wrap`}>
+              {data.buttons?.map((button, index) => (
+                <Button
+                  key={index}
+                  href={button.href}
+                  variant={button.variant}
+                  external={button.external}
+                  className={`${ANIMATION_CLASSES.hover} ${HOVER_EFFECTS.basic}`}
+                >
+                  {button.label}
+                </Button>
+              ))}
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Obraz */}
-      <div
-        className={`${getMobileImageOrder(
-          layout.mobileLayout
-        )} ${getImagePositionClass(layout.imagePosition)} ${getImageColumnClass(
-          imageColumns
-        )} w-full h-64 lg:h-full`}
-      >
+        {/* Obraz */}
         <div
-          className={`relative w-full h-full overflow-hidden ${ANIMATION_PRESETS.sideElement(
-            isInView,
-            "medium"
-          )}`}
+          className={`${getMobileImageOrder(
+            layout.mobileLayout
+          )} ${getImagePositionClass(
+            layout.imagePosition
+          )} ${getImageColumnClass(
+            imageColumns
+          )} w-full aspect-square lg:aspect-auto lg:h-full`}
         >
-          <Image
-            src={getCurrentImage().src}
-            alt={getCurrentImage().alt}
-            fill
-            className={`object-cover ${ANIMATION_CLASSES.hover} ${HOVER_EFFECTS.transform}`}
-            priority
-          />
+          <div className={`relative w-full h-full overflow-hidden`}>
+            {getCurrentImage(data.image, data.mobileImage).src && (
+              <Image
+                src={getCurrentImage(data.image, data.mobileImage).src}
+                alt={
+                  getCurrentImage(data.image, data.mobileImage).alt || "Obrazek"
+                }
+                fill
+                className={`object-cover`}
+                priority
+              />
+            )}
+          </div>
         </div>
       </div>
     </div>

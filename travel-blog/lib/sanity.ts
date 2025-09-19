@@ -1,6 +1,14 @@
+import imageUrlBuilder from '@sanity/image-url';
+
 export const projectId = "k5fsny25";
 export const dataset = "production";
 export const apiVersion = "2023-10-10";
+
+// Konfiguracja dla image-url builder
+const builder = imageUrlBuilder({
+  projectId,
+  dataset,
+});
 
 type GroqParams = Record<string, unknown>;
 
@@ -26,12 +34,45 @@ export type PortableBlock = {
   children?: Array<{ _key: string; _type: string; text?: string }>;
 };
 
+export type SanityImage = {
+  asset?: {
+    _id: string;
+    url: string;
+    metadata?: {
+      dimensions?: {
+        width: number;
+        height: number;
+      };
+    };
+  };
+  hotspot?: {
+    x: number;
+    y: number;
+    height: number;
+    width: number;
+  };
+  crop?: {
+    top: number;
+    bottom: number;
+    left: number;
+    right: number;
+  };
+};
+
 export type Post = {
   _id: string;
   title: string;
+  subtitle?: string;
   slug?: { current: string };
   publishedAt?: string;
-  coverImage?: { asset?: { url?: string } } | string | null;
+  categories?: Array<{
+    _id: string;
+    name: string;
+    slug: { current: string };
+    color: string;
+  }>;
+  coverImage?: SanityImage | null;
+  coverMobileImage?: SanityImage | null;
   components?: Array<{
     _type: string;
     _key: string;
@@ -146,19 +187,73 @@ export async function getHeaderData(): Promise<HeaderData | null> {
   }
 }
 
-// Funkcja do generowania URL obrazu z Sanity
-export function getImageUrl(image: any): string | null {
+// Funkcja do generowania URL obrazu z Sanity z obsługą crop i hotspot
+export function getImageUrl(
+  image: SanityImage | string | null | undefined,
+  options?: {
+    width?: number;
+    height?: number;
+    quality?: number;
+    format?: 'webp' | 'jpg' | 'png';
+    fit?: 'clip' | 'crop' | 'fill' | 'fillmax' | 'max' | 'scale' | 'min';
+  }
+): string | null {
   if (!image) return null;
   
   if (typeof image === 'string') {
     return image;
   }
   
-  if (image.asset?.url) {
+  if (!image.asset?.url) {
+    return null;
+  }
+
+  try {
+    const imageBuilder = builder.image(image);
+    
+    // Zastosuj crop i hotspot jeśli są dostępne
+    if (image.crop && image.asset?.metadata?.dimensions) {
+      // Użyj rect() zamiast crop() - rect przyjmuje współrzędne w pikselach
+      const { width, height } = image.asset.metadata.dimensions;
+      const left = Math.round(image.crop.left * width);
+      const top = Math.round(image.crop.top * height);
+      const right = Math.round(image.crop.right * width);
+      const bottom = Math.round(image.crop.bottom * height);
+      
+      imageBuilder.rect(left, top, right - left, bottom - top);
+    }
+    
+    if (image.hotspot) {
+      imageBuilder.fit('crop').focalPoint(image.hotspot.x, image.hotspot.y);
+    }
+    
+    // Zastosuj opcjonalne parametry
+    if (options?.width) {
+      imageBuilder.width(options.width);
+    }
+    
+    if (options?.height) {
+      imageBuilder.height(options.height);
+    }
+    
+    if (options?.quality) {
+      imageBuilder.quality(options.quality);
+    }
+    
+    if (options?.format) {
+      imageBuilder.format(options.format);
+    }
+    
+    if (options?.fit) {
+      imageBuilder.fit(options.fit);
+    }
+    
+    return imageBuilder.url();
+  } catch (error) {
+    console.error('Error generating image URL:', error);
+    // Fallback do podstawowego URL
     return image.asset.url;
   }
-  
-  return null;
 }
 
 

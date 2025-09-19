@@ -14,6 +14,11 @@ export default function NavLink({
   className,
   external = false,
 }: NavLinkProps) {
+  // Sprawdź czy href nie jest pusty
+  if (!href || href.trim() === "") {
+    return <span className={className}>{children}</span>;
+  }
+
   if (external) {
     return (
       <a

@@ -30,6 +30,11 @@ export default function Link({
   const variantStyle = variantStyles[variant];
   const combinedClassName = `${variantStyle} ${className}`.trim();
 
+  // Sprawdź czy href nie jest pusty
+  if (!href || href.trim() === "") {
+    return <span className={combinedClassName}>{children}</span>;
+  }
+
   if (external) {
     return (
       <a

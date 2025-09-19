@@ -5,6 +5,19 @@ import { Button, RichTextBlock, HeroBannerData, BackgroundHeroBannerData } from 
 export type HeroButton = Button;
 
 export const heroTestData: HeroBannerData = {
+  container: {
+    maxWidth: '6xl',
+    padding: 'lg',
+    margin: {
+      top: 'lg',
+      bottom: 'lg'
+    },
+    alignment: 'center',
+    backgroundColor: 'subtle',
+    borderRadius: 'lg',
+    shadow: 'lg',
+    height: 'auto'
+  },
   content: [
     {
       _type: 'block',
@@ -105,7 +118,6 @@ export const heroTestData: HeroBannerData = {
     mobileLayout: 'top',
     textSpacing: 'with-spacing',
     height: 75,
-    backgroundColor: 'card',
   },
 };
 
@@ -114,8 +126,8 @@ export const heroExamples = {
   // Hero z tłem sekcji
   sectionBackground: {
     ...heroTestData,
-    layout: {
-      ...heroTestData.layout,
+    container: {
+      ...heroTestData.container,
       backgroundColor: 'background',
     }
   },
@@ -123,17 +135,17 @@ export const heroExamples = {
   // Hero z tłem karty
   cardBackground: {
     ...heroTestData,
-    layout: {
-      ...heroTestData.layout,
-      backgroundColor: 'card',
+    container: {
+      ...heroTestData.container,
+      backgroundColor: 'subtle',
     }
   },
   
   // Hero z tłem akcentu
   accentBackground: {
     ...heroTestData,
-    layout: {
-      ...heroTestData.layout,
+    container: {
+      ...heroTestData.container,
       backgroundColor: 'accent',
     }
   },
@@ -141,6 +153,19 @@ export const heroExamples = {
 
 // Dane testowe dla baneru z obrazkiem w tle
 export const backgroundHeroTestData: BackgroundHeroBannerData = {
+  container: {
+    maxWidth: 'full',
+    padding: 'none',
+    margin: {
+      top: 'none',
+      bottom: 'none'
+    },
+    alignment: 'center',
+    backgroundColor: 'transparent',
+    borderRadius: 'none',
+    shadow: 'none',
+    height: '70vh'
+  },
   content: [
     {
       _type: 'block',
@@ -196,7 +221,6 @@ export const backgroundHeroTestData: BackgroundHeroBannerData = {
     },
   ],
   layout: {
-    height: 75,
     textAlignment: 'left',
     overlayOpacity: 30,
     textStyle: 'shadow',

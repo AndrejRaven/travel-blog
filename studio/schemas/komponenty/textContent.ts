@@ -4,52 +4,40 @@ export default defineType({
   name: "textContent",
   title: "Treść tekstowa",
   type: "object",
+  fieldsets: [
+    {
+      name: 'content',
+      title: 'Treść',
+      options: { collapsible: true, collapsed: false }
+    },
+    {
+      name: 'properties',
+      title: 'Właściwości',
+      options: { collapsible: true, collapsed: false }
+    }
+  ],
   fields: [
+    defineField({
+      name: "container",
+      title: "Kontener",
+      type: "baseContainer",
+      description: "Podstawowe ustawienia layoutu (szerokość, odstępy, wyrównanie)",
+      fieldset: 'properties'
+    }),
     defineField({
       name: "content",
       title: "Treść",
       type: "richText",
       validation: (Rule: any) => Rule.required(),
       description: "Treść tekstowa z możliwością formatowania, linków i custom styles.",
+      fieldset: 'content'
     }),
     defineField({
       name: "layout",
       title: "Układ",
       type: "object",
+      fieldset: 'properties',
       fields: [
-        defineField({
-          name: "maxWidth",
-          title: "Maksymalna szerokość",
-          type: "string",
-          options: {
-            list: [
-              { title: "Mała (sm)", value: "sm" },
-              { title: "Średnia (md)", value: "md" },
-              { title: "Duża (lg)", value: "lg" },
-              { title: "Bardzo duża (xl)", value: "xl" },
-              { title: "2XL", value: "2xl" },
-              { title: "4XL", value: "4xl" },
-              { title: "6XL", value: "6xl" },
-              { title: "Pełna szerokość", value: "full" },
-            ],
-          },
-          initialValue: "4xl",
-        }),
-        defineField({
-          name: "padding",
-          title: "Wewnętrzny odstęp",
-          type: "string",
-          options: {
-            list: [
-              { title: "Brak", value: "none" },
-              { title: "Mały", value: "sm" },
-              { title: "Średni", value: "md" },
-              { title: "Duży", value: "lg" },
-              { title: "Bardzo duży", value: "xl" },
-            ],
-          },
-          initialValue: "md",
-        }),
         defineField({
           name: "textSize",
           title: "Rozmiar tekstu",
@@ -70,7 +58,7 @@ export default defineType({
   preview: {
     select: {
       title: "content.0.children.0.text",
-      subtitle: "layout.maxWidth",
+      subtitle: "container.maxWidth",
     },
     prepare(selection) {
       const { title, subtitle } = selection;

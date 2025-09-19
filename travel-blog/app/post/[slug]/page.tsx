@@ -1,7 +1,5 @@
-import Image from "next/image";
 import { fetchGroq, Post } from "@/lib/sanity";
-import ComponentRenderer from "@/components/ui/ComponentRenderer";
-import { PostComponent } from "@/lib/component-types";
+import PostPageClient from "@/components/pages/PostPageClient";
 
 type Params = { params: Promise<{ slug: string }> };
 
@@ -9,13 +7,51 @@ async function getPost(slug: string) {
   const query = `*[_type == "post" && slug.current == $slug][0]{
     _id,
     title,
+    subtitle,
     slug,
     publishedAt,
-    "coverImage": coalesce(coverImage.asset->url, null),
+    categories[]-> {
+      _id,
+      name,
+      slug,
+      color
+    },
+    coverImage {
+      asset-> {
+        _id,
+        url,
+        metadata {
+          dimensions {
+            width,
+            height
+          }
+        }
+      },
+      hotspot,
+      crop
+    },
+    coverMobileImage {
+      asset-> {
+        _id,
+        url,
+        metadata {
+          dimensions {
+            width,
+            height
+          }
+        }
+      },
+      hotspot,
+      crop
+    },
     components[] {
       _type,
       _key,
       ...,
+      container {
+        ...,
+        "contentTitle": @.contentTitle
+      },
       content[] {
         ...,
         children[] {
@@ -38,8 +74,31 @@ async function getPost(slug: string) {
       image {
         asset-> {
           _id,
-          url
-        }
+          url,
+          metadata {
+            dimensions {
+              width,
+              height
+            }
+          }
+        },
+        hotspot,
+        crop
+      },
+      images[] {
+        asset-> {
+          _id,
+          url,
+          metadata {
+            dimensions {
+              width,
+              height
+            }
+          }
+        },
+        hotspot,
+        crop,
+        alt
       },
       buttons[] {
         ...,
@@ -62,14 +121,16 @@ export default async function PostPage({ params }: Params) {
 
   if (!post) {
     return (
-      <main className="mx-auto max-w-3xl px-6 py-10">
-        <h1 className="text-2xl font-serif font-semibold">
-          Nie znaleziono posta
-        </h1>
-        <p className="text-gray-600 font-sans">
-          Sprawdź adres URL lub wróć na stronę główną.
-        </p>
-      </main>
+      <div className="flex min-h-screen">
+        <main className="flex-1 mx-auto max-w-3xl px-6 py-10">
+          <h1 className="text-2xl font-serif font-semibold text-gray-900 dark:text-gray-100">
+            Nie znaleziono posta
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400 font-sans">
+            Sprawdź adres URL lub wróć na stronę główną.
+          </p>
+        </main>
+      </div>
     );
   }
 
@@ -81,53 +142,39 @@ export default async function PostPage({ params }: Params) {
       }).format(new Date(post.publishedAt))
     : null;
 
+  // Generuj spis treści na podstawie komponentów z tytułami treści
+  const generateTableOfContents = () => {
+    if (!post.components) return [];
+
+    const generateId = (title: string) => {
+      return (
+        title
+          .toLowerCase()
+          .replace(/[^a-z0-9\s-]/g, "")
+          .replace(/\s+/g, "-")
+          .replace(/^-+|-+$/g, "") // Usuń myślniki z początku i końca
+          .replace(/^-/, "section-") // Jeśli zaczyna się od myślnika, dodaj prefix
+          .trim() || "section"
+      ); // Fallback jeśli pusty string
+    };
+
+    return post.components
+      .filter(
+        (component) =>
+          component.container?.contentTitle &&
+          component.container.contentTitle.trim() !== ""
+      )
+      .map((component, index) => ({
+        id: generateId(component.container.contentTitle),
+        title: component.container.contentTitle,
+        level: 1, // Wszystkie sekcje na tym samym poziomie
+      }));
+  };
+
+  const tableOfContentsItems = generateTableOfContents();
+
   return (
-    <main>
-      {/* Meta - tylko jeśli nie ma komponentów lub pierwszy komponent nie jest banerem */}
-      {(!post.components ||
-        post.components.length === 0 ||
-        (post.components[0]?._type !== "heroBanner" &&
-          post.components[0]?._type !== "backgroundHeroBanner")) && (
-        <div className="mx-auto max-w-3xl px-6 py-10">
-          <div className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm font-sans text-gray-600">
-            {formattedDate ? (
-              <time dateTime={post.publishedAt}>{formattedDate}</time>
-            ) : null}
-          </div>
-
-          {/* Tytuł */}
-          <h1 className="text-3xl md:text-4xl font-serif font-bold tracking-tight mb-6">
-            {post.title}
-          </h1>
-
-          {/* Okładka */}
-          {post.coverImage ? (
-            <div className="relative w-full aspect-[16/9] overflow-hidden rounded-2xl border bg-gray-50 mb-8">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={post.coverImage as string}
-                alt={post.title}
-                className="w-full h-full object-cover"
-              />
-            </div>
-          ) : null}
-        </div>
-      )}
-
-      {/* Komponenty */}
-      {post.components && post.components.length > 0 ? (
-        post.components.map((component) => (
-          <ComponentRenderer
-            key={component._key}
-            component={component as PostComponent}
-          />
-        ))
-      ) : (
-        <div className="mx-auto max-w-3xl px-6 py-10">
-          <p className="text-gray-600 font-sans">Brak treści.</p>
-        </div>
-      )}
-    </main>
+    <PostPageClient post={post} tableOfContentsItems={tableOfContentsItems} />
   );
 }
 

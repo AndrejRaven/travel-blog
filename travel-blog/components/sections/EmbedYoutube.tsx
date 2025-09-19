@@ -9,6 +9,7 @@ import {
 } from "@/lib/youtube";
 import { useAnimation } from "@/lib/useAnimation";
 import { ANIMATION_PRESETS } from "@/lib/animations";
+import AnimatedSection from "@/components/shared/AnimatedSection";
 
 interface EmbedYoutubeProps {
   title?: string;
@@ -61,20 +62,14 @@ export default function EmbedYoutube({
   // Loading state
   if (isLoading) {
     return (
-      <figure
+      <AnimatedSection
         ref={containerRef}
         aria-labelledby="video-heading"
         itemScope
         itemType="https://schema.org/VideoObject"
       >
         <div className="mx-auto max-w-7xl px-6">
-          <div
-            className={`mb-8 transition-all duration-1000 ease-out ${
-              isLoaded && isInView
-                ? "opacity-100 translate-y-0"
-                : "opacity-0 translate-y-8"
-            }`}
-          >
+          <div className="mb-8">
             <h2 className="text-2xl md:text-3xl font-serif font-bold mb-2">
               {title}
             </h2>
@@ -82,13 +77,7 @@ export default function EmbedYoutube({
               Ładowanie najnowszego filmu z naszego kanału YouTube...
             </p>
           </div>
-          <div
-            className={`relative w-full max-w-4xl mx-auto mb-8 transition-all duration-1000 ease-out delay-300 ${
-              isLoaded && isInView
-                ? "opacity-100 translate-y-0 scale-100"
-                : "opacity-0 translate-y-8 scale-95"
-            }`}
-          >
+          <div className="relative w-full max-w-4xl mx-auto mb-8">
             <div className="relative aspect-video rounded-2xl overflow-hidden shadow-2xl bg-gray-200 dark:bg-gray-700 animate-pulse">
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="w-16 h-16 bg-gray-300 dark:bg-gray-600 rounded-full flex items-center justify-center">
@@ -104,27 +93,21 @@ export default function EmbedYoutube({
             </div>
           </div>
         </div>
-      </figure>
+      </AnimatedSection>
     );
   }
 
   // Error state - fallback to default video
   if (error && (videoId === "latest" || useLatestVideo)) {
     return (
-      <figure
+      <AnimatedSection
         ref={containerRef}
         aria-labelledby="video-heading"
         itemScope
         itemType="https://schema.org/VideoObject"
       >
         <div className="mx-auto max-w-7xl px-6">
-          <div
-            className={`mb-8 transition-all duration-1000 ease-out ${
-              isLoaded && isInView
-                ? "opacity-100 translate-y-0"
-                : "opacity-0 translate-y-8"
-            }`}
-          >
+          <div className="mb-8">
             <h2 className="text-2xl md:text-3xl font-serif font-bold mb-2">
               {title}
             </h2>
@@ -135,13 +118,7 @@ export default function EmbedYoutube({
               ⚠️ {error} - wyświetlamy przykładowy film
             </p>
           </div>
-          <div
-            className={`relative w-full max-w-4xl mx-auto mb-8 transition-all duration-1000 ease-out delay-300 ${
-              isLoaded && isInView
-                ? "opacity-100 translate-y-0 scale-100"
-                : "opacity-0 translate-y-8 scale-95"
-            }`}
-          >
+          <div className="relative w-full max-w-4xl mx-auto mb-8">
             <div className="relative aspect-video rounded-2xl overflow-hidden shadow-2xl transition-transform duration-300 hover:scale-105">
               <iframe
                 src="https://www.youtube.com/embed/dQw4w9WgXcQ?rel=0&modestbranding=1&showinfo=0"
@@ -154,12 +131,12 @@ export default function EmbedYoutube({
             </div>
           </div>
         </div>
-      </figure>
+      </AnimatedSection>
     );
   }
 
   return (
-    <figure
+    <AnimatedSection
       ref={containerRef}
       aria-labelledby="video-heading"
       itemScope
@@ -167,13 +144,7 @@ export default function EmbedYoutube({
     >
       <div className="mx-auto max-w-7xl px-6">
         {/* HEADER */}
-        <div
-          className={`mb-8 transition-all duration-1000 ease-out ${
-            isLoaded && isInView
-              ? "opacity-100 translate-y-0"
-              : "opacity-0 translate-y-8"
-          }`}
-        >
+        <div className="mb-8">
           <h2
             id="video-heading"
             className="text-2xl md:text-3xl font-serif font-bold mb-2"
@@ -186,13 +157,7 @@ export default function EmbedYoutube({
         </div>
 
         {/* VIDEO CONTAINER */}
-        <div
-          className={`relative w-full max-w-4xl mx-auto mb-8 transition-all duration-1000 ease-out delay-300 ${
-            isLoaded && isInView
-              ? "opacity-100 translate-y-0 scale-100"
-              : "opacity-0 translate-y-8 scale-95"
-          }`}
-        >
+        <div className="relative w-full max-w-4xl mx-auto mb-8">
           <div className="relative aspect-video rounded-2xl overflow-hidden shadow-2xl transition-transform duration-300 hover:scale-105">
             <iframe
               src={`https://www.youtube.com/embed/${resolvedVideoId}?rel=0&modestbranding=1&showinfo=0`}
@@ -211,6 +176,6 @@ export default function EmbedYoutube({
           />
         </div>
       </div>
-    </figure>
+    </AnimatedSection>
   );
 }

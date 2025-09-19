@@ -10,18 +10,21 @@ import {
   TextContentData,
   ImageCollageData,
 } from "@/lib/component-types";
-import { getImageUrl } from "@/lib/sanity";
+import { getImageUrl, SanityImage } from "@/lib/sanity";
 
 type Props = {
   component: PostComponent;
 };
 
 export default function ComponentRenderer({ component }: Props) {
-  // Debug - sprawdź typ komponentu
-
   // Konwersja danych z Sanity na format oczekiwany przez komponenty
   const convertToComponentData = (comp: PostComponent) => {
     const baseData: any = {};
+
+    // Dodaj container tylko jeśli komponent go ma
+    if ("container" in comp) {
+      baseData.container = comp.container;
+    }
 
     // Dodaj content tylko jeśli komponent je ma
     if ("content" in comp) {
@@ -37,7 +40,11 @@ export default function ComponentRenderer({ component }: Props) {
     if ("image" in comp) {
       const image = comp.image?.asset
         ? {
-            src: getImageUrl(comp.image) || "",
+            src:
+              getImageUrl(comp.image as SanityImage, {
+                quality: 85,
+                format: "webp",
+              }) || "",
             alt: comp.content?.[0]?.children?.[0]?.text || "Obraz",
           }
         : {
@@ -50,7 +57,11 @@ export default function ComponentRenderer({ component }: Props) {
     // Dodaj mobileImage tylko jeśli komponent je ma
     if ("mobileImage" in comp && comp.mobileImage?.asset) {
       const mobileImage = {
-        src: getImageUrl(comp.mobileImage) || "",
+        src:
+          getImageUrl(comp.mobileImage as SanityImage, {
+            quality: 85,
+            format: "webp",
+          }) || "",
         alt: comp.content?.[0]?.children?.[0]?.text || "Obraz mobile",
       };
       baseData.mobileImage = mobileImage;
@@ -78,24 +89,29 @@ export default function ComponentRenderer({ component }: Props) {
 
     case "textContent": {
       const textData: TextContentData = {
-        content: component.content || [],
+        ...convertToComponentData(component),
         layout: component.layout,
-      };
+      } as TextContentData;
       return <TextContent data={textData} />;
     }
 
     case "imageCollage": {
       const collageData: ImageCollageData = {
+        ...convertToComponentData(component),
         images:
           component.images?.map((img) => {
-            const src = getImageUrl(img) || "";
+            const src =
+              getImageUrl(img as SanityImage, {
+                quality: 85,
+                format: "webp",
+              }) || "";
             return {
               src,
               alt: img.alt || "Zdjęcie",
             };
           }) || [],
         layout: component.layout,
-      };
+      } as ImageCollageData;
       return <ImageCollage data={collageData} />;
     }
 

@@ -16,7 +16,6 @@ import { useAnimation } from "@/lib/useAnimation";
 
 export default function Home() {
   const { isLoaded, isInView, containerRef } = useAnimation();
-
   return (
     <div className="min-h-screen font-sans text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900">
       <BackgroundHeroBanner data={backgroundHeroTestData} />
@@ -25,15 +24,14 @@ export default function Home() {
       <div
         ref={containerRef}
         data-main-content
-        className={`mx-auto max-w-7xl px-6 py-12 md:py-16 transition-all duration-1000 ease-out ${
-          isLoaded && isInView
-            ? "opacity-100 translate-y-0"
-            : "opacity-0 translate-y-8"
-        }`}
+        className="mx-auto max-w-7xl px-6 py-8 md:py-12 transition-all duration-1000 ease-out translate-y-0"
+        style={{
+          opacity: isLoaded && isInView ? 1 : 0.3,
+        }}
       >
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* MAIN CONTENT - 75% */}
-          <div className="lg:col-span-3 space-y-12">
+          <div className="lg:col-span-3">
             {/* LATEST ARTICLES */}
             <LatestArticles />
 

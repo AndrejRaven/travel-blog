@@ -5,59 +5,39 @@ import { createPortal } from "react-dom";
 import Image from "next/image";
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
 import { ImageCollageData } from "@/lib/component-types";
+import { useAnimation } from "@/lib/useAnimation";
+import {
+  ANIMATION_PRESETS,
+  ANIMATION_CLASSES,
+  HOVER_EFFECTS,
+} from "@/lib/animations";
+import {
+  getAlignmentClass,
+  getMarginClass,
+  getMaxWidthClass,
+  getPaddingClass,
+} from "@/lib/section-utils";
 
 type Props = {
   data: ImageCollageData;
 };
 
 export default function ImageCollage({ data }: Props) {
-  const { images, layout } = data;
+  const { container, images, layout } = data;
+  const { isLoaded, isInView, containerRef: animationRef } = useAnimation();
 
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(
     null
   );
-  const [isLoaded, setIsLoaded] = useState(false);
-  const [isInView, setIsInView] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [scrollPosition, setScrollPosition] = useState(0);
   const [previousSelectedIndex, setPreviousSelectedIndex] = useState<
     number | null
   >(null);
-  const containerRef = useRef<HTMLDivElement>(null);
 
   // Mount check dla SSR
   useEffect(() => {
     setIsMounted(true);
-  }, []);
-
-  // Intersection Observer - animacja uruchamia się gdy komponent wchodzi w viewport
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setIsInView(true);
-            setTimeout(() => {
-              setIsLoaded(true);
-            }, 200);
-          }
-        });
-      },
-      {
-        threshold: 0.1,
-        rootMargin: "0px 0px -50px 0px",
-      }
-    );
-
-    if (containerRef.current) {
-      observer.observe(containerRef.current);
-    }
-
-    return () => {
-      if (containerRef.current) {
-        observer.unobserve(containerRef.current);
-      }
-    };
   }, []);
 
   // Obsługa klawiatury w modalu i blokowanie scrollingu
@@ -164,30 +144,35 @@ export default function ImageCollage({ data }: Props) {
   const mainImage = images[0];
   const thumbnailImages = images.slice(1, layout.thumbnailCount + 1);
 
+  // Sprawdź czy główne zdjęcie ma prawidłowy src
+  if (!mainImage.src) return null;
+
   return (
     <div
-      ref={containerRef}
-      className={`w-full transition-all duration-700 ${
-        isInView && isLoaded
-          ? "opacity-100 translate-y-0"
-          : "opacity-0 translate-y-8"
-      }`}
+      ref={animationRef}
+      className={`w-full ${getMarginClass(container.margin)}`}
     >
       <div
-        className={`w-full ${
-          layout.maxWidth === "full" ? "max-w-none" : `max-w-${layout.maxWidth}`
-        } mx-auto`}
+        className={`w-full ${getMaxWidthClass(
+          container.maxWidth
+        )} ${getPaddingClass(container.padding)} ${getAlignmentClass(
+          container.alignment
+        )} mx-auto ${ANIMATION_PRESETS.text(isLoaded && isInView, "medium")}`}
       >
         {/* Główne zdjęcie */}
         <div
-          className="relative w-full h-64 md:h-80 lg:h-96 xl:h-[28rem] rounded-2xl overflow-hidden cursor-pointer group"
+          className={`relative w-full h-64 md:h-80 lg:h-96 xl:h-[28rem] rounded-2xl overflow-hidden cursor-pointer group ${ANIMATION_PRESETS.image(
+            isLoaded && isInView,
+            "short"
+          )}`}
           onClick={() => openModal(0)}
         >
           <Image
             src={mainImage.src}
             alt={mainImage.alt || "Główne zdjęcie"}
-            fill
-            className="object-cover transition-transform duration-300 group-hover:scale-105"
+            width={800}
+            height={600}
+            className={`w-full h-full object-cover ${ANIMATION_CLASSES.hover} ${HOVER_EFFECTS.transform}`}
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 70vw"
           />
           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300" />
@@ -201,7 +186,10 @@ export default function ImageCollage({ data }: Props) {
         {/* Miniaturki */}
         {thumbnailImages.length > 0 && (
           <div
-            className={`mt-4 grid gap-3 ${
+            className={`mt-4 grid gap-3 ${ANIMATION_PRESETS.text(
+              isLoaded && isInView,
+              "long"
+            )} ${
               thumbnailImages.length === 1
                 ? "grid-cols-1 max-w-xs mx-auto"
                 : thumbnailImages.length === 2
@@ -214,14 +202,18 @@ export default function ImageCollage({ data }: Props) {
             {thumbnailImages.map((image, index) => (
               <div
                 key={index}
-                className="relative aspect-square rounded-xl overflow-hidden cursor-pointer group"
+                className={`relative aspect-square rounded-xl overflow-hidden cursor-pointer group ${ANIMATION_PRESETS.image(
+                  isLoaded && isInView,
+                  "medium"
+                )}`}
                 onClick={() => openModal(index + 1)}
               >
                 <Image
                   src={image.src}
                   alt={image.alt || `Miniatura ${index + 1}`}
-                  fill
-                  className="object-cover transition-transform duration-300 group-hover:scale-105"
+                  width={300}
+                  height={300}
+                  className={`w-full h-full object-cover ${ANIMATION_CLASSES.hover} ${HOVER_EFFECTS.transform}`}
                   sizes="(max-width: 768px) 50vw, (max-width: 1200px) 25vw, 20vw"
                 />
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300" />
@@ -293,18 +285,20 @@ export default function ImageCollage({ data }: Props) {
             )}
 
             {/* Image */}
-            <div className="relative w-[70vw] h-[70vh] max-w-6xl max-h-[80vh]">
-              <Image
-                src={images[selectedImageIndex].src}
-                alt={
-                  images[selectedImageIndex].alt ||
-                  `Zdjęcie ${selectedImageIndex + 1}`
-                }
-                fill
-                className="object-contain"
-                sizes="70vw"
-                priority
-              />
+            <div className="relative w-[70vw] h-[70vh] max-w-6xl xl:max-w-4xl 2xl:max-w-5xl max-h-[80vh]">
+              {images[selectedImageIndex].src && (
+                <Image
+                  src={images[selectedImageIndex].src}
+                  alt={
+                    images[selectedImageIndex].alt ||
+                    `Zdjęcie ${selectedImageIndex + 1}`
+                  }
+                  fill
+                  className="object-contain"
+                  sizes="70vw"
+                  priority
+                />
+              )}
             </div>
           </div>,
           document.body

@@ -2,13 +2,48 @@ export default {
   name: 'backgroundHeroBanner',
   type: 'object',
   title: 'Background Hero Banner',
+  initialValue: () => ({
+    container: {
+      maxWidth: "6xl",
+      padding: "md",
+      margin: {
+        top: "md",
+        bottom: "md"
+      },
+      alignment: "left",
+      backgroundColor: "transparent",
+      borderRadius: "none",
+      shadow: "none",
+      height: "75vh"
+    }
+  }),
+  fieldsets: [
+    {
+      name: 'content',
+      title: 'Treść',
+      options: { collapsible: true, collapsed: false }
+    },
+    {
+      name: 'properties',
+      title: 'Właściwości',
+      options: { collapsible: true, collapsed: false }
+    }
+  ],
   fields: [
+    {
+      name: 'container',
+      title: 'Kontener',
+      type: 'baseContainer',
+      description: 'Podstawowe ustawienia layoutu (szerokość, odstępy, wyrównanie)',
+      fieldset: 'properties'
+    },
     {
       name: 'content',
       title: 'Treść',
       type: 'richText',
       validation: (Rule: any) => Rule.required(),
       description: 'Tytuł i opis w jednym polu. Użyj nagłówków (H1, H2, H3) dla tytułów i zwykłego tekstu dla opisu.',
+      fieldset: 'content'
     },
     {
       name: 'image',
@@ -17,6 +52,7 @@ export default {
       options: { hotspot: true },
       validation: (Rule: any) => Rule.required(),
       description: 'Obraz wyświetlany na desktop i jako fallback na mobile',
+      fieldset: 'content'
     },
     {
       name: 'mobileImage',
@@ -24,47 +60,21 @@ export default {
       type: 'image',
       options: { hotspot: true },
       description: 'Opcjonalny obraz specjalnie dla mobile. Jeśli nie zostanie wybrany, będzie używany obraz desktop.',
+      fieldset: 'content'
     },
     {
       name: 'buttons',
       title: 'Przyciski',
       type: 'array',
       of: [{ type: 'button' }],
+      fieldset: 'content'
     },
     {
       name: 'layout',
       title: 'Układ',
       type: 'object',
+      fieldset: 'properties',
       fields: [
-        {
-          name: 'height',
-          title: 'Wysokość baneru (vh)',
-          type: 'number',
-          options: {
-            list: [
-              { title: '25vh', value: 25 },
-              { title: '50vh', value: 50 },
-              { title: '75vh', value: 75 },
-              { title: '100vh', value: 100 },
-            ],
-            layout: 'radio',
-          },
-          initialValue: 75,
-        },
-        {
-          name: 'textAlignment',
-          title: 'Wyrównanie tekstu',
-          type: 'string',
-          options: {
-            list: [
-              { title: 'Lewo', value: 'left' },
-              { title: 'Środek', value: 'center' },
-              { title: 'Prawo', value: 'right' },
-            ],
-            layout: 'radio',
-          },
-          initialValue: 'left',
-        },
         {
           name: 'overlayOpacity',
           title: 'Przezroczystość nakładki (%)',

@@ -1,13 +1,9 @@
 "use client";
 
 import { useState, useCallback, useEffect, useMemo, memo } from "react";
-import ChevronIcon from "@/components/ui/icons/ChevronIcon";
-import CircleIcon from "@/components/ui/icons/CircleIcon";
-import ToggleChevron from "@/components/ui/ToggleChevron";
 import DesktopNav from "@/components/layout/header/DesktopNav";
 import MobileMenu from "@/components/layout/header/MobileMenu";
 import {
-  sections,
   getSectionsFromHeaderData,
   getMainMenuFromHeaderData,
 } from "@/components/layout/header/header-data";

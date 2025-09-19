@@ -12,6 +12,7 @@ import { Instagram, Heart } from "lucide-react";
 import "swiper/css/pagination";
 import { useAnimation } from "@/lib/useAnimation";
 import { ANIMATION_PRESETS } from "@/lib/animations";
+import AnimatedSection from "@/components/shared/AnimatedSection";
 
 interface InstagramPost {
   id: string;
@@ -66,7 +67,7 @@ export default function InstagramSection() {
   const { isLoaded, isInView, containerRef } = useAnimation();
 
   return (
-    <div
+    <AnimatedSection
       ref={containerRef}
       role="complementary"
       aria-labelledby="instagram-heading"
@@ -75,11 +76,7 @@ export default function InstagramSection() {
     >
       <div className="mx-auto max-w-7xl px-0 md:px-6">
         {/* HEADER */}
-        <div
-          className={`flex flex-col space-y-4 mb-8 px-6 md:px-0 md:flex-row md:items-center md:justify-between md:space-y-0 ${ANIMATION_PRESETS.sectionHeader(
-            isLoaded && isInView
-          )}`}
-        >
+        <div className="flex flex-col space-y-4 mb-8 px-6 md:px-0 md:flex-row md:items-center md:justify-between md:space-y-0">
           <div>
             <h2
               id="instagram-heading"
@@ -103,12 +100,7 @@ export default function InstagramSection() {
         </div>
 
         {/* SWIPER CAROUSEL */}
-        <div
-          className={`relative ${ANIMATION_PRESETS.image(
-            isLoaded && isInView,
-            "long"
-          )}`}
-        >
+        <div className="relative">
           <Swiper
             modules={[Pagination, Autoplay]}
             spaceBetween={20}
@@ -227,6 +219,6 @@ export default function InstagramSection() {
           }
         ></div>
       </div>
-    </div>
+    </AnimatedSection>
   );
 }

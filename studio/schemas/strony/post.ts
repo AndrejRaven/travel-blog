@@ -9,6 +9,23 @@ export default {
       type: 'string',
     },
     {
+      name: 'subtitle',
+      title: 'Podtytuł',
+      type: 'string',
+    },
+    {
+      name: 'categories',
+      title: 'Kategorie',
+      type: 'array',
+      of: [
+        {
+          type: 'reference',
+          to: [{ type: 'category' }],
+        },
+      ],
+      validation: (Rule: any) => Rule.min(1).error('Post musi mieć przynajmniej jedną kategorię'),
+    },
+    {
       name: 'slug',
       title: 'Slug (adres URL)',
       type: 'slug',
@@ -20,6 +37,12 @@ export default {
       type: 'image',
       options: { hotspot: true },
     },
+    {
+    name: 'coverMobileImage',
+    title: 'Zdjęcie główne (mobile)',
+    type: 'image',
+    options: { hotspot: true },
+  },
     {
       name: 'publishedAt',
       title: 'Data publikacji',

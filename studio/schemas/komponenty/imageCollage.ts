@@ -4,11 +4,31 @@ export default defineType({
   name: "imageCollage",
   title: "Kolaż Zdjęć",
   type: "object",
+  fieldsets: [
+    {
+      name: 'content',
+      title: 'Treść',
+      options: { collapsible: true, collapsed: false }
+    },
+    {
+      name: 'properties',
+      title: 'Właściwości',
+      options: { collapsible: true, collapsed: false }
+    }
+  ],
   fields: [
+    {
+      name: "container",
+      title: "Kontener",
+      type: "baseContainer",
+      description: "Podstawowe ustawienia layoutu (szerokość, odstępy, wyrównanie)",
+      fieldset: 'properties'
+    },
     {
       name: "images",
       title: "Zdjęcia",
       type: "array",
+      fieldset: 'content',
       of: [
         {
           type: "image",
@@ -31,25 +51,8 @@ export default defineType({
       name: "layout",
       title: "Układ",
       type: "object",
+      fieldset: 'properties',
       fields: [
-        {
-          name: "maxWidth",
-          title: "Maksymalna szerokość",
-          type: "string",
-          options: {
-            list: [
-              { title: "Bardzo mała (sm)", value: "sm" },
-              { title: "Mała (md)", value: "md" },
-              { title: "Średnia (lg)", value: "lg" },
-              { title: "Duża (xl)", value: "xl" },
-              { title: "Bardzo duża (2xl)", value: "2xl" },
-              { title: "Ekstra duża (4xl)", value: "4xl" },
-              { title: "Mega duża (6xl)", value: "6xl" },
-              { title: "Pełna szerokość", value: "full" },
-            ],
-          },
-          initialValue: "4xl",
-        },
         {
           name: "thumbnailCount",
           title: "Liczba miniatur",
