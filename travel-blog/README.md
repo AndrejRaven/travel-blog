@@ -1,5 +1,23 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## 📚 Dokumentacja komponentów
+
+### TableOfContents
+
+Komponent spisu treści z płynnym przewijaniem - [Pełna dokumentacja](./components/ui/TableOfContents.md)
+
+**Szybki start:**
+
+```tsx
+<TableOfContents
+  items={[
+    { id: "sekcja-1", title: "Sekcja 1", level: 1 },
+    { id: "sekcja-2", title: "Sekcja 2", level: 1 },
+  ]}
+  onToggle={(isOpen) => console.log("Spis treści:", isOpen)}
+/>
+```
+
 ## Getting Started
 
 First, run the development server:

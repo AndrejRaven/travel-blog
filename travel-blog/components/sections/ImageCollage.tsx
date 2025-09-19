@@ -16,6 +16,7 @@ import {
   getMarginClass,
   getMaxWidthClass,
   getPaddingClass,
+  generateSectionId,
 } from "@/lib/section-utils";
 
 type Props = {
@@ -25,6 +26,11 @@ type Props = {
 export default function ImageCollage({ data }: Props) {
   const { container, images, layout } = data;
   const { isLoaded, isInView, containerRef: animationRef } = useAnimation();
+
+  // Generuj ID sekcji na podstawie contentTitle
+  const sectionId = container.contentTitle
+    ? generateSectionId(container.contentTitle)
+    : undefined;
 
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(
     null
@@ -149,6 +155,7 @@ export default function ImageCollage({ data }: Props) {
 
   return (
     <div
+      id={sectionId}
       ref={animationRef}
       className={`w-full ${getMarginClass(container.margin)}`}
     >

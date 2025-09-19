@@ -15,6 +15,26 @@ interface TableOfContentsProps {
   onToggle?: (isOpen: boolean) => void;
 }
 
+/**
+ * Komponent spisu treści z płynnym przewijaniem do sekcji
+ *
+ * @param items - Tablica elementów spisu treści z ID, tytułem i poziomem
+ * @param className - Dodatkowe klasy CSS
+ * @param onToggle - Callback wywoływany przy otwieraniu/zamykaniu spisu
+ *
+ * @example
+ * ```tsx
+ * <TableOfContents
+ *   items={[
+ *     { id: "wprowadzenie", title: "Wprowadzenie", level: 1 },
+ *     { id: "rozdzial-1", title: "Rozdział 1", level: 1 }
+ *   ]}
+ *   onToggle={(isOpen) => console.log('Spis treści:', isOpen)}
+ * />
+ * ```
+ *
+ * @see {@link ./TableOfContents.md} Pełna dokumentacja
+ */
 export default function TableOfContents({
   items,
   className = "",
@@ -22,19 +42,6 @@ export default function TableOfContents({
 }: TableOfContentsProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
-
-  // Generuj ID na podstawie tytułu
-  const generateId = (title: string) => {
-    return (
-      title
-        .toLowerCase()
-        .replace(/[^a-z0-9\s-]/g, "")
-        .replace(/\s+/g, "-")
-        .replace(/^-+|-+$/g, "") // Usuń myślniki z początku i końca
-        .replace(/^-/, "section-") // Jeśli zaczyna się od myślnika, dodaj prefix
-        .trim() || "section"
-    ); // Fallback jeśli pusty string
-  };
 
   // Obserwuj przewijanie i ustaw aktywną sekcję
   useEffect(() => {
@@ -72,29 +79,34 @@ export default function TableOfContents({
     const element = document.getElementById(id);
 
     if (element) {
-      // Dynamicznie oblicz wysokość header
-      const header = document.querySelector("header");
-      const headerHeight = header ? header.offsetHeight + 16 : 80; // +16px margines
-      const elementPosition = element.offsetTop - headerHeight;
+      // Czekaj na następny frame, żeby DOM się zaktualizował
+      requestAnimationFrame(() => {
+        // Dynamicznie oblicz wysokość header
+        const header = document.querySelector("header");
+        const headerHeight = header ? header.offsetHeight + 16 : 80; // +16px margines
 
-      // Na mobile używaj scrollIntoView z offsetem, na desktop window.scrollTo
-      if (window.innerWidth < 1024) {
-        // Na mobile używamy scrollIntoView ale z dodatkowym offsetem
+        // Użyj getBoundingClientRect dla dokładniejszej pozycji
+        const elementRect = element.getBoundingClientRect();
         const currentScrollY = window.scrollY;
-        const targetScrollY = elementPosition;
+        const elementPosition = elementRect.top + currentScrollY - headerHeight;
 
-        // Płynne skrolowanie z offsetem
-        window.scrollTo({
-          top: targetScrollY,
-          behavior: "smooth",
-        });
-      } else {
-        window.scrollTo({
-          top: elementPosition,
-          behavior: "smooth",
-        });
-      }
+        // Sprawdź czy pozycja jest sensowna (nie ujemna)
+        if (elementPosition < 0) {
+          const fallbackPosition = Math.max(0, element.offsetTop - 20); // 20px margines zamiast header
+
+          window.scrollTo({
+            top: fallbackPosition,
+            behavior: "smooth",
+          });
+        } else {
+          window.scrollTo({
+            top: elementPosition,
+            behavior: "smooth",
+          });
+        }
+      });
     }
+
     setIsOpen(false);
     onToggle?.(false);
   };
