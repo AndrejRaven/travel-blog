@@ -3,8 +3,6 @@
 import React from "react";
 import Image from "next/image";
 import Button from "@/components/ui/Button";
-import { useAnimation } from "@/lib/useAnimation";
-import { ANIMATION_PRESETS } from "@/lib/animations";
 import AnimatedSection from "@/components/shared/AnimatedSection";
 
 interface AboutUsProps {
@@ -33,7 +31,7 @@ export default function AboutUs({
   return (
     <AnimatedSection
       id="o-nas"
-      className="rounded-xl border border-gray-200 dark:border-gray-700 p-6 bg-white dark:bg-gray-800"
+      className="rounded-xl my-8 border border-gray-200 dark:border-gray-700 p-6 bg-white dark:bg-gray-800"
     >
       <h2 className="text-xl font-serif font-semibold text-gray-900 dark:text-gray-100 mb-4">
         {title}

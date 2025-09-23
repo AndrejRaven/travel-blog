@@ -1,27 +1,26 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React from "react";
 import Image from "next/image";
 import Button from "@/components/ui/Button";
 import RichText from "@/components/ui/RichText";
 import { HeroBannerData } from "@/lib/component-types";
 import {
-  ANIMATION_PRESETS,
-  ANIMATION_CLASSES,
-  HOVER_EFFECTS,
-} from "@/lib/animations";
-import {
   getMaxWidthClass,
   getPaddingClass,
   getMarginClass,
-  getAlignmentClass,
   getBackgroundColorClass,
   getBorderRadiusClass,
   getShadowClass,
   getHeightClass,
-  useResponsiveImage,
   generateSectionId,
 } from "@/lib/section-utils";
+import {
+  useResponsiveImage,
+  useAnimation,
+  getAnimationClass,
+  getTextAlignmentClasses,
+} from "@/lib/render-utils";
 
 type Props = {
   data: HeroBannerData;
@@ -30,106 +29,39 @@ type Props = {
 export default function HeroBanner({ data }: Props) {
   const { container, layout } = data;
 
-  // Zabezpieczenie na wypadek gdyby container był undefined
   if (!container || !layout) {
-    console.error("HeroBanner: Missing container or layout data", {
-      container,
-      layout,
-    });
+    console.error("HeroBanner: Missing container or layout data");
     return null;
   }
 
-  const [isInView, setIsInView] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const { isMobile, getCurrentImage } = useResponsiveImage();
+  const { isLoaded, isInView, containerRef } = useAnimation();
+  const { getCurrentImage, getOptimizedImageProps } = useResponsiveImage({
+    width: 1600,
+    mobileWidth: 800,
+    quality: 95,
+    format: "webp",
+    fit: "fillmax",
+  });
 
-  // Generuj ID na podstawie tytułu treści
+  const selectedImage = getCurrentImage(data.image, data.mobileImage);
+  const imageProps = getOptimizedImageProps(selectedImage);
   const sectionId = container.contentTitle
     ? generateSectionId(container.contentTitle)
     : undefined;
 
-  // Intersection Observer - animacja uruchamia się gdy komponent wchodzi w viewport
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setIsInView(true);
-          }
-        });
-      },
-      {
-        threshold: 0.1,
-        rootMargin: "0px 0px -50px 0px",
-      }
-    );
-
-    if (containerRef.current) {
-      observer.observe(containerRef.current);
-    }
-
-    return () => {
-      if (containerRef.current) {
-        observer.unobserve(containerRef.current);
-      }
-    };
-  }, []);
-
-  // Oblicz kolumny dla tekstu i obrazka
-  const imageColumns = (layout.imageWidth / 25) * 3; // 25% = 3 kolumny, 50% = 6 kolumn, 75% = 9 kolumn
+  // Mapowanie szerokości obrazka na   kolumny grid
+  const imageColumnMap = { 25: 3, 50: 6, 75: 9 } as const;
+  const imageColumns = imageColumnMap[layout.imageWidth] || 6;
   const textColumns = 12 - imageColumns;
 
-  // Klasy dla pozycji obrazka na desktop
-  const getImagePositionClass = (position: "left" | "right") => {
-    return position === "left" ? "lg:order-1" : "lg:order-2";
-  };
-
-  // Klasy dla pozycji tekstu na desktop
-  const getTextPositionClass = (position: "left" | "right") => {
-    return position === "left" ? "lg:order-2" : "lg:order-1";
-  };
-
-  // Klasy dla układu mobilnego
-  const getMobileImageOrder = (mobileLayout: "top" | "bottom") => {
-    return mobileLayout === "top" ? "order-1" : "order-2";
-  };
-
-  const getMobileTextOrder = (mobileLayout: "top" | "bottom") => {
-    return mobileLayout === "top" ? "order-2" : "order-1";
-  };
-
-  // Klasy dla odstępów tekstu
-  const getTextSpacingClass = (spacing: "with-spacing" | "no-spacing") => {
-    return spacing === "with-spacing" ? "space-y-4" : "space-y-0";
-  };
-
-  // Klasy dla kolumn tekstu
-  const getTextColumnClass = (columns: number) => {
-    switch (columns) {
-      case 3:
-        return "lg:col-span-3";
-      case 6:
-        return "lg:col-span-6";
-      case 9:
-        return "lg:col-span-9";
-      default:
-        return "lg:col-span-6";
-    }
-  };
-
-  // Klasy dla kolumn obrazka
-  const getImageColumnClass = (columns: number) => {
-    switch (columns) {
-      case 3:
-        return "lg:col-span-3";
-      case 6:
-        return "lg:col-span-6";
-      case 9:
-        return "lg:col-span-9";
-      default:
-        return "lg:col-span-6";
-    }
-  };
+  // Klasy pozycjonowania
+  const imageOrder =
+    layout.imagePosition === "left" ? "lg:order-1" : "lg:order-2";
+  const textOrder =
+    layout.imagePosition === "left" ? "lg:order-2" : "lg:order-1";
+  const mobileImageOrder =
+    layout.mobileLayout === "top" ? "order-1" : "order-2";
+  const mobileTextOrder = layout.mobileLayout === "top" ? "order-2" : "order-1";
 
   return (
     <div
@@ -139,9 +71,9 @@ export default function HeroBanner({ data }: Props) {
         container.maxWidth
       )} ${getPaddingClass(container.padding)} ${getMarginClass(
         container.margin
-      )} ${getAlignmentClass(container.alignment)} ${getBorderRadiusClass(
-        container.borderRadius
-      )} ${getShadowClass(container.shadow)} mx-auto overflow-hidden`}
+      )} ${getBorderRadiusClass(container.borderRadius)} ${getShadowClass(
+        container.shadow
+      )} mx-auto overflow-hidden`}
       role="banner"
     >
       <div
@@ -153,55 +85,64 @@ export default function HeroBanner({ data }: Props) {
       >
         {/* Tekst */}
         <div
-          className={`${getMobileTextOrder(
-            layout.mobileLayout
-          )} ${getTextPositionClass(layout.imagePosition)} ${getTextColumnClass(
-            textColumns
-          )} px-6 lg:px-12 py-8 lg:py-16 flex items-center`}
+          className={`${mobileTextOrder} ${textOrder} lg:col-span-${textColumns} px-6 lg:px-12 py-8 lg:py-16 flex items-center`}
         >
           <div
-            className={`${getTextSpacingClass(
-              layout.textSpacing
-            )} ${ANIMATION_PRESETS.text(isInView, "none")}`}
+            className={`${
+              layout.textSpacing === "with-spacing" ? "space-y-4" : "space-y-0"
+            } ${getTextAlignmentClasses(
+              layout.textAlignment
+            )} ${getAnimationClass({
+              type: "text",
+              delay: "none",
+              isInView,
+              isLoaded,
+            })}`}
           >
             <RichText blocks={data.content} />
-            <div className={`flex items-center gap-3 flex-wrap`}>
-              {data.buttons?.map((button, index) => (
-                <Button
-                  key={index}
-                  href={button.href}
-                  variant={button.variant}
-                  external={button.external}
-                  className={`${ANIMATION_CLASSES.hover} ${HOVER_EFFECTS.basic}`}
-                >
-                  {button.label}
-                </Button>
-              ))}
-            </div>
+            {data.buttons && (
+              <div className="flex items-center gap-3 flex-wrap">
+                {data.buttons.map((button, index) => (
+                  <Button
+                    key={index}
+                    href={button.href}
+                    variant={button.variant}
+                    external={button.external}
+                    className={getAnimationClass({
+                      type: "button",
+                      delay: "none",
+                      isInView,
+                      isLoaded,
+                    })}
+                  >
+                    {button.label}
+                  </Button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
         {/* Obraz */}
         <div
-          className={`${getMobileImageOrder(
-            layout.mobileLayout
-          )} ${getImagePositionClass(
-            layout.imagePosition
-          )} ${getImageColumnClass(
-            imageColumns
-          )} w-full aspect-square lg:aspect-auto lg:h-full`}
+          className={`${mobileImageOrder} ${imageOrder} lg:col-span-${imageColumns} w-full aspect-square lg:aspect-auto lg:h-full`}
         >
-          <div className={`relative w-full h-full overflow-hidden`}>
-            {getCurrentImage(data.image, data.mobileImage).src && (
+          <div className="relative w-full h-full overflow-hidden">
+            {imageProps?.src ? (
               <Image
-                src={getCurrentImage(data.image, data.mobileImage).src}
+                src={imageProps.src as string}
                 alt={
-                  getCurrentImage(data.image, data.mobileImage).alt || "Obrazek"
+                  selectedImage && "alt" in selectedImage
+                    ? selectedImage.alt || "Obraz"
+                    : "Obraz"
                 }
                 fill
-                className={`object-cover`}
+                className="object-cover"
                 priority
+                sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
               />
+            ) : (
+              <div className="w-full h-full bg-gray-300 dark:bg-gray-700 animate-pulse" />
             )}
           </div>
         </div>

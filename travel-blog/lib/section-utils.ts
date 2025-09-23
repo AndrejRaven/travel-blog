@@ -3,12 +3,15 @@
  * Eliminuje duplikację kodu między różnymi sekcjami
  */
 
+import { useState, useEffect } from "react";
+import { SanityImage } from "./sanity";
+
 // Typy dla konfiguracji kontenerów
 export interface ContainerConfig {
   maxWidth: string;
   padding: string;
   margin: { top: string; bottom: string };
-  alignment: string;
+  alignment?: string;
   backgroundColor?: string;
   borderRadius?: string;
   shadow?: string;
@@ -26,6 +29,104 @@ export interface LayoutConfig {
   showBottomGradient?: boolean;
 }
 
+// Mapowania dla klas CSS - eliminuje długie switch-case
+const MAX_WIDTH_MAP = {
+  sm: "max-w-sm",
+  md: "max-w-md", 
+  lg: "max-w-lg",
+  xl: "max-w-xl",
+  "2xl": "max-w-2xl",
+  "4xl": "max-w-4xl",
+  "6xl": "max-w-4xl xl:max-w-5xl 2xl:max-w-6xl",
+  full: "max-w-full",
+} as const;
+
+const PADDING_MAP = {
+  none: "p-0",
+  xs: "p-2",
+  sm: "p-4", 
+  md: "p-6",
+  lg: "p-8",
+  xl: "p-12",
+  "2xl": "p-16",
+} as const;
+
+const MARGIN_MAP = {
+  none: "0",
+  xs: "2",
+  sm: "4",
+  md: "6", 
+  lg: "8",
+  xl: "12",
+  "2xl": "16",
+} as const;
+
+const BACKGROUND_COLOR_MAP = {
+  subtle: "bg-gray-50 dark:bg-gray-800",
+  accent: "bg-blue-50 dark:bg-blue-900/20", 
+  transparent: "bg-transparent",
+} as const;
+
+const BORDER_RADIUS_MAP = {
+  sm: "rounded-sm",
+  md: "rounded-md",
+  lg: "rounded-lg", 
+  xl: "rounded-xl",
+  "2xl": "rounded-2xl",
+  full: "rounded-full",
+  none: "rounded-none",
+} as const;
+
+const SHADOW_MAP = {
+  sm: "shadow-sm",
+  md: "shadow-md",
+  lg: "shadow-lg",
+  xl: "shadow-xl", 
+  "2xl": "shadow-2xl",
+  none: "shadow-none",
+} as const;
+
+const TEXT_SIZE_MAP = {
+  sm: "prose-sm",
+  base: "prose-base",
+  lg: "prose-lg",
+  xl: "prose-xl",
+} as const;
+
+const TEXT_STYLE_MAP = {
+  normal: "",
+  bold: "font-black",
+  outline: "text-stroke-2 text-stroke-white",
+  shadow: "drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] drop-shadow-[0_4px_8px_rgba(0,0,0,0.6)]",
+} as const;
+
+const HEIGHT_MAP = {
+  "10vh": "lg:h-[10vh]",
+  "20vh": "lg:h-[20vh]", 
+  "25vh": "lg:min-h-[25vh]",
+  "30vh": "lg:h-[30vh]",
+  "40vh": "lg:h-[40vh]",
+  "50vh": "lg:min-h-[50vh]",
+  "60vh": "lg:h-[60vh]",
+  "70vh": "lg:min-h-[75vh]",
+  "75vh": "lg:min-h-[75vh]",
+  "80vh": "lg:h-[80vh]",
+  "90vh": "lg:h-[90vh]",
+  "100vh": "lg:min-h-[100vh]",
+  auto: "h-auto",
+} as const;
+
+/**
+ * Uniwersalna funkcja do generowania klas CSS z mapowania
+ */
+const getClassFromMap = <T extends Record<string, string>>(
+  map: T,
+  key: string,
+  fallback: string
+): string => {
+  return map[key as keyof T] || fallback;
+};
+
 /**
  * Generuje ID sekcji na podstawie tytułu treści
  */
@@ -35,248 +136,79 @@ export const generateSectionId = (title: string): string => {
       .toLowerCase()
       .replace(/[^a-z0-9\s-]/g, "")
       .replace(/\s+/g, "-")
-      .replace(/^-+|-+$/g, "") // Usuń myślniki z początku i końca
-      .replace(/^-/, "section-") // Jeśli zaczyna się od myślnika, dodaj prefix
+      .replace(/^-+|-+$/g, "")
+      .replace(/^-/, "section-")
       .trim() || "section"
-  ); // Fallback jeśli pusty string
+  );
 };
 
 /**
- * Klasy dla maksymalnej szerokości - responsywne z uwzględnieniem spisu treści
+ * Klasy dla maksymalnej szerokości
  */
 export const getMaxWidthClass = (maxWidth: string): string => {
-  switch (maxWidth) {
-    case "sm":
-      return "max-w-sm";
-    case "md":
-      return "max-w-md";
-    case "lg":
-      return "max-w-lg";
-    case "xl":
-      return "max-w-xl";
-    case "2xl":
-      return "max-w-2xl";
-    case "4xl":
-      return "max-w-4xl";
-    case "6xl":
-      return "max-w-6xl xl:max-w-4xl 2xl:max-w-5xl";
-    case "full":
-      return "max-w-full";
-    default:
-      return "max-w-4xl";
-  }
+  return getClassFromMap(MAX_WIDTH_MAP, maxWidth, "max-w-4xl");
 };
 
 /**
  * Klasy dla paddingu
  */
 export const getPaddingClass = (padding: string): string => {
-  switch (padding) {
-    case "none":
-      return "p-0";
-    case "xs":
-      return "p-2";
-    case "sm":
-      return "p-4";
-    case "md":
-      return "p-6";
-    case "lg":
-      return "p-8";
-    case "xl":
-      return "p-12";
-    case "2xl":
-      return "p-16";
-    default:
-      return "p-6";
-  }
+  return getClassFromMap(PADDING_MAP, padding, "p-6");
 };
 
 /**
  * Klasy dla marginesów
  */
 export const getMarginClass = (margin: { top: string; bottom: string }): string => {
-  const topClass =
-    margin.top === "none"
-      ? "mt-0"
-      : `mt-${
-          margin.top === "xs"
-            ? "2"
-            : margin.top === "sm"
-            ? "4"
-            : margin.top === "md"
-            ? "6"
-            : margin.top === "lg"
-            ? "8"
-            : margin.top === "xl"
-            ? "12"
-            : margin.top === "2xl"
-            ? "16"
-            : "16"
-        }`;
-  const bottomClass =
-    margin.bottom === "none"
-      ? "mb-0"
-      : `mb-${
-          margin.bottom === "xs"
-            ? "2"
-            : margin.bottom === "sm"
-            ? "4"
-            : margin.bottom === "md"
-            ? "6"
-            : margin.bottom === "lg"
-            ? "8"
-            : margin.bottom === "xl"
-            ? "12"
-            : margin.bottom === "2xl"
-            ? "16"
-            : "16"
-        }`;
+  const topValue = getClassFromMap(MARGIN_MAP, margin.top, "16");
+  const bottomValue = getClassFromMap(MARGIN_MAP, margin.bottom, "16");
+  
+  const topClass = margin.top === "none" ? "mt-0" : `mt-${topValue}`;
+  const bottomClass = margin.bottom === "none" ? "mb-0" : `mb-${bottomValue}`;
+  
   return `${topClass} ${bottomClass}`;
-};
-
-/**
- * Klasy dla wyrównania
- */
-export const getAlignmentClass = (alignment: string): string => {
-  switch (alignment) {
-    case "center":
-      return "text-center";
-    case "right":
-      return "text-right";
-    case "left":
-    default:
-      return "text-left";
-  }
 };
 
 /**
  * Klasy dla koloru tła
  */
 export const getBackgroundColorClass = (backgroundColor: string): string => {
-  switch (backgroundColor) {
-    case "subtle":
-      return "bg-gray-50 dark:bg-gray-800";
-    case "accent":
-      return "bg-blue-50 dark:bg-blue-900/20";
-    case "transparent":
-      return "bg-transparent";
-    default:
-      return "bg-white dark:bg-gray-900";
-  }
+  return getClassFromMap(BACKGROUND_COLOR_MAP, backgroundColor, "bg-white dark:bg-gray-900");
 };
 
 /**
  * Klasy dla zaokrąglenia rogów
  */
 export const getBorderRadiusClass = (borderRadius: string): string => {
-  switch (borderRadius) {
-    case "sm":
-      return "rounded-sm";
-    case "md":
-      return "rounded-md";
-    case "lg":
-      return "rounded-lg";
-    case "xl":
-      return "rounded-xl";
-    case "full":
-      return "rounded-full";
-    case "none":
-    default:
-      return "rounded-none";
-  }
+  return getClassFromMap(BORDER_RADIUS_MAP, borderRadius, "rounded-none");
 };
 
 /**
  * Klasy dla cienia
  */
 export const getShadowClass = (shadow: string): string => {
-  switch (shadow) {
-    case "sm":
-      return "shadow-sm";
-    case "md":
-      return "shadow-md";
-    case "lg":
-      return "shadow-lg";
-    case "xl":
-      return "shadow-xl";
-    case "2xl":
-      return "shadow-2xl";
-    case "none":
-    default:
-      return "shadow-none";
-  }
+  return getClassFromMap(SHADOW_MAP, shadow, "shadow-none");
 };
 
 /**
  * Klasy dla rozmiaru tekstu
  */
 export const getTextSizeClass = (textSize: string): string => {
-  switch (textSize) {
-    case "sm":
-      return "prose-sm";
-    case "base":
-      return "prose-base";
-    case "lg":
-      return "prose-lg";
-    case "xl":
-      return "prose-xl";
-    default:
-      return "prose-lg";
-  }
+  return getClassFromMap(TEXT_SIZE_MAP, textSize, "prose-lg");
 };
 
 /**
  * Klasy dla stylu tekstu
  */
-export const getTextStyleClass = (
-  textStyle: "normal" | "bold" | "outline" | "shadow"
-): string => {
-  switch (textStyle) {
-    case "bold":
-      return "font-black";
-    case "outline":
-      return "text-stroke-2 text-stroke-white";
-    case "shadow":
-      return "drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] drop-shadow-[0_4px_8px_rgba(0,0,0,0.6)]";
-    case "normal":
-    default:
-      return "";
-  }
+export const getTextStyleClass = (textStyle: "normal" | "bold" | "outline" | "shadow"): string => {
+  return TEXT_STYLE_MAP[textStyle] || "";
 };
 
 /**
  * Klasy dla wysokości komponentu
  */
 export const getHeightClass = (height: string): string => {
-  switch (height) {
-    case "10vh":
-      return "h-[10vh]";
-    case "20vh":
-      return "h-[20vh]";
-    case "25vh":
-      return "lg:min-h-[25vh]";
-    case "30vh":
-      return "h-[30vh]";
-    case "40vh":
-      return "h-[40vh]";
-    case "50vh":
-      return "h-[50vh] lg:min-h-[50vh]";
-    case "60vh":
-      return "h-[60vh]";
-    case "70vh":
-      return "h-[70vh] lg:min-h-[75vh]";
-    case "75vh":
-      return "lg:min-h-[75vh]";
-    case "80vh":
-      return "h-[80vh]";
-    case "90vh":
-      return "h-[90vh]";
-    case "100vh":
-      return "h-[100vh] lg:min-h-[100vh]";
-    case "auto":
-    default:
-      return "h-auto";
-  }
+  return getClassFromMap(HEIGHT_MAP, height, "h-auto");
 };
 
 /**
@@ -288,7 +220,6 @@ export const getContainerClasses = (config: ContainerConfig): string => {
     getMaxWidthClass(config.maxWidth),
     getPaddingClass(config.padding),
     getMarginClass(config.margin),
-    getAlignmentClass(config.alignment),
   ];
 
   if (config.backgroundColor) {
@@ -315,27 +246,41 @@ export const useResponsiveImage = () => {
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
-    const checkIsMobile = () => {
-      setIsMobile(window.innerWidth < 1024); // lg breakpoint
-    };
-
+    const checkIsMobile = () => setIsMobile(window.innerWidth < 1024);
     checkIsMobile();
     window.addEventListener("resize", checkIsMobile);
     return () => window.removeEventListener("resize", checkIsMobile);
   }, []);
 
-  const getCurrentImage = (desktopImage?: { src: string; alt?: string }, mobileImage?: { src: string; alt?: string }, fallback?: { src: string; alt: string }) => {
-    if (isMobile && mobileImage?.src) {
-      return mobileImage;
-    }
-    if (desktopImage?.src) {
-      return desktopImage;
-    }
-    return fallback || { src: "/demo-images/demo-asset.png", alt: "Obrazek" };
+  const hasValidImage = (image?: { src: string; alt?: string } | SanityImage): boolean => {
+    if (!image) return false;
+    return Boolean(('src' in image && image.src?.trim()) || ('asset' in image && image.asset?.url));
   };
 
-  return { isMobile, getCurrentImage };
-};
+  const getCurrentImage = (
+    desktopImage?: { src: string; alt?: string } | SanityImage,
+    mobileImage?: { src: string; alt?: string } | SanityImage,
+    fallback?: { src: string; alt: string }
+  ) => {
+    if (isMobile && hasValidImage(mobileImage)) return mobileImage;
+    if (hasValidImage(desktopImage)) return desktopImage;
+    if (fallback) return fallback;
+    return { src: "/demo-images/demo-asset.png", alt: "Obrazek" };
+  };
 
-// Import useState i useEffect dla hooka
-import { useState, useEffect } from "react";
+  const getOptimizedImageProps = (image?: { src: string; alt?: string } | SanityImage) => {
+    if (!image) return null;
+    
+    if ('src' in image && typeof image.src === 'string') {
+      return { src: image.src, alt: image.alt || "Obraz" };
+    }
+    
+    if ('asset' in image && image.asset?.url) {
+      return { isSanityImage: true, asset: image.asset, alt: "Obraz" };
+    }
+    
+    return null;
+  };
+
+  return { isMobile, getCurrentImage, getOptimizedImageProps };
+};

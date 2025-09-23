@@ -4,19 +4,6 @@ export default defineType({
   name: "baseContainer",
   title: "Base Container",
   type: "object",
-  initialValue: () => ({
-    maxWidth: "4xl",
-    padding: "md",
-    margin: {
-      top: "md",
-      bottom: "md"
-    },
-    alignment: "left",
-    backgroundColor: "transparent",
-    borderRadius: "none",
-    shadow: "none",
-    height: "auto"
-  }),
   fields: [
     defineField({
       name: "maxWidth",
@@ -24,17 +11,13 @@ export default defineType({
       type: "string",
       options: {
         list: [
-          { title: "Bardzo mała (sm)", value: "sm" },
-          { title: "Mała (md)", value: "md" },
-          { title: "Średnia (lg)", value: "lg" },
-          { title: "Duża (xl)", value: "xl" },
-          { title: "Bardzo duża (2xl)", value: "2xl" },
-          { title: "Ekstra duża (4xl)", value: "4xl" },
-          { title: "Mega duża (6xl)", value: "6xl" },
+          { title: "4XL", value: "4xl" },
+          { title: "6XL", value: "6xl" },
           { title: "Pełna szerokość", value: "full" },
         ],
       },
       initialValue: "4xl",
+      validation: (Rule) => Rule.required().error("Maksymalna szerokość jest wymagana"),
     }),
     defineField({
       name: "padding",
@@ -43,15 +26,13 @@ export default defineType({
       options: {
         list: [
           { title: "Brak", value: "none" },
-          { title: "Bardzo mały", value: "xs" },
-          { title: "Mały", value: "sm" },
-          { title: "Średni", value: "md" },
-          { title: "Duży", value: "lg" },
-          { title: "Bardzo duży", value: "xl" },
-          { title: "Ekstra duży", value: "2xl" },
+          { title: "MD", value: "md" },
+          { title: "XL", value: "xl" },
+          { title: "2XL", value: "2xl" },
         ],
       },
       initialValue: "md",
+      validation: (Rule) => Rule.required().error("Wewnętrzny odstęp jest wymagany"),
     }),
     defineField({
       name: "margin",
@@ -65,15 +46,12 @@ export default defineType({
           options: {
             list: [
               { title: "Brak", value: "none" },
-              { title: "Bardzo mały", value: "xs" },
-              { title: "Mały", value: "sm" },
-              { title: "Średni", value: "md" },
-              { title: "Duży", value: "lg" },
-              { title: "Bardzo duży", value: "xl" },
-              { title: "Ekstra duży", value: "2xl" },
+              { title: "XL", value: "xl" },
+              { title: "2XL", value: "2xl" },
             ],
           },
-          initialValue: "md",
+          initialValue: "none",
+          validation: (Rule) => Rule.required().error("Margines góra jest wymagany"),
         }),
         defineField({
           name: "bottom",
@@ -82,30 +60,14 @@ export default defineType({
           options: {
             list: [
               { title: "Brak", value: "none" },
-              { title: "Bardzo mały", value: "xs" },
-              { title: "Mały", value: "sm" },
-              { title: "Średni", value: "md" },
-              { title: "Duży", value: "lg" },
-              { title: "Bardzo duży", value: "xl" },
-              { title: "Ekstra duży", value: "2xl" },
+              { title: "XL", value: "xl" },
+              { title: "2XL", value: "2xl" },
             ],
           },
           initialValue: "md",
+          validation: (Rule) => Rule.required().error("Margines dół jest wymagany"),
         }),
       ],
-    }),
-    defineField({
-      name: "alignment",
-      title: "Wyrównanie",
-      type: "string",
-      options: {
-        list: [
-          { title: "Lewo", value: "left" },
-          { title: "Środek", value: "center" },
-          { title: "Prawo", value: "right" },
-        ],
-      },
-      initialValue: "left",
     }),
     defineField({
       name: "backgroundColor",
@@ -119,6 +81,7 @@ export default defineType({
         ],
       },
       initialValue: "transparent",
+      validation: (Rule) => Rule.required().error("Kolor tła jest wymagany"),
     }),
     defineField({
       name: "borderRadius",
@@ -127,14 +90,14 @@ export default defineType({
       options: {
         list: [
           { title: "Brak", value: "none" },
-          { title: "Małe", value: "sm" },
-          { title: "Średnie", value: "md" },
-          { title: "Duże", value: "lg" },
-          { title: "Bardzo duże", value: "xl" },
+          { title: "LG", value: "lg" },
+          { title: "XL", value: "xl" },
+          { title: "2XL", value: "2xl" },
           { title: "Pełne", value: "full" },
         ],
       },
       initialValue: "none",
+      validation: (Rule) => Rule.required().error("Zaokrąglenie rogów jest wymagane"),
     }),
     defineField({
       name: "shadow",
@@ -143,14 +106,13 @@ export default defineType({
       options: {
         list: [
           { title: "Brak", value: "none" },
-          { title: "Mały", value: "sm" },
-          { title: "Średni", value: "md" },
-          { title: "Duży", value: "lg" },
-          { title: "Bardzo duży", value: "xl" },
+          { title: "LG", value: "lg" },
+          { title: "XL", value: "xl" },
           { title: "Ekstra duży", value: "2xl" },
         ],
       },
       initialValue: "none",
+      validation: (Rule) => Rule.required().error("Cień jest wymagany"),
     }),
     defineField({
       name: "height",
@@ -159,9 +121,6 @@ export default defineType({
       options: {
         list: [
           { title: "Auto", value: "auto" },
-          { title: "10vh", value: "10vh" },
-          { title: "20vh", value: "20vh" },
-          { title: "30vh", value: "30vh" },
           { title: "40vh", value: "40vh" },
           { title: "50vh", value: "50vh" },
           { title: "60vh", value: "60vh" },
@@ -172,6 +131,7 @@ export default defineType({
         ],
       },
       initialValue: "auto",
+      validation: (Rule) => Rule.required().error("Wysokość komponentu jest wymagana"),
     }),
     defineField({
       name: "contentTitle",

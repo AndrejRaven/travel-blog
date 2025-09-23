@@ -4,14 +4,11 @@ import Image from "next/image";
 import { useState } from "react";
 import React from "react";
 import Button from "@/components/ui/Button";
-import SectionHeader from "@/components/shared/SectionHeader";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Pagination, Autoplay } from "swiper/modules";
 import "swiper/css";
 import { Instagram, Heart } from "lucide-react";
 import "swiper/css/pagination";
-import { useAnimation } from "@/lib/useAnimation";
-import { ANIMATION_PRESETS } from "@/lib/animations";
 import AnimatedSection from "@/components/shared/AnimatedSection";
 
 interface InstagramPost {
@@ -64,11 +61,9 @@ export default function InstagramSection() {
   const [activeSlide, setActiveSlide] = useState(0);
   const [realIndex, setRealIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
-  const { isLoaded, isInView, containerRef } = useAnimation();
 
   return (
     <AnimatedSection
-      ref={containerRef}
       role="complementary"
       aria-labelledby="instagram-heading"
       itemScope
@@ -161,7 +156,7 @@ export default function InstagramSection() {
                     itemScope
                     itemType="https://schema.org/ImageObject"
                   >
-                    <div className="relative aspect-square">
+                    <div className="relative h-[250px] w-full">
                       <Image
                         src={post.imageUrl}
                         alt={post.caption}

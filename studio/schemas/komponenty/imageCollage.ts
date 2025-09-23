@@ -54,6 +54,20 @@ export default defineType({
       fieldset: 'properties',
       fields: [
         {
+          name: "textAlignment",
+          title: "Wyrównanie tekstu",
+          type: "string",
+          options: {
+            list: [
+              { title: "Lewo", value: "left" },
+              { title: "Środek", value: "center" },
+              { title: "Prawo", value: "right" },
+            ],
+            layout: "radio",
+          },
+          initialValue: "left",
+        },
+        {
           name: "thumbnailCount",
           title: "Liczba miniatur",
           type: "number",

@@ -68,7 +68,7 @@ export default function LatestArticles({
     <section
       ref={containerRef}
       id="najnowsze"
-      className="mx-auto max-w-7xl px-6"
+      className="mx-auto max-w-7xl px-6 my-8"
     >
       <div
         className={`flex items-end justify-between mb-6 ${ANIMATION_PRESETS.sectionHeader(

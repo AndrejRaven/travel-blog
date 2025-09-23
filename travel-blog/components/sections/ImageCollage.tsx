@@ -5,19 +5,27 @@ import { createPortal } from "react-dom";
 import Image from "next/image";
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
 import { ImageCollageData } from "@/lib/component-types";
-import { useAnimation } from "@/lib/useAnimation";
 import {
   ANIMATION_PRESETS,
   ANIMATION_CLASSES,
   HOVER_EFFECTS,
 } from "@/lib/animations";
 import {
-  getAlignmentClass,
   getMarginClass,
   getMaxWidthClass,
   getPaddingClass,
   generateSectionId,
 } from "@/lib/section-utils";
+import {
+  useResponsiveImage,
+  useAnimation,
+  getAnimationClass,
+  getTextAlignmentClasses,
+  getImageClasses,
+  getModalClasses,
+  getNavigationClasses,
+} from "@/lib/render-utils";
+import { SanityImage } from "@/lib/sanity";
 
 type Props = {
   data: ImageCollageData;
@@ -26,6 +34,12 @@ type Props = {
 export default function ImageCollage({ data }: Props) {
   const { container, images, layout } = data;
   const { isLoaded, isInView, containerRef: animationRef } = useAnimation();
+  const { getOptimizedImageProps } = useResponsiveImage({
+    width: 1200,
+    quality: 95,
+    format: "webp",
+    fit: "fillmax",
+  });
 
   // Generuj ID sekcji na podstawie contentTitle
   const sectionId = container.contentTitle
@@ -150,8 +164,9 @@ export default function ImageCollage({ data }: Props) {
   const mainImage = images[0];
   const thumbnailImages = images.slice(1, layout.thumbnailCount + 1);
 
-  // Sprawdź czy główne zdjęcie ma prawidłowy src
-  if (!mainImage.src) return null;
+  // Pobierz props dla głównego obrazu
+  const mainImageProps = getOptimizedImageProps(mainImage);
+  if (!mainImageProps) return null;
 
   return (
     <div
@@ -162,24 +177,32 @@ export default function ImageCollage({ data }: Props) {
       <div
         className={`w-full ${getMaxWidthClass(
           container.maxWidth
-        )} ${getPaddingClass(container.padding)} ${getAlignmentClass(
-          container.alignment
-        )} mx-auto ${ANIMATION_PRESETS.text(isLoaded && isInView, "medium")}`}
+        )} ${getPaddingClass(container.padding)} ${getTextAlignmentClasses(
+          layout.textAlignment
+        )} mx-auto ${getAnimationClass({
+          type: "text",
+          delay: "medium",
+          isInView,
+          isLoaded,
+        })}`}
       >
         {/* Główne zdjęcie */}
         <div
-          className={`relative w-full h-64 md:h-80 lg:h-96 xl:h-[28rem] rounded-2xl overflow-hidden cursor-pointer group ${ANIMATION_PRESETS.image(
-            isLoaded && isInView,
-            "short"
+          className={`relative w-full h-64 md:h-80 lg:h-96 xl:h-[28rem] rounded-2xl overflow-hidden cursor-pointer group ${getAnimationClass(
+            {
+              type: "image",
+              delay: "short",
+              isInView,
+              isLoaded,
+            }
           )}`}
           onClick={() => openModal(0)}
         >
           <Image
-            src={mainImage.src}
-            alt={mainImage.alt || "Główne zdjęcie"}
+            {...mainImageProps}
             width={800}
             height={600}
-            className={`w-full h-full object-cover ${ANIMATION_CLASSES.hover} ${HOVER_EFFECTS.transform}`}
+            className={getImageClasses(true)}
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 70vw"
           />
           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300" />
@@ -206,31 +229,35 @@ export default function ImageCollage({ data }: Props) {
                 : "grid-cols-4"
             }`}
           >
-            {thumbnailImages.map((image, index) => (
-              <div
-                key={index}
-                className={`relative aspect-square rounded-xl overflow-hidden cursor-pointer group ${ANIMATION_PRESETS.image(
-                  isLoaded && isInView,
-                  "medium"
-                )}`}
-                onClick={() => openModal(index + 1)}
-              >
-                <Image
-                  src={image.src}
-                  alt={image.alt || `Miniatura ${index + 1}`}
-                  width={300}
-                  height={300}
-                  className={`w-full h-full object-cover ${ANIMATION_CLASSES.hover} ${HOVER_EFFECTS.transform}`}
-                  sizes="(max-width: 768px) 50vw, (max-width: 1200px) 25vw, 20vw"
-                />
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300" />
-                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 ease-out">
-                  <span className="text-white/70 group-hover:text-white text-xs font-medium transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
-                    Zobacz
-                  </span>
+            {thumbnailImages.map((image, index) => {
+              const imageProps = getOptimizedImageProps(image);
+              if (!imageProps) return null;
+
+              return (
+                <div
+                  key={index}
+                  className={`relative aspect-square rounded-xl overflow-hidden cursor-pointer group ${ANIMATION_PRESETS.image(
+                    isLoaded && isInView,
+                    "medium"
+                  )}`}
+                  onClick={() => openModal(index + 1)}
+                >
+                  <Image
+                    {...imageProps}
+                    width={300}
+                    height={300}
+                    className={getImageClasses(true)}
+                    sizes="(max-width: 768px) 50vw, (max-width: 1200px) 25vw, 20vw"
+                  />
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300" />
+                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 ease-out">
+                    <span className="text-white/70 group-hover:text-white text-xs font-medium transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
+                      Zobacz
+                    </span>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
@@ -292,20 +319,23 @@ export default function ImageCollage({ data }: Props) {
             )}
 
             {/* Image */}
-            <div className="relative w-[70vw] h-[70vh] max-w-6xl xl:max-w-4xl 2xl:max-w-5xl max-h-[80vh]">
-              {images[selectedImageIndex].src && (
-                <Image
-                  src={images[selectedImageIndex].src}
-                  alt={
-                    images[selectedImageIndex].alt ||
-                    `Zdjęcie ${selectedImageIndex + 1}`
-                  }
-                  fill
-                  className="object-contain"
-                  sizes="70vw"
-                  priority
-                />
-              )}
+            <div className="relative w-[70vw] h-[70vh] max-w-4xl xl:max-w-5xl 2xl:max-w-6xl max-h-[80vh]">
+              {(() => {
+                const imageProps = getOptimizedImageProps(
+                  images[selectedImageIndex]
+                );
+                if (!imageProps) return null;
+
+                return (
+                  <Image
+                    {...imageProps}
+                    fill
+                    className="object-contain"
+                    sizes="70vw"
+                    priority
+                  />
+                );
+              })()}
             </div>
           </div>,
           document.body

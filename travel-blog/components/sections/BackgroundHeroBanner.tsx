@@ -1,29 +1,32 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState } from "react";
 import Image from "next/image";
 import Button from "@/components/ui/Button";
 import RichText from "@/components/ui/RichText";
 import { BackgroundHeroBannerData } from "@/lib/component-types";
 import { ChevronDown } from "lucide-react";
 import {
-  ANIMATION_PRESETS,
-  ANIMATION_CLASSES,
-  HOVER_EFFECTS,
-} from "@/lib/animations";
-import {
   getMaxWidthClass,
   getPaddingClass,
   getMarginClass,
-  getAlignmentClass,
   getBackgroundColorClass,
   getBorderRadiusClass,
   getShadowClass,
   getHeightClass,
   getTextStyleClass,
-  useResponsiveImage,
   generateSectionId,
 } from "@/lib/section-utils";
+import {
+  useResponsiveImage,
+  useAnimation,
+  useScrollIndicator,
+  getAnimationClass,
+  getTextAlignmentClasses,
+  getFlexLayoutClasses,
+  getContainerMarginClasses,
+  getImagePlaceholderClasses,
+} from "@/lib/render-utils";
 
 type Props = {
   data: BackgroundHeroBannerData;
@@ -31,13 +34,6 @@ type Props = {
 
 export default function BackgroundHeroBanner({ data }: Props) {
   const { container, layout } = data;
-
-  // Debug - sprawdź jakie dane przychodzą z Sanity
-  console.log("BackgroundHeroBanner data:", {
-    textAlignment: layout?.textAlignment,
-    fullLayout: layout,
-    fullData: data,
-  });
 
   // Zabezpieczenie na wypadek gdyby container był undefined
   if (!container || !layout) {
@@ -49,54 +45,26 @@ export default function BackgroundHeroBanner({ data }: Props) {
   }
 
   const [imageLoaded, setImageLoaded] = useState(false);
-  const [isInView, setIsInView] = useState(false);
-  const [showScrollButton, setShowScrollButton] = useState(true);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const { isMobile, getCurrentImage } = useResponsiveImage();
+  const { isLoaded, isInView, containerRef } = useAnimation();
+  const { showScrollButton, hideScrollButton } = useScrollIndicator();
+  const { getCurrentImage, getOptimizedImageProps } = useResponsiveImage({
+    width: 1920,
+    mobileWidth: 1200,
+    quality: 95,
+    format: "webp",
+    fit: "fillmax",
+  });
+
+  const selectedImage = getCurrentImage(data.image, data.mobileImage, {
+    src: "/demo-images/demo-asset.png",
+    alt: "Tło hero",
+  });
+  const imageProps = getOptimizedImageProps(selectedImage);
 
   // Generuj ID na podstawie tytułu treści
   const sectionId = container.contentTitle
     ? generateSectionId(container.contentTitle)
     : undefined;
-
-  // Intersection Observer - animacja uruchamia się gdy komponent wchodzi w viewport
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setIsInView(true);
-          }
-        });
-      },
-      {
-        threshold: 0.1, // Uruchamia się gdy 10% komponentu jest widoczne
-        rootMargin: "0px 0px -50px 0px", // Dodatkowy margines od dołu
-      }
-    );
-
-    if (containerRef.current) {
-      observer.observe(containerRef.current);
-    }
-
-    return () => {
-      if (containerRef.current) {
-        observer.unobserve(containerRef.current);
-      }
-    };
-  }, []);
-
-  // Auto-hide przycisk po przewinięciu
-  useEffect(() => {
-    const handleScroll = () => {
-      if (window.scrollY > 100) {
-        setShowScrollButton(false);
-      }
-    };
-
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
 
   return (
     <div
@@ -105,9 +73,9 @@ export default function BackgroundHeroBanner({ data }: Props) {
         container.maxWidth
       )} ${getPaddingClass(container.padding)} ${getMarginClass(
         container.margin
-      )} ${getAlignmentClass(container.alignment)} ${getBackgroundColorClass(
-        container.backgroundColor
-      )} ${getShadowClass(container.shadow)} ${getBorderRadiusClass(
+      )} ${getBackgroundColorClass(container.backgroundColor)} ${getShadowClass(
+        container.shadow
+      )} ${getBorderRadiusClass(
         container.borderRadius
       )} overflow-hidden mx-auto`}
     >
@@ -121,25 +89,24 @@ export default function BackgroundHeroBanner({ data }: Props) {
       >
         {/* Obraz w tle */}
         <div className="absolute inset-0 w-full h-full bg-gray-900 dark:bg-gray-800">
-          {/* Placeholder podczas ładowania */}
-          {!imageLoaded && (
-            <div className="absolute inset-0 bg-gradient-to-br from-gray-300 to-gray-400 dark:from-gray-700 dark:to-gray-800 animate-pulse" />
-          )}
-
-          {getCurrentImage(data.image, data.mobileImage).src && (
+          {imageProps?.src ? (
             <Image
-              src={getCurrentImage(data.image, data.mobileImage).src}
+              src={imageProps.src as string}
               alt={
-                getCurrentImage(data.image, data.mobileImage).alt || "Tło hero"
+                selectedImage && "alt" in selectedImage
+                  ? selectedImage.alt || "Tło hero"
+                  : "Tło hero"
               }
               fill
-              className={`object-cover ${ANIMATION_CLASSES.main} ${
+              className={`object-cover ${
                 imageLoaded && isInView ? "opacity-100" : "opacity-0"
               }`}
               priority
-              sizes="100vw"
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 100vw, 100vw"
               onLoad={() => setImageLoaded(true)}
             />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-gray-300 to-gray-400 dark:from-gray-700 dark:to-gray-800 animate-pulse" />
           )}
         </div>
 
@@ -153,25 +120,29 @@ export default function BackgroundHeroBanner({ data }: Props) {
 
         {/* Zawartość tekstowa */}
         <div
-          className={`relative z-10 w-full h-full flex items-center px-6 lg:px-12 py-8 lg:py-16 ${
-            layout.textAlignment === "center"
-              ? "justify-center"
-              : layout.textAlignment === "right"
-              ? "justify-end"
-              : "justify-start"
-          }`}
+          className={`relative z-10 w-full h-full flex items-center px-6 lg:px-12 py-8 lg:py-16 ${getFlexLayoutClasses(
+            layout.textAlignment
+          )}`}
         >
           <div
-            className={`max-w-4xl w-full space-y-6 mx-auto ${ANIMATION_PRESETS.text(
+            className={`max-w-4xl w-full space-y-6 ${getContainerMarginClasses(
+              layout.textAlignment
+            )} ${getAnimationClass({
+              type: "text",
+              delay: "none",
               isInView,
-              "none"
-            )}`}
+              isLoaded,
+            })}`}
           >
             <h2 id="section-heading" className="sr-only">
               {data.content?.[0]?.children?.[0]?.text || "Sekcja treści"}
             </h2>
 
-            <div className={getTextStyleClass(layout.textStyle)}>
+            <div
+              className={`${getTextStyleClass(
+                layout.textStyle
+              )} ${getTextAlignmentClasses(layout.textAlignment)}`}
+            >
               <RichText blocks={data.content} textColor="white" />
             </div>
 
@@ -183,7 +154,12 @@ export default function BackgroundHeroBanner({ data }: Props) {
                     href={button.href}
                     variant={button.variant}
                     external={button.external}
-                    className={`${ANIMATION_CLASSES.hover} ${HOVER_EFFECTS.basic}`}
+                    className={getAnimationClass({
+                      type: "button",
+                      delay: "none",
+                      isInView,
+                      isLoaded,
+                    })}
                   >
                     {button.label}
                   </Button>
@@ -218,9 +194,9 @@ export default function BackgroundHeroBanner({ data }: Props) {
                   });
                 }
                 // Ukryj przycisk po kliknięciu
-                setShowScrollButton(false);
+                hideScrollButton();
               }}
-              className={`flex flex-col items-center space-y-1 text-white/70 hover:text-white ${ANIMATION_CLASSES.hover} cursor-pointer group focus:outline-none rounded-lg p-2 hover:bg-white/5`}
+              className={`flex flex-col items-center space-y-1 text-white/70 hover:text-white cursor-pointer group focus:outline-none rounded-lg p-2 hover:bg-white/5`}
               aria-label="Zobacz więcej treści"
             >
               <span className="text-xs font-medium">Zobacz więcej</span>

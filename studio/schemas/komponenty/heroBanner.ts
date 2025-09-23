@@ -2,21 +2,6 @@ export default {
   name: 'heroBanner',
   type: 'object',
   title: 'Hero Banner',
-  initialValue: () => ({
-    container: {
-      maxWidth: "6xl",
-      padding: "md",
-      margin: {
-        top: "md",
-        bottom: "md"
-      },
-      alignment: "left",
-      backgroundColor: "transparent",
-      borderRadius: "none",
-      shadow: "none",
-      height: "75vh"
-    }
-  }),
   fieldsets: [
     {
       name: 'content',
@@ -26,7 +11,7 @@ export default {
     {
       name: 'properties',
       title: 'Właściwości',
-      options: { collapsible: true, collapsed: false }
+      options: { collapsible: true, collapsed: true }
     }
   ],
   fields: [
@@ -76,6 +61,20 @@ export default {
       fieldset: 'properties',
       fields: [
         {
+          name: 'textAlignment',
+          title: 'Wyrównanie tekstu',
+          type: 'string',
+          options: {
+            list: [
+              { title: 'Lewo', value: 'left' },
+              { title: 'Środek', value: 'center' },
+              { title: 'Prawo', value: 'right' },
+            ],
+            layout: 'radio',
+          },
+          initialValue: 'left',
+        },
+        {
           name: 'imageWidth',
           title: 'Szerokość obrazka (%)',
           type: 'number',
@@ -114,20 +113,7 @@ export default {
             layout: 'radio',
           },
           initialValue: 'top',
-        },
-        {
-          name: 'textSpacing',
-          title: 'Odstępy tekstu',
-          type: 'string',
-          options: {
-            list: [
-              { title: 'Z odstępami', value: 'with-spacing' },
-              { title: 'Bez odstępów', value: 'no-spacing' },
-            ],
-            layout: 'radio',
-          },
-          initialValue: 'with-spacing',
-        },
+        }
       ],
     },
   ],

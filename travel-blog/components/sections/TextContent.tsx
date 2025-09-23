@@ -19,7 +19,7 @@ export default function TextContent({ data }: Props) {
       className="transition-all duration-300"
     >
       <div
-        className={`prose max-w-none ${getTextSizeClass(
+        className={`prose max-w-none px-6 md:px-0 ${getTextSizeClass(
           layout.textSize
         )} prose-serif`}
       >

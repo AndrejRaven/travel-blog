@@ -44,9 +44,11 @@ export default function ResponsiveImage({
   onLoad,
 }: ResponsiveImageProps) {
   const [imageLoaded, setImageLoaded] = useState(false);
-  const { isMobile, getCurrentImage } = useResponsiveImage();
+  const { isMobile, getCurrentImage, getOptimizedImageProps } =
+    useResponsiveImage();
 
   const currentImage = getCurrentImage(desktopImage, mobileImage, fallback);
+  const optimizedProps = getOptimizedImageProps(currentImage);
 
   const handleLoad = () => {
     setImageLoaded(true);
@@ -63,15 +65,17 @@ export default function ResponsiveImage({
     .filter(Boolean)
     .join(" ");
 
-  if (!currentImage.src) {
+  if (!optimizedProps || !("src" in optimizedProps)) {
     return null;
   }
+
+  const alt = "alt" in optimizedProps ? optimizedProps.alt : "Obrazek";
 
   if (fill) {
     return (
       <Image
-        src={currentImage.src}
-        alt={currentImage.alt || "Obrazek"}
+        {...optimizedProps}
+        alt={alt}
         fill
         className={imageClasses}
         priority={priority}
@@ -83,8 +87,8 @@ export default function ResponsiveImage({
 
   return (
     <Image
-      src={currentImage.src}
-      alt={currentImage.alt || "Obrazek"}
+      {...optimizedProps}
+      alt={alt}
       width={width}
       height={height}
       className={imageClasses}

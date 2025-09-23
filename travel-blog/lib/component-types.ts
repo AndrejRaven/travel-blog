@@ -1,9 +1,11 @@
 // Typy dla komponentów Sanity
+import { SanityImage } from './sanity';
 
 export type RichTextBlock = {
   _type: 'block';
   _key: string;
-  style?: 'h1' | 'h2' | 'h3' | 'normal';
+  style?: 'h1' | 'h2' | 'h3' | 'normal' | 'bullet' | 'number';
+  listItem?: 'bullet' | 'number';
   children: Array<{
     _type: 'span';
     _key: string;
@@ -37,7 +39,6 @@ export type BaseContainer = {
     top: 'none' | 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
     bottom: 'none' | 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
   };
-  alignment: 'left' | 'center' | 'right';
   backgroundColor: 'transparent' | 'subtle' | 'accent';
   borderRadius: 'none' | 'sm' | 'md' | 'lg' | 'xl' | 'full';
   shadow: 'none' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
@@ -64,6 +65,7 @@ export type HeroBanner = {
   };
   buttons?: Button[];
   layout: {
+    textAlignment: 'left' | 'center' | 'right';
     imageWidth: 25 | 50 | 75;
     imagePosition: 'left' | 'right';
     mobileLayout: 'top' | 'bottom';
@@ -100,51 +102,14 @@ export type BackgroundHeroBanner = {
 };
 
 // Union type dla wszystkich komponentów
-export type PostComponent = HeroBanner | BackgroundHeroBanner | TextContent | ImageCollage;
+export type PostComponent = HeroBanner | BackgroundHeroBanner | TextContent | ImageCollage | EmbedYoutube;
 
-// Typ dla danych komponentu (bez _type i _key)
-// Typy dla danych komponentu (kompatybilne z istniejącymi komponentami)
-export type HeroBannerData = {
-  container: BaseContainer;
-  content: RichTextBlock[];
-  image: {
-    src: string;
-    alt: string;
-  };
-  mobileImage?: {
-    src: string;
-    alt: string;
-  };
-  buttons?: Button[];
-  layout: {
-    imageWidth: 25 | 50 | 75;
-    imagePosition: 'left' | 'right';
-    mobileLayout: 'top' | 'bottom';
-    textSpacing: 'with-spacing' | 'no-spacing';
-    height: 25 | 50 | 75;
-  };
-};
+// Utility type do usunięcia _type i _key z PostComponent
+export type ComponentData<T extends PostComponent> = Omit<T, '_type' | '_key'>;
 
-export type BackgroundHeroBannerData = {
-  container: BaseContainer;
-  content: RichTextBlock[];
-  image: {
-    src: string;
-    alt: string;
-  };
-  mobileImage?: {
-    src: string;
-    alt: string;
-  };
-  buttons?: Button[];
-  layout: {
-    textAlignment: 'left' | 'center' | 'right';
-    overlayOpacity: 10 | 20 | 30 | 40 | 50 | 60 | 70 | 80 | 90;
-    textStyle: 'normal' | 'bold' | 'outline' | 'shadow';
-    showScrollIndicator?: boolean;
-    showBottomGradient?: boolean;
-  };
-};
+// Typy dla danych komponentu (używają utility type)
+export type HeroBannerData = ComponentData<HeroBanner>;
+export type BackgroundHeroBannerData = ComponentData<BackgroundHeroBanner>;
 
 export type TextContent = {
   _type: 'textContent';
@@ -156,13 +121,7 @@ export type TextContent = {
   };
 };
 
-export type TextContentData = {
-  container: BaseContainer;
-  content: RichTextBlock[];
-  layout: {
-    textSize: 'sm' | 'base' | 'lg' | 'xl';
-  };
-};
+export type TextContentData = ComponentData<TextContent>;
 
 export type ImageCollage = {
   _type: 'imageCollage';
@@ -180,13 +139,17 @@ export type ImageCollage = {
   };
 };
 
-export type ImageCollageData = {
+export type ImageCollageData = ComponentData<ImageCollage>;
+
+export type EmbedYoutube = {
+  _type: 'embedYoutube';
+  _key: string;
   container: BaseContainer;
-  images: Array<{
-    src: string;
-    alt: string;
-  }>;
-  layout: {
-    thumbnailCount: 2 | 3 | 4;
-  };
+  title?: string;
+  description?: string;
+  videoId: string;
+  useLatestVideo?: boolean;
 };
+
+export type EmbedYoutubeData = ComponentData<EmbedYoutube>;
+

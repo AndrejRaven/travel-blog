@@ -19,12 +19,11 @@ export default function Home() {
   return (
     <div className="min-h-screen font-sans text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900">
       <BackgroundHeroBanner data={backgroundHeroTestData} />
-
       {/* MAIN CONTENT WITH ASIDE */}
       <div
         ref={containerRef}
         data-main-content
-        className="mx-auto max-w-7xl px-6 py-8 md:py-12 transition-all duration-1000 ease-out translate-y-0"
+        className="mx-auto max-w-7xl px-6 py-4 transition-all duration-1000 ease-out translate-y-0"
         style={{
           opacity: isLoaded && isInView ? 1 : 0.3,
         }}
@@ -43,6 +42,18 @@ export default function Home() {
 
             {/* YOUTUBE SECTION */}
             <EmbedYoutube
+              container={{
+                maxWidth: "6xl",
+                padding: "lg",
+                margin: {
+                  top: "lg",
+                  bottom: "lg",
+                },
+                backgroundColor: "transparent",
+                borderRadius: "none",
+                shadow: "none",
+                height: "auto",
+              }}
               videoId="latest"
               title="Zobacz nasz najnowszy film"
               description="Odkryj najpiękniejsze miejsca z naszych podróży w najnowszym filmie na YouTube! 🎬 Zasubskrybuj nasz kanał i kliknij dzwoneczek 🔔, aby nie przegapić żadnej przygody!"

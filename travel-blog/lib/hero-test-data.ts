@@ -209,7 +209,7 @@ export const backgroundHeroTestData: BackgroundHeroBannerData = {
       _type: "button",
       _key: "bg-btn-1",
       label: "Zobacz nasze podróże",
-      href: "/post/indonezja",
+      href: "/post/tajlandia-na-wlasna-reke",
       variant: "primary",
     },
     {

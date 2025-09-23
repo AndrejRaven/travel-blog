@@ -68,7 +68,7 @@ export default function CategoriesSection({
     <section
       ref={containerRef}
       id="kategorie"
-      className={`mx-auto max-w-7xl px-6 py-12 md:py-16 ${
+      className={`mx-auto my-8 max-w-7xl px-6 py-12 md:py-16 ${
         showBackground ? "bg-gray-50 dark:bg-gray-900" : ""
       }`}
     >

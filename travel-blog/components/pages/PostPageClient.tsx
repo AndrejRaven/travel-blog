@@ -151,12 +151,12 @@ export default function PostPageClient({
           )}`}
         >
           {/* Tytuł */}
-          <h1 className="md:text-5xl sm:text-4xl font-serif font-bold tracking-tight mb-6 text-gray-900 dark:text-gray-100">
+          <h1 className="text-4xl md:text-5xl font-serif font-bold tracking-tight mb-6 text-gray-900 dark:text-gray-100">
             {post.title}
           </h1>
           {/* Podtytuł */}
           {post?.subtitle && (
-            <h2 className="md:text-3xl sm:text-2xl font-serif font-bold tracking-tight mb-6 text-gray-600 dark:text-gray-300">
+            <h2 className="text-2xl md:text-3xl font-serif font-bold tracking-tight mb-6 text-gray-600 dark:text-gray-300">
               {post.subtitle}
             </h2>
           )}
@@ -211,16 +211,16 @@ export default function PostPageClient({
           </div>
         </div>
       )}
-
       {/* Komponenty */}
       {post.components && post.components.length > 0 ? (
         <div className="relative">
-          {post.components.map((component) => (
-            <ComponentRenderer
-              key={component._key}
-              component={component as PostComponent}
-            />
-          ))}
+          {post.components.map((component, index) => {
+            return (
+              <div key={component._key} className={`relative`}>
+                <ComponentRenderer component={component as PostComponent} />
+              </div>
+            );
+          })}
         </div>
       ) : (
         <div className="mx-auto max-w-3xl px-6 py-10">

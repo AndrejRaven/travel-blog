@@ -4,6 +4,7 @@ import heroBanner from "../schemas/komponenty/heroBanner"
 import backgroundHeroBanner from "../schemas/komponenty/backgroundHeroBanner"
 import textContent from "../schemas/komponenty/textContent"
 import imageCollage from "../schemas/komponenty/imageCollage"
+import embedYoutube from "../schemas/komponenty/embedYoutube"
 
 export const schemaTypesComponents = [
   richText,
@@ -11,5 +12,6 @@ export const schemaTypesComponents = [
   heroBanner,
   backgroundHeroBanner,
   textContent,
-  imageCollage
+  imageCollage,
+  embedYoutube,
 ]

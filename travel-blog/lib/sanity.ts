@@ -10,6 +10,9 @@ const builder = imageUrlBuilder({
   dataset,
 });
 
+// Eksport urlFor dla użycia w komponentach
+export const urlFor = (source: SanityImage) => builder.image(source);
+
 type GroqParams = Record<string, unknown>;
 
 export async function fetchGroq<T>(query: string, params: GroqParams = {}): Promise<T> {

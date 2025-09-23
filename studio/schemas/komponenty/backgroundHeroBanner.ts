@@ -2,21 +2,6 @@ export default {
   name: 'backgroundHeroBanner',
   type: 'object',
   title: 'Background Hero Banner',
-  initialValue: () => ({
-    container: {
-      maxWidth: "6xl",
-      padding: "md",
-      margin: {
-        top: "md",
-        bottom: "md"
-      },
-      alignment: "left",
-      backgroundColor: "transparent",
-      borderRadius: "none",
-      shadow: "none",
-      height: "75vh"
-    }
-  }),
   fieldsets: [
     {
       name: 'content',
@@ -76,6 +61,35 @@ export default {
       fieldset: 'properties',
       fields: [
         {
+          name: 'textAlignment',
+          title: 'Wyrównanie tekstu',
+          type: 'string',
+          options: {
+            list: [
+              { title: 'Lewo', value: 'left' },
+              { title: 'Środek', value: 'center' },
+              { title: 'Prawo', value: 'right' },
+            ],
+            layout: 'radio',
+          },
+          initialValue: 'left',
+        },
+        {
+          name: 'textStyle',
+          title: 'Styl tekstu',
+          type: 'string',
+          options: {
+            list: [
+              { title: 'Normalny', value: 'normal' },
+              { title: 'Pogrubiony', value: 'bold' },
+              { title: 'Kontur', value: 'outline' },
+              { title: 'Cień', value: 'shadow' },
+            ],
+            layout: 'radio',
+          },
+          initialValue: 'shadow',
+        },
+        {
           name: 'overlayOpacity',
           title: 'Przezroczystość nakładki (%)',
           type: 'number',
@@ -94,21 +108,6 @@ export default {
             layout: 'dropdown',
           },
           initialValue: 30,
-        },
-        {
-          name: 'textStyle',
-          title: 'Styl tekstu',
-          type: 'string',
-          options: {
-            list: [
-              { title: 'Normalny', value: 'normal' },
-              { title: 'Pogrubiony', value: 'bold' },
-              { title: 'Kontur', value: 'outline' },
-              { title: 'Cień', value: 'shadow' },
-            ],
-            layout: 'radio',
-          },
-          initialValue: 'shadow',
         },
         {
           name: 'showScrollIndicator',

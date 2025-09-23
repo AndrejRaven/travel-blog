@@ -12,6 +12,12 @@ export default {
         { title: 'H1', value: 'h1' },
         { title: 'H2', value: 'h2' },
         { title: 'H3', value: 'h3' },
+        { title: 'Lista punktowana', value: 'bullet' },
+        { title: 'Lista numerowana', value: 'number' },
+      ],
+      lists: [
+        { title: 'Lista punktowana', value: 'bullet' },
+        { title: 'Lista numerowana', value: 'number' },
       ],
       marks: {
         decorators: [
