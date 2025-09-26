@@ -45,7 +45,7 @@ export default function SectionContainer({
     <div
       id={sectionId}
       ref={containerRef}
-      className={`${containerClasses} ${animationClass} ${className}`}
+      className={`${containerClasses} ${animationClass} ${className || ""}`}
       role={role}
       aria-labelledby={ariaLabelledBy}
       itemScope={itemScope}

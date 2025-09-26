@@ -65,6 +65,7 @@ const BACKGROUND_COLOR_MAP = {
   subtle: "bg-gray-50 dark:bg-gray-800",
   accent: "bg-blue-50 dark:bg-blue-900/20", 
   transparent: "bg-transparent",
+  warning: "bg-red-200 dark:bg-red-50/20",
 } as const;
 
 const BORDER_RADIUS_MAP = {
@@ -252,14 +253,14 @@ export const useResponsiveImage = () => {
     return () => window.removeEventListener("resize", checkIsMobile);
   }, []);
 
-  const hasValidImage = (image?: { src: string; alt?: string } | SanityImage): boolean => {
+  const hasValidImage = (image?: { src: string; alt?: string } | SanityImage | null): boolean => {
     if (!image) return false;
     return Boolean(('src' in image && image.src?.trim()) || ('asset' in image && image.asset?.url));
   };
 
   const getCurrentImage = (
-    desktopImage?: { src: string; alt?: string } | SanityImage,
-    mobileImage?: { src: string; alt?: string } | SanityImage,
+    desktopImage?: { src: string; alt?: string } | SanityImage | null,
+    mobileImage?: { src: string; alt?: string } | SanityImage | null,
     fallback?: { src: string; alt: string }
   ) => {
     if (isMobile && hasValidImage(mobileImage)) return mobileImage;

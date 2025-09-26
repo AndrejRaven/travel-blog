@@ -73,11 +73,11 @@ export default function HeroBanner({ data }: Props) {
         container.margin
       )} ${getBorderRadiusClass(container.borderRadius)} ${getShadowClass(
         container.shadow
-      )} mx-auto overflow-hidden`}
+      )} mx-auto`}
       role="banner"
     >
       <div
-        className={`grid grid-cols-1 lg:grid-cols-12 gap-0 ${getHeightClass(
+        className={`grid grid-cols-1 lg:grid-cols-12 gap-0 overflow-hidden ${getHeightClass(
           container.height
         )} ${getBackgroundColorClass(
           container.backgroundColor

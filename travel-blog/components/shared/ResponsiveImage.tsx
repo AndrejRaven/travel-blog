@@ -2,8 +2,9 @@
 
 import React, { useState } from "react";
 import Image from "next/image";
-import { useResponsiveImage } from "@/lib/section-utils";
+import { useResponsiveImage } from "@/lib/render-utils";
 import { ANIMATION_CLASSES, HOVER_EFFECTS } from "@/lib/animations";
+import { SanityImage } from "@/lib/sanity";
 
 interface ImageData {
   src: string;
@@ -11,9 +12,9 @@ interface ImageData {
 }
 
 interface ResponsiveImageProps {
-  desktopImage?: ImageData;
-  mobileImage?: ImageData;
-  fallback?: ImageData;
+  desktopImage?: SanityImage | { src: string; alt?: string } | null;
+  mobileImage?: SanityImage | { src: string; alt?: string } | null;
+  fallback?: { src: string; alt: string };
   className?: string;
   fill?: boolean;
   width?: number;
@@ -22,6 +23,7 @@ interface ResponsiveImageProps {
   priority?: boolean;
   objectFit?: "cover" | "contain" | "fill" | "none" | "scale-down";
   showHoverEffect?: boolean;
+  quality?: number;
   onLoad?: () => void;
 }
 
@@ -41,14 +43,15 @@ export default function ResponsiveImage({
   priority = false,
   objectFit = "cover",
   showHoverEffect = false,
+  quality = 100,
   onLoad,
 }: ResponsiveImageProps) {
   const [imageLoaded, setImageLoaded] = useState(false);
   const { isMobile, getCurrentImage, getOptimizedImageProps } =
-    useResponsiveImage();
+    useResponsiveImage({ quality });
 
   const currentImage = getCurrentImage(desktopImage, mobileImage, fallback);
-  const optimizedProps = getOptimizedImageProps(currentImage);
+  const optimizedProps = getOptimizedImageProps(currentImage, fallback);
 
   const handleLoad = () => {
     setImageLoaded(true);
@@ -65,16 +68,16 @@ export default function ResponsiveImage({
     .filter(Boolean)
     .join(" ");
 
-  if (!optimizedProps || !("src" in optimizedProps)) {
+  if (!optimizedProps || !optimizedProps.src) {
     return null;
   }
 
-  const alt = "alt" in optimizedProps ? optimizedProps.alt : "Obrazek";
+  const alt = (optimizedProps.alt || "Obrazek") as string;
 
   if (fill) {
     return (
       <Image
-        {...optimizedProps}
+        src={optimizedProps.src}
         alt={alt}
         fill
         className={imageClasses}
@@ -87,7 +90,7 @@ export default function ResponsiveImage({
 
   return (
     <Image
-      {...optimizedProps}
+      src={optimizedProps.src}
       alt={alt}
       width={width}
       height={height}

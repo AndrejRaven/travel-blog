@@ -89,8 +89,8 @@ export const createAnimationClass = (
   delay: keyof typeof ANIMATION_DELAY_CLASSES = "none",
   hoverEffect: keyof typeof HOVER_EFFECTS = "basic"
 ) => {
-  const delayClass = ANIMATION_DELAY_CLASSES[delay];
-  const hoverClass = HOVER_EFFECTS[hoverEffect];
+  const delayClass = ANIMATION_DELAY_CLASSES[delay] || "";
+  const hoverClass = HOVER_EFFECTS[hoverEffect] || "";
   
   return `${baseClass} ${ANIMATION_STATES[state]} ${delayClass} ${hoverClass}`.trim();
 };
@@ -103,8 +103,8 @@ export const createConditionalAnimationClass = (
   delay: keyof typeof ANIMATION_DELAY_CLASSES = "none",
   hoverEffect: keyof typeof HOVER_EFFECTS = "basic"
 ) => {
-  const delayClass = ANIMATION_DELAY_CLASSES[delay];
-  const hoverClass = HOVER_EFFECTS[hoverEffect];
+  const delayClass = ANIMATION_DELAY_CLASSES[delay] || "";
+  const hoverClass = HOVER_EFFECTS[hoverEffect] || "";
   const stateClass = isVisible ? 
     (state.includes("visible") ? ANIMATION_STATES[state] : ANIMATION_STATES[state.replace("initial", "visible")]) :
     (state.includes("initial") ? ANIMATION_STATES[state] : ANIMATION_STATES[state.replace("visible", "initial")]);

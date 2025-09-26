@@ -102,7 +102,7 @@ export type BackgroundHeroBanner = {
 };
 
 // Union type dla wszystkich komponentów
-export type PostComponent = HeroBanner | BackgroundHeroBanner | TextContent | ImageCollage | EmbedYoutube;
+export type PostComponent = HeroBanner | BackgroundHeroBanner | TextContent | ImageCollage | EmbedYoutube | Articles;
 
 // Utility type do usunięcia _type i _key z PostComponent
 export type ComponentData<T extends PostComponent> = Omit<T, '_type' | '_key'>;
@@ -152,4 +152,20 @@ export type EmbedYoutube = {
 };
 
 export type EmbedYoutubeData = ComponentData<EmbedYoutube>;
+
+export type Articles = {
+  _type: 'articles';
+  _key: string;
+  container: BaseContainer;
+  title: string;
+  showViewAll: boolean;
+  viewAllHref?: string;
+  articlesType: 'latest' | 'selected';
+  selectedArticles?: Array<{
+    _ref: string;
+  }>;
+  maxArticles: number;
+};
+
+export type ArticlesData = Omit<Articles, '_type' | '_key'>;
 

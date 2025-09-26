@@ -14,10 +14,7 @@ export default function TextContent({ data }: Props) {
   const { container, content, layout } = data;
 
   return (
-    <SectionContainer
-      config={container}
-      className="transition-all duration-300"
-    >
+    <SectionContainer config={container}>
       <div
         className={`prose max-w-none px-6 md:px-0 ${getTextSizeClass(
           layout.textSize

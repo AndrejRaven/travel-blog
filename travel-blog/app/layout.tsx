@@ -5,6 +5,7 @@ import Footer from "@/components/layout/footer";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import CookieBanner from "@/components/ui/CookieBanner";
 import ScrollToTop from "@/components/ui/ScrollToTop";
+import NotificationProvider from "@/components/providers/NotificationProvider";
 import "./globals.css";
 
 // Font główny - Inter - doskonały do czytania
@@ -68,12 +69,14 @@ export default function RootLayout({
         className={`${inter.variable} ${playfairDisplay.variable} ${sourceCodePro.variable} antialiased`}
       >
         <ThemeProvider>
-          <Header />
-          {/* Main content */}
-          {children}
-          <Footer />
-          <CookieBanner />
-          <ScrollToTop />
+          <NotificationProvider>
+            <Header />
+            {/* Main content */}
+            {children}
+            <Footer />
+            <CookieBanner />
+            <ScrollToTop />
+          </NotificationProvider>
         </ThemeProvider>
       </body>
     </html>

@@ -20,21 +20,6 @@ const COLOR_CLASSES = {
   },
 };
 
-// Stałe dla stylów custom
-const CUSTOM_STYLE_CLASSES = {
-  "link-primary":
-    "text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium",
-  "link-secondary":
-    "text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-300 font-medium",
-  "margin-top": "block mt-4",
-  "margin-bottom": "block mb-4",
-  highlight: "bg-yellow-200 dark:bg-yellow-800 px-1 py-0.5 rounded",
-  warning: "text-orange-600 dark:text-orange-400 font-medium",
-  success: "text-green-600 dark:text-green-400 font-medium",
-  error: "text-red-600 dark:text-red-400 font-medium",
-  info: "text-blue-600 dark:text-blue-400 font-medium",
-};
-
 export default function RichText({
   blocks,
   className = "",
@@ -110,30 +95,6 @@ export default function RichText({
     return "";
   };
 
-  // Funkcja do pobierania klas custom style
-  const getCustomStyleClasses = (styleObj: any) => {
-    if (typeof styleObj === "object" && styleObj !== null) {
-      const { links = [], margins = [], colors = [] } = styleObj;
-      const allStyles = [...links, ...margins, ...colors];
-      return allStyles
-        .map(
-          (style: string) =>
-            CUSTOM_STYLE_CLASSES[style as keyof typeof CUSTOM_STYLE_CLASSES]
-        )
-        .filter(Boolean)
-        .join(" ");
-    }
-
-    if (typeof styleObj === "string") {
-      return (
-        CUSTOM_STYLE_CLASSES[styleObj as keyof typeof CUSTOM_STYLE_CLASSES] ||
-        ""
-      );
-    }
-
-    return "";
-  };
-
   const renderBlock = (block: RichTextBlock) => {
     const { _key, style, listItem, children = [], markDefs = [] } = block;
 
@@ -181,10 +142,9 @@ export default function RichText({
             }
 
             const linkProps = {
-              key: child._key,
               href,
               className:
-                "text-black dark:text-white hover:text-gray-700 dark:hover:text-gray-300 font-medium",
+                " text-blue-600 text-bold dark:text-blue-900 hover:text-blue-800 dark:hover:text-blue-300 transition-colors duration-200 relative group",
               ...(linkDef.blank && {
                 target: "_blank",
                 rel: "noopener noreferrer",
@@ -193,25 +153,16 @@ export default function RichText({
 
             element =
               linkDef.linkType === "external" ? (
-                <a {...linkProps}>{element}</a>
+                <a key={child._key} {...linkProps}>
+                  {element}
+                  <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-current group-hover:w-full transition-all duration-300 ease-out"></span>
+                </a>
               ) : (
-                <Link {...linkProps}>{element}</Link>
+                <Link key={child._key} {...linkProps}>
+                  {element}
+                  <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-current group-hover:w-full transition-all duration-300 ease-out"></span>
+                </Link>
               );
-          }
-        } else if (
-          mark.startsWith("customStyle-") ||
-          markDefs.some(
-            (def) => def._key === mark && def._type === "customStyle"
-          )
-        ) {
-          const customStyleDef = markDefs.find((def) => def._key === mark);
-          if (customStyleDef?.style) {
-            const styleClasses = getCustomStyleClasses(customStyleDef.style);
-            element = (
-              <span key={child._key} className={styleClasses}>
-                {element}
-              </span>
-            );
           }
         }
       });
@@ -245,10 +196,10 @@ export default function RichText({
       style === "h1"
         ? "h1"
         : style === "h2"
-        ? "h2"
-        : style === "h3"
-        ? "h3"
-        : "p";
+          ? "h2"
+          : style === "h3"
+            ? "h3"
+            : "p";
     const classes = `${
       styleClasses[style as keyof typeof styleClasses] || styleClasses.normal
     } ${colorClass} ${textAlignClass}`;

@@ -1,0 +1,465 @@
+// Wszystkie zapytania GROQ w jednym miejscu
+export const QUERIES = {
+  // Zapytania dla postów
+  POST: {
+    // Pobierz post po slug
+    BY_SLUG: `*[_type == "post" && slug.current == $slug][0]{
+      _id,
+      title,
+      subtitle,
+      description,
+      slug,
+      publishedAt,
+      categories[]-> {
+        _id,
+        name,
+        slug {
+          current
+        },
+        color
+      },
+      coverImage {
+        asset-> {
+          _id,
+          url,
+          metadata {
+            dimensions {
+              width,
+              height
+            }
+          }
+        },
+        hotspot,
+        crop
+      },
+      coverMobileImage {
+        asset-> {
+          _id,
+          url,
+          metadata {
+            dimensions {
+              width,
+              height
+            }
+          }
+        },
+        hotspot,
+        crop
+      },
+      seo {
+        seoTitle,
+        seoDescription,
+        seoKeywords,
+        canonicalUrl,
+        noIndex,
+        noFollow,
+        ogTitle,
+        ogDescription,
+        ogImage {
+          asset-> {
+            _id,
+            url,
+            metadata {
+              dimensions {
+                width,
+                height
+              }
+            }
+          },
+          hotspot,
+          crop
+        }
+      },
+      components[] {
+        _type,
+        _key,
+        ...,
+        container {
+          ...,
+          "contentTitle": @.contentTitle
+        },
+        content[] {
+          ...,
+          children[] {
+            ...,
+            marks[],
+            markDefs[] {
+              ...,
+              _type == "link" => {
+                ...,
+                "href": @.href,
+                "blank": @.blank
+              },
+              _type == "customStyle" => {
+                ...,
+                "style": @.style
+              }
+            }
+          }
+        },
+        image {
+          asset-> {
+            _id,
+            url,
+            metadata {
+              dimensions {
+                width,
+                height
+              }
+            }
+          },
+          hotspot,
+          crop
+        },
+        images[] {
+          asset-> {
+            _id,
+            url,
+            metadata {
+              dimensions {
+                width,
+                height
+              }
+            }
+          },
+          hotspot,
+          crop,
+          alt
+        },
+        buttons[] {
+          ...,
+          _type == "button" => {
+            ...,
+            "label": @.label,
+            "href": @.href,
+            "variant": @.variant,
+            "external": @.external
+          }
+        }
+      }
+    }`,
+
+    // Pobierz wszystkie slugi postów
+    ALL_SLUGS: `*[_type == "post" && defined(slug.current)][].slug.current`,
+
+    // Pobierz najnowsze posty
+    LATEST: `*[_type == "post"] | order(_createdAt desc) [0...$limit] {
+      _id,
+      title,
+      subtitle,
+      description,
+      slug,
+      publishedAt,
+      coverImage {
+        asset-> {
+          _id,
+          url,
+          metadata {
+            dimensions {
+              width,
+              height
+            }
+          }
+        },
+        hotspot,
+        crop,
+        alt
+      },
+      coverMobileImage {
+        asset-> {
+          _id,
+          url,
+          metadata {
+            dimensions {
+              width,
+              height
+            }
+          }
+        },
+        hotspot,
+        crop,
+        alt
+      },
+      categories[]-> {
+        _id,
+        name,
+        slug {
+          current
+        },
+        color
+      }
+    }`,
+
+    // Pobierz wybrane posty po ID
+    SELECTED: `*[_type == "post" && _id in $articleIds] {
+      _id,
+      title,
+      subtitle,
+      description,
+      slug,
+      publishedAt,
+      coverImage {
+        asset-> {
+          _id,
+          url,
+          metadata {
+            dimensions {
+              width,
+              height
+            }
+          }
+        },
+        hotspot,
+        crop,
+        alt
+      },
+      coverMobileImage {
+        asset-> {
+          _id,
+          url,
+          metadata {
+            dimensions {
+              width,
+              height
+            }
+          }
+        },
+        hotspot,
+        crop,
+        alt
+      },
+      categories[]-> {
+        _id,
+        name,
+        slug {
+          current
+        },
+        color
+      }
+    }`
+  },
+
+  // Zapytania dla headera
+  HEADER: {
+    // Pobierz dane headera
+    DATA: `*[_type == "header"][0] {
+      _id,
+      title,
+      logo {
+        asset->{
+          _id,
+          url
+        }
+      },
+      mainMenu[] {
+        label,
+        href,
+        isExternal,
+        hasDropdown,
+        dropdownItems[] {
+          label,
+          href,
+          isExternal,
+          hasSubmenu,
+          submenuItems[] {
+            label,
+            href,
+            isExternal
+          }
+        }
+      },
+      categoriesDropdown {
+        label,
+        sections[] {
+          key,
+          title,
+          emoji,
+          items[] {
+            label,
+            href,
+            isExternal
+          }
+        }
+      },
+      mobileMenu {
+        isEnabled,
+        label
+      }
+    }`
+  },
+
+  // Zapytania dla komponentu articles
+  ARTICLES: {
+    // Pobierz dane komponentu articles
+    COMPONENT_DATA: `*[_type == "articles"][0] {
+      _id,
+      _type,
+      container {
+        maxWidth,
+        padding,
+        margin {
+          top,
+          bottom
+        },
+        backgroundColor,
+        borderRadius,
+        shadow,
+        height,
+        contentTitle
+      },
+      title,
+      showViewAll,
+      viewAllHref,
+      articlesType,
+      selectedArticles[] {
+        _ref
+      },
+      maxArticles
+    }`
+  },
+
+  // Zapytania dla kategorii
+  CATEGORY: {
+    // Pobierz wszystkie kategorie
+    ALL: `*[_type == "category"] {
+      _id,
+      name,
+      slug {
+        current
+      },
+      color,
+      description
+    }`,
+
+    // Pobierz kategorię po slug
+    BY_SLUG: `*[_type == "category" && slug.current == $slug][0] {
+      _id,
+      name,
+      slug {
+        current
+      },
+      color,
+      description
+    }`,
+
+    // Pobierz posty z kategorii
+    POSTS: `*[_type == "post" && $slug in categories[]->slug.current] {
+      _id,
+      title,
+      subtitle,
+      description,
+      slug,
+      publishedAt,
+      coverImage {
+        asset-> {
+          _id,
+          url,
+          metadata {
+            dimensions {
+              width,
+              height
+            }
+          }
+        },
+        hotspot,
+        crop,
+        alt
+      },
+      coverMobileImage {
+        asset-> {
+          _id,
+          url,
+          metadata {
+            dimensions {
+              width,
+              height
+            }
+          }
+        },
+        hotspot,
+        crop,
+        alt
+      },
+      categories[]-> {
+        _id,
+        name,
+        slug {
+          current
+        },
+        color
+      }
+    }`
+  },
+
+  // Zapytania dla strony głównej
+  HOME: {
+    // Pobierz wszystkie komponenty strony głównej
+    COMPONENTS: `*[_type in ["heroBanner", "backgroundHeroBanner", "textContent", "imageCollage", "articles", "embedYoutube", "instagramSection", "newsletter"]] | order(_createdAt asc) {
+      _type,
+      _key,
+      ...,
+      container {
+        ...,
+        "contentTitle": @.contentTitle
+      },
+      content[] {
+        ...,
+        children[] {
+          ...,
+          marks[],
+          markDefs[] {
+            ...,
+            _type == "link" => {
+              ...,
+              "href": @.href,
+              "blank": @.blank
+            },
+            _type == "customStyle" => {
+              ...,
+              "style": @.style
+            }
+          }
+        }
+      },
+      image {
+        asset-> {
+          _id,
+          url,
+          metadata {
+            dimensions {
+              width,
+              height
+            }
+          }
+        },
+        hotspot,
+        crop
+      },
+      images[] {
+        asset-> {
+          _id,
+          url,
+          metadata {
+            dimensions {
+              width,
+              height
+            }
+          }
+        },
+        hotspot,
+        crop,
+        alt
+      },
+      buttons[] {
+        ...,
+        _type == "button" => {
+          ...,
+          "label": @.label,
+          "href": @.href,
+          "variant": @.variant,
+          "external": @.external
+        }
+      }
+    }`
+  }
+} as const;

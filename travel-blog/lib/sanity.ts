@@ -1,8 +1,29 @@
 import imageUrlBuilder from '@sanity/image-url';
+import { createClient } from 'next-sanity';
+import { ArticlesData } from './component-types';
 
-export const projectId = "k5fsny25";
-export const dataset = "production";
-export const apiVersion = "2023-10-10";
+export const projectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID || "k5fsny25";
+export const dataset = process.env.NEXT_PUBLIC_SANITY_DATASET || "production";
+export const apiVersion = process.env.NEXT_PUBLIC_SANITY_API_VERSION || "2023-10-10";
+
+// Konfiguracja Sanity client
+export const client = createClient({
+  projectId,
+  dataset,
+  apiVersion,
+  useCdn: false, // Używaj zawsze najnowszych danych
+  token: process.env.SANITY_API_TOKEN, // Token dla operacji write
+  perspective: 'published', // Używaj tylko opublikowanych danych
+});
+
+// Client tylko do odczytu (bez tokenu)
+export const readOnlyClient = createClient({
+  projectId,
+  dataset,
+  apiVersion,
+  useCdn: false,
+  perspective: 'published',
+});
 
 // Konfiguracja dla image-url builder
 const builder = imageUrlBuilder({
@@ -66,6 +87,7 @@ export type Post = {
   _id: string;
   title: string;
   subtitle?: string;
+  description?: string;
   slug?: { current: string };
   publishedAt?: string;
   categories?: Array<{
@@ -76,12 +98,50 @@ export type Post = {
   }>;
   coverImage?: SanityImage | null;
   coverMobileImage?: SanityImage | null;
+  seo?: {
+    seoTitle?: string;
+    seoDescription?: string;
+    seoKeywords?: string[];
+    canonicalUrl?: string;
+    noIndex?: boolean;
+    noFollow?: boolean;
+    ogTitle?: string;
+    ogDescription?: string;
+    ogImage?: SanityImage | null;
+  };
   components?: Array<{
     _type: string;
     _key: string;
     [key: string]: any;
   }>;
+  comments?: {
+    enabled?: boolean;
+    moderation?: {
+      requireApproval?: boolean;
+      maxLength?: number;
+      allowReplies?: boolean;
+    };
+  };
 };
+
+// Typ dla artykułów w sekcji LatestArticles
+export type ArticleForList = {
+  _id: string;
+  title: string;
+  subtitle?: string;
+  description?: string;
+  slug?: { current: string };
+  publishedAt?: string;
+  coverImage?: SanityImage | null;
+  coverMobileImage?: SanityImage | null;
+  categories?: Array<{
+    _id: string;
+    name: string;
+    slug: { current: string };
+    color: string;
+  }>;
+};
+
 
 
 export type SubmenuItem = {
@@ -135,60 +195,15 @@ export type HeaderData = {
   };
 };
 
-export async function getHeaderData(): Promise<HeaderData | null> {
-  const query = `*[_type == "header"][0] {
-    _id,
-    title,
-    logo {
-      asset->{
-        _id,
-        url
-      }
-    },
-    mainMenu[] {
-      label,
-      href,
-      isExternal,
-      hasDropdown,
-      dropdownItems[] {
-        label,
-        href,
-        isExternal,
-        hasSubmenu,
-        submenuItems[] {
-          label,
-          href,
-          isExternal
-        }
-      }
-    },
-    categoriesDropdown {
-      label,
-      sections[] {
-        key,
-        title,
-        emoji,
-        items[] {
-          label,
-          href,
-          isExternal
-        }
-      }
-    },
-    mobileMenu {
-      isEnabled,
-      label
-    }
-  }`;
-  
-  try {
-    const result = await fetchGroq<HeaderData>(query);
-    return result;
-  } catch (error) {
-    console.error('Error fetching header data:', error);
-    return null;
-  }
-}
+// Re-export functions from queries for backward compatibility
+export { 
+  getHeaderData,
+  getLatestArticles,
+  getSelectedArticles,
+  getArticlesComponentData,
+  getLatestPosts,
+  getSelectedPosts
+} from './queries/functions';
 
 // Funkcja do generowania URL obrazu z Sanity z obsługą crop i hotspot
 export function getImageUrl(
@@ -258,5 +273,6 @@ export function getImageUrl(
     return image.asset.url;
   }
 }
+
 
 

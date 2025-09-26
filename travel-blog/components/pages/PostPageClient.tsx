@@ -3,10 +3,13 @@
 import React, { useState, useEffect } from "react";
 import ComponentRenderer from "@/components/ui/ComponentRenderer";
 import TableOfContents from "@/components/ui/TableOfContents";
-import Link from "@/components/ui/Link";
-import { Post, getImageUrl } from "@/lib/sanity";
+import CategoryBadge from "@/components/ui/CategoryBadge";
+import CommentsSection from "@/components/ui/CommentsSection";
+import ResponsiveImage from "@/components/shared/ResponsiveImage";
+import { Post } from "@/lib/sanity";
 import { PostComponent } from "@/lib/component-types";
 import { useAnimation, ANIMATION_PRESETS } from "@/lib/useAnimation";
+import { useComments } from "@/lib/useComments";
 
 interface PostPageClientProps {
   post: Post;
@@ -29,6 +32,15 @@ export default function PostPageClient({
   const titleAnimation = useAnimation();
   const metaAnimation = useAnimation();
 
+  // Hook do zarządzania komentarzami
+  const {
+    comments,
+    loading: commentsLoading,
+    error: commentsError,
+    addComment,
+    replyToComment,
+  } = useComments(post._id);
+
   useEffect(() => {
     const checkIsMobile = () => {
       setIsMobile(window.innerWidth < 640);
@@ -47,22 +59,6 @@ export default function PostPageClient({
         day: "2-digit",
       }).format(new Date(post.publishedAt))
     : null;
-
-  // Mapowanie kolorów kategorii do klas Tailwind
-  const getCategoryColorClasses = (color: string) => {
-    const colorMap: Record<string, string> = {
-      blue: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
-      green:
-        "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
-      yellow:
-        "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300",
-      red: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300",
-      purple:
-        "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300",
-      gray: "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300",
-    };
-    return colorMap[color] || colorMap.gray;
-  };
 
   return (
     <main
@@ -87,55 +83,21 @@ export default function PostPageClient({
         (post.coverImage || post.coverMobileImage) && (
           <div
             ref={imageAnimation.containerRef}
-            className={`relative w-full h-[40vh] overflow-hidden ${ANIMATION_PRESETS.sectionHeader(
+            className={`relative w-full min-h-[300px] overflow-hidden ${ANIMATION_PRESETS.sectionHeader(
               imageAnimation.isLoaded && imageAnimation.isInView
             )}`}
           >
-            {/* Obrazek desktop */}
-            {post.coverImage && (
-              <img
-                src={
-                  getImageUrl(post.coverImage, {
-                    width: 1920,
-                    height: 800,
-                    quality: 85,
-                    format: "webp",
-                  }) || ""
-                }
-                alt={post.title}
-                className="hidden md:block w-full h-full object-cover"
-              />
-            )}
-            {/* Obrazek mobile */}
-            {post.coverMobileImage && (
-              <img
-                src={
-                  getImageUrl(post.coverMobileImage, {
-                    width: 768,
-                    height: 400,
-                    quality: 85,
-                    format: "webp",
-                  }) || ""
-                }
-                alt={post.title}
-                className="block md:hidden w-full h-full object-cover"
-              />
-            )}
-            {/* Fallback na desktop jeśli nie ma coverMobileImage */}
-            {post.coverImage && !post.coverMobileImage && (
-              <img
-                src={
-                  getImageUrl(post.coverImage, {
-                    width: 768,
-                    height: 400,
-                    quality: 85,
-                    format: "webp",
-                  }) || ""
-                }
-                alt={post.title}
-                className="block md:hidden w-full h-full object-cover"
-              />
-            )}
+            <ResponsiveImage
+              desktopImage={post.coverImage}
+              mobileImage={post.coverMobileImage}
+              fallback={{ src: "/demo-images/demo-asset.png", alt: post.title }}
+              fill
+              priority
+              objectFit="cover"
+              sizes="100vw"
+              className="w-full h-full"
+              onLoad={() => imageAnimation.setIsLoaded(true)}
+            />
           </div>
         )}
 
@@ -189,15 +151,7 @@ export default function PostPageClient({
                   {post.categories
                     .slice(0, isMobile ? 3 : post.categories.length)
                     .map((category) => (
-                      <Link
-                        key={category._id}
-                        href={`/kategoria/${category.slug.current}`}
-                        className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getCategoryColorClasses(
-                          category.color
-                        )} hover:opacity-80 transition-opacity duration-200`}
-                      >
-                        {category.name}
-                      </Link>
+                      <CategoryBadge key={category._id} category={category} />
                     ))}
                   {/* Pokazuj "+X więcej" jeśli są ukryte kategorie na mobile */}
                   {isMobile && post.categories.length > 3 && (
@@ -229,6 +183,17 @@ export default function PostPageClient({
           </p>
         </div>
       )}
+
+      {/* Sekcja komentarzy - tylko jeśli komentarze są włączone */}
+      <CommentsSection
+        postId={post._id}
+        comments={comments}
+        onAddComment={addComment}
+        onReply={replyToComment}
+        isModerated={post.comments?.moderation?.requireApproval !== false}
+        allowReplies={post.comments?.moderation?.allowReplies !== false}
+        maxLength={post.comments?.moderation?.maxLength || 1000}
+      />
     </main>
   );
 }

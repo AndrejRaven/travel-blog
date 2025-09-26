@@ -1,5 +1,5 @@
 import { HeaderData } from "@/lib/sanity";
-import { getHeaderData } from "@/lib/sanity";
+import { getHeaderData } from "@/lib/queries/functions";
 
 // Globalny cache dla danych header
 let headerDataCache: HeaderData | null = null;

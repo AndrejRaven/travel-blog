@@ -59,6 +59,7 @@ export const useAnimation = () => {
     isLoaded,
     isInView,
     containerRef,
+    setIsLoaded,
   };
 };
 

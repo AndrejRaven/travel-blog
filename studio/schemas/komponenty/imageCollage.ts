@@ -4,31 +4,19 @@ export default defineType({
   name: "imageCollage",
   title: "Kolaż Zdjęć",
   type: "object",
-  fieldsets: [
-    {
-      name: 'content',
-      title: 'Treść',
-      options: { collapsible: true, collapsed: false }
-    },
-    {
-      name: 'properties',
-      title: 'Właściwości',
-      options: { collapsible: true, collapsed: false }
-    }
-  ],
   fields: [
     {
       name: "container",
       title: "Kontener",
       type: "baseContainer",
       description: "Podstawowe ustawienia layoutu (szerokość, odstępy, wyrównanie)",
-      fieldset: 'properties'
+      group: 'properties'
     },
     {
       name: "images",
       title: "Zdjęcia",
       type: "array",
-      fieldset: 'content',
+      group: 'content',
       of: [
         {
           type: "image",
@@ -51,7 +39,7 @@ export default defineType({
       name: "layout",
       title: "Układ",
       type: "object",
-      fieldset: 'properties',
+      group: 'properties',
       fields: [
         {
           name: "textAlignment",
@@ -82,6 +70,17 @@ export default defineType({
           validation: (Rule) => Rule.required().error("Wybierz liczbę miniatur"),
         },
       ],
+    },
+  ],
+  groups: [
+    {
+      name: 'content',
+      title: 'Treść',
+      default: true,
+    },
+    {
+      name: 'properties',
+      title: 'Właściwości',
     },
   ],
   preview: {

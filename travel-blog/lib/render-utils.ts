@@ -60,9 +60,13 @@ export const useResponsiveImage = (config: ImageConfig = {}) => {
   }, []);
 
   const getOptimizedImageProps = (
-    image: SanityImage | { src: string; alt?: string },
+    image: SanityImage | { src: string; alt?: string } | null | undefined,
     fallback?: { src: string; alt: string }
   ) => {
+    if (!image) {
+      return fallback || { src: "/demo-images/demo-asset.png", alt: "Obraz" };
+    }
+    
     // Fallback image
     if ('src' in image && typeof image.src === 'string') {
       return {
@@ -101,8 +105,8 @@ export const useResponsiveImage = (config: ImageConfig = {}) => {
   };
 
   const getCurrentImage = (
-    desktopImage?: SanityImage | { src: string; alt?: string },
-    mobileImage?: SanityImage | { src: string; alt?: string },
+    desktopImage?: SanityImage | { src: string; alt?: string } | null,
+    mobileImage?: SanityImage | { src: string; alt?: string } | null,
     fallback?: { src: string; alt: string }
   ) => {
     // Jeśli nie jest jeszcze zhydrowany, zawsze używaj desktop image

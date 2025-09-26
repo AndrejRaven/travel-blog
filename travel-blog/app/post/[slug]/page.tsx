@@ -1,123 +1,117 @@
-import { fetchGroq, Post } from "@/lib/sanity";
+import { Post } from "@/lib/sanity";
+import { getPostBySlug, getAllPostSlugs } from "@/lib/queries/functions";
+import { getImageUrl } from "@/lib/sanity";
 import PostPageClient from "@/components/pages/PostPageClient";
+import { Metadata } from "next";
 
 type Params = { params: Promise<{ slug: string }> };
 
-async function getPost(slug: string) {
-  const query = `*[_type == "post" && slug.current == $slug][0]{
-    _id,
-    title,
-    subtitle,
-    slug,
-    publishedAt,
-    categories[]-> {
-      _id,
-      name,
-      slug,
-      color
+// Generuj metadata dla SEO
+export async function generateMetadata({ params }: Params): Promise<Metadata> {
+  const { slug } = await params;
+  const post = await getPostBySlug(slug);
+
+  if (!post) {
+    return {
+      title: "Nie znaleziono posta",
+      description: "Sprawdź adres URL lub wróć na stronę główną.",
+    };
+  }
+
+  // Podstawowe informacje
+  const siteName = "Nasz Blog";
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://nasz-blog.com";
+  const postUrl = `${siteUrl}/post/${slug}`;
+
+  // SEO Title - użyj seoTitle lub fallback do title
+  const seoTitle = post.seo?.seoTitle || post.title;
+  const fullTitle = seoTitle
+    ? `${seoTitle} | ${siteName}`
+    : `${post.title} | ${siteName}`;
+
+  // SEO Description - użyj seoDescription lub fallback do subtitle
+  const seoDescription =
+    post.seo?.seoDescription ||
+    post.subtitle ||
+    `Przeczytaj artykuł: ${post.title}`;
+
+  // Open Graph
+  const ogTitle = post.seo?.ogTitle || post.title;
+  const ogDescription =
+    post.seo?.ogDescription || post.subtitle || seoDescription;
+  const ogImage = post.seo?.ogImage || post.coverImage;
+  const ogImageUrl = ogImage
+    ? getImageUrl(ogImage, { width: 1200, height: 630, format: "webp" })
+    : null;
+
+  // Canonical URL
+  const canonicalUrl = post.seo?.canonicalUrl || postUrl;
+
+  // Keywords
+  const keywords =
+    post.seo?.seoKeywords || post.categories?.map((cat) => cat.name) || [];
+
+  // Robots
+  const robots = [];
+  if (post.seo?.noIndex) robots.push("noindex");
+  if (post.seo?.noFollow) robots.push("nofollow");
+  if (robots.length === 0) robots.push("index", "follow");
+
+  const metadata: Metadata = {
+    title: fullTitle,
+    description: seoDescription,
+    keywords: keywords.length > 0 ? keywords.join(", ") : undefined,
+    authors: [{ name: siteName }],
+    creator: siteName,
+    publisher: siteName,
+    robots: robots.join(", "),
+    alternates: {
+      canonical: canonicalUrl,
     },
-    coverImage {
-      asset-> {
-        _id,
-        url,
-        metadata {
-          dimensions {
-            width,
-            height
-          }
-        }
-      },
-      hotspot,
-      crop
+    openGraph: {
+      type: "article",
+      title: ogTitle,
+      description: ogDescription,
+      url: postUrl,
+      siteName,
+      locale: "pl_PL",
+      ...(ogImageUrl && {
+        images: [
+          {
+            url: ogImageUrl,
+            width: 1200,
+            height: 630,
+            alt: ogTitle,
+          },
+        ],
+      }),
+      ...(post.publishedAt && {
+        publishedTime: post.publishedAt,
+      }),
     },
-    coverMobileImage {
-      asset-> {
-        _id,
-        url,
-        metadata {
-          dimensions {
-            width,
-            height
-          }
-        }
-      },
-      hotspot,
-      crop
+    twitter: {
+      card: "summary_large_image",
+      title: ogTitle,
+      description: ogDescription,
+      ...(ogImageUrl && {
+        images: [ogImageUrl],
+      }),
     },
-    components[] {
-      _type,
-      _key,
-      ...,
-      container {
-        ...,
-        "contentTitle": @.contentTitle
-      },
-      content[] {
-        ...,
-        children[] {
-          ...,
-          marks[],
-          markDefs[] {
-            ...,
-            _type == "link" => {
-              ...,
-              "href": @.href,
-              "blank": @.blank
-            },
-            _type == "customStyle" => {
-              ...,
-              "style": @.style
-            }
-          }
-        }
-      },
-      image {
-        asset-> {
-          _id,
-          url,
-          metadata {
-            dimensions {
-              width,
-              height
-            }
-          }
-        },
-        hotspot,
-        crop
-      },
-      images[] {
-        asset-> {
-          _id,
-          url,
-          metadata {
-            dimensions {
-              width,
-              height
-            }
-          }
-        },
-        hotspot,
-        crop,
-        alt
-      },
-      buttons[] {
-        ...,
-        _type == "button" => {
-          ...,
-          "label": @.label,
-          "href": @.href,
-          "variant": @.variant,
-          "external": @.external
-        }
-      }
-    }
-  }`;
-  return fetchGroq<Post | null>(query, { slug });
+    other: {
+      "article:author": siteName,
+      "article:section": post.categories?.[0]?.name || "Blog",
+      ...(post.publishedAt && {
+        "article:published_time": post.publishedAt,
+      }),
+    },
+  };
+
+  return metadata;
 }
 
 export default async function PostPage({ params }: Params) {
   const { slug } = await params;
-  const post = await getPost(slug);
+  const post = await getPostBySlug(slug);
 
   if (!post) {
     return (
@@ -173,13 +167,50 @@ export default async function PostPage({ params }: Params) {
 
   const tableOfContentsItems = generateTableOfContents();
 
+  // Generuj JSON-LD dla lepszego SEO
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: post.title,
+    description:
+      post.seo?.seoDescription ||
+      post.subtitle ||
+      `Przeczytaj artykuł: ${post.title}`,
+    image: post.coverImage
+      ? getImageUrl(post.coverImage, { width: 1200, height: 630 })
+      : undefined,
+    author: {
+      "@type": "Organization",
+      name: "Nasz Blog",
+    },
+    publisher: {
+      "@type": "Organization",
+      name: "Nasz Blog",
+    },
+    datePublished: post.publishedAt,
+    dateModified: post.publishedAt,
+    mainEntityOfPage: {
+      "@type": "WebPage",
+      "@id": `${process.env.NEXT_PUBLIC_SITE_URL || "https://nasz-blog.com"}/post/${slug}`,
+    },
+    ...(post.categories &&
+      post.categories.length > 0 && {
+        articleSection: post.categories.map((cat) => cat.name).join(", "),
+      }),
+  };
+
   return (
-    <PostPageClient post={post} tableOfContentsItems={tableOfContentsItems} />
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <PostPageClient post={post} tableOfContentsItems={tableOfContentsItems} />
+    </>
   );
 }
 
 export async function generateStaticParams() {
-  const query = `*[_type == "post" && defined(slug.current)][].slug.current`;
-  const slugs = await fetchGroq<string[]>(query);
+  const slugs = await getAllPostSlugs();
   return slugs.map((slug) => ({ slug }));
 }

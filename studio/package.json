@@ -18,12 +18,13 @@
     "sanity"
   ],
   "dependencies": {
+    "@sanity/presentation": "^2.0.0",
     "@sanity/ui": "^3.1.0",
-    "@sanity/vision": "^4.9.0",
+    "@sanity/vision": "^4.10.1",
     "lucide-react": "^0.544.0",
     "react": "^19.1",
     "react-dom": "^19.1",
-    "sanity": "^4.9.0",
+    "sanity": "^4.10.1",
     "styled-components": "^6.1.18"
   },
   "devDependencies": {

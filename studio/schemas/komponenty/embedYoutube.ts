@@ -10,12 +10,14 @@ export default defineType({
       title: 'Kontener',
       type: 'baseContainer',
       validation: (Rule: any) => Rule.required(),
+      group: 'properties',
     },
     {
       name: 'title',
       title: 'Tytuł',
       type: 'string',
       description: 'Opcjonalny tytuł sekcji z filmem YouTube',
+      group: 'content',
     },
     {
       name: 'description',
@@ -23,6 +25,7 @@ export default defineType({
       type: 'text',
       rows: 3,
       description: 'Opcjonalny opis sekcji z filmem YouTube',
+      group: 'content',
     },
     {
       name: 'videoId',
@@ -30,6 +33,7 @@ export default defineType({
       type: 'string',
       description: 'ID filmu YouTube (np. dQw4w9WgXcQ) lub "latest" dla najnowszego filmu z kanału',
       validation: (Rule: any) => Rule.required().min(1).error('ID filmu YouTube jest wymagane'),
+      group: 'content',
     },
     {
       name: 'useLatestVideo',
@@ -37,6 +41,18 @@ export default defineType({
       type: 'boolean',
       description: 'Jeśli zaznaczone, automatycznie pobierze najnowszy film z kanału YouTube',
       initialValue: false,
+      group: 'content',
+    },
+  ],
+  groups: [
+    {
+      name: 'content',
+      title: 'Treść',
+      default: true,
+    },
+    {
+      name: 'properties',
+      title: 'Właściwości',
     },
   ],
   preview: {

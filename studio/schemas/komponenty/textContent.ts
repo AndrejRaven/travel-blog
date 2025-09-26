@@ -4,25 +4,13 @@ export default defineType({
   name: "textContent",
   title: "Treść tekstowa",
   type: "object",
-  fieldsets: [
-    {
-      name: 'content',
-      title: 'Treść',
-      options: { collapsible: true, collapsed: false }
-    },
-    {
-      name: 'properties',
-      title: 'Właściwości',
-      options: { collapsible: true, collapsed: false }
-    }
-  ],
   fields: [
     defineField({
       name: "container",
       title: "Kontener",
       type: "baseContainer",
       description: "Podstawowe ustawienia layoutu (szerokość, odstępy, wyrównanie)",
-      fieldset: 'properties'
+      group: 'properties'
     }),
     defineField({
       name: "content",
@@ -30,13 +18,13 @@ export default defineType({
       type: "richText",
       validation: (Rule: any) => Rule.required(),
       description: "Treść tekstowa z możliwością formatowania, linków i custom styles.",
-      fieldset: 'content'
+      group: 'content'
     }),
     defineField({
       name: "layout",
       title: "Układ",
       type: "object",
-      fieldset: 'properties',
+      group: 'properties',
       fields: [
         defineField({
           name: "textSize",
@@ -54,6 +42,17 @@ export default defineType({
         }),
       ],
     }),
+  ],
+  groups: [
+    {
+      name: 'content',
+      title: 'Treść',
+      default: true,
+    },
+    {
+      name: 'properties',
+      title: 'Właściwości',
+    },
   ],
   preview: {
     select: {

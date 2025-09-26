@@ -46,11 +46,12 @@ export default defineType({
           options: {
             list: [
               { title: "Brak", value: "none" },
+              { title: "MD", value: "md" },
               { title: "XL", value: "xl" },
               { title: "2XL", value: "2xl" },
             ],
           },
-          initialValue: "none",
+          initialValue: "md",
           validation: (Rule) => Rule.required().error("Margines góra jest wymagany"),
         }),
         defineField({
@@ -60,6 +61,7 @@ export default defineType({
           options: {
             list: [
               { title: "Brak", value: "none" },
+              { title: "MD", value: "md" },
               { title: "XL", value: "xl" },
               { title: "2XL", value: "2xl" },
             ],
@@ -78,6 +80,7 @@ export default defineType({
           { title: "Przezroczyste", value: "transparent" },
           { title: "Delikatny", value: "subtle" },
           { title: "Akcent", value: "accent" },
+          { title: "Warning", value: "warning" },
         ],
       },
       initialValue: "transparent",
@@ -90,9 +93,11 @@ export default defineType({
       options: {
         list: [
           { title: "Brak", value: "none" },
-          { title: "LG", value: "lg" },
-          { title: "XL", value: "xl" },
-          { title: "2XL", value: "2xl" },
+          { title: "Małe", value: "sm" },
+          { title: "Średnie", value: "md" },
+          { title: "Duże", value: "lg" },
+          { title: "Ekstra duże", value: "xl" },
+          { title: "Ekstra ekstra duże", value: "2xl" },
           { title: "Pełne", value: "full" },
         ],
       },

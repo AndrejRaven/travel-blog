@@ -1,121 +1,242 @@
 "use client";
 
 import React from "react";
-import Image from "next/image";
 import Link from "@/components/ui/Link";
+import CategoryBadge from "@/components/ui/CategoryBadge";
 import SectionHeader from "@/components/shared/SectionHeader";
-import { useProgressiveAnimation } from "@/lib/useAnimation";
-import { ANIMATION_PRESETS } from "@/lib/animations";
+import ResponsiveImage from "@/components/shared/ResponsiveImage";
+import {
+  getMaxWidthClass,
+  getPaddingClass,
+  getMarginClass,
+  getBackgroundColorClass,
+  getBorderRadiusClass,
+  getShadowClass,
+  getHeightClass,
+  generateSectionId,
+} from "@/lib/section-utils";
+import { useAnimation, getAnimationClass } from "@/lib/render-utils";
+import { ArticlesData } from "@/lib/component-types";
+import { ArticleForList } from "@/lib/sanity";
+import { getSelectedPosts, getLatestPosts } from "@/lib/queries/functions";
 
-interface Article {
-  id: number;
-  title: string;
-  excerpt: string;
-  category: string;
-  publishedAt: string;
-  image: string;
-  slug: string;
-}
+// Używamy typu z Sanity
+type Article = ArticleForList;
 
-interface LatestArticlesProps {
-  articles?: Article[];
-  showViewAll?: boolean;
-  viewAllHref?: string;
-  maxArticles?: number;
-}
+type Props = {
+  data: ArticlesData;
+};
 
-const defaultArticles: Article[] = [
-  {
-    id: 1,
-    title: "Tytuł przykładowego artykułu 1",
-    excerpt: "Krótki opis artykułu. Placeholder tekst do wypełnienia treścią.",
-    category: "Kategoria",
-    publishedAt: "2 dni temu",
-    image: "/window.svg",
-    slug: "przykladowy-artykul-1",
-  },
-  {
-    id: 2,
-    title: "Tytuł przykładowego artykułu 2",
-    excerpt: "Krótki opis artykułu. Placeholder tekst do wypełnienia treścią.",
-    category: "Kategoria",
-    publishedAt: "3 dni temu",
-    image: "/window.svg",
-    slug: "przykladowy-artykul-2",
-  },
-  {
-    id: 3,
-    title: "Tytuł przykładowego artykułu 3",
-    excerpt: "Krótki opis artykułu. Placeholder tekst do wypełnienia treścią.",
-    category: "Kategoria",
-    publishedAt: "5 dni temu",
-    image: "/window.svg",
-    slug: "przykladowy-artykul-3",
-  },
-];
+export default function Articles({ data }: Props) {
+  const {
+    container,
+    title,
+    showViewAll,
+    viewAllHref,
+    articlesType,
+    selectedArticles,
+    maxArticles,
+  } = data;
 
-export default function LatestArticles({
-  articles = defaultArticles,
-  showViewAll = true,
-  viewAllHref = "#",
-  maxArticles = 3,
-}: LatestArticlesProps) {
-  const displayedArticles = articles.slice(0, maxArticles);
-  const { isLoaded, isInView, containerRef, getItemClass } =
-    useProgressiveAnimation(displayedArticles.length);
+  // Zabezpieczenie na wypadek gdyby container był undefined
+  if (!container) {
+    console.error("Articles: Missing container data", { container });
+    return null;
+  }
+
+  const [displayedArticles, setDisplayedArticles] = React.useState<Article[]>(
+    []
+  );
+  const [isLoading, setIsLoading] = React.useState(true);
+
+  // Wyciągnij ID artykułów z referencji - używamy useMemo żeby uniknąć nieskończonej pętli
+  const selectedArticleIds = React.useMemo(() => {
+    return selectedArticles?.map((ref) => ref._ref) || [];
+  }, [selectedArticles]);
+
+  // Pobieranie artykułów z Sanity
+  React.useEffect(() => {
+    const fetchArticles = async () => {
+      setIsLoading(true);
+      try {
+        let articles: Article[] = [];
+
+        if (articlesType === "selected" && selectedArticleIds.length > 0) {
+          articles = await getSelectedPosts(selectedArticleIds);
+        } else if (articlesType === "latest") {
+          articles = await getLatestPosts(maxArticles);
+        }
+
+        setDisplayedArticles(articles.slice(0, maxArticles));
+      } catch (error) {
+        console.error("❌ Error fetching articles:", error);
+        setDisplayedArticles([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchArticles();
+  }, [articlesType, selectedArticleIds, maxArticles]);
+
+  const { isLoaded, isInView, containerRef } = useAnimation();
+
+  // Mapowanie kolorów kategorii do klas Tailwind
+
+  // Funkcja do formatowania daty
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return "Brak daty";
+
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - date.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 1) return "1 dzień temu";
+    if (diffDays < 7) return `${diffDays} dni temu`;
+    if (diffDays < 30) return `${Math.ceil(diffDays / 7)} tygodni temu`;
+    return date.toLocaleDateString("pl-PL");
+  };
+
+  // Generowanie ID sekcji
+  const sectionId = container.contentTitle
+    ? generateSectionId(container.contentTitle)
+    : undefined;
 
   return (
-    <section
+    <div
+      id={sectionId}
       ref={containerRef}
-      id="najnowsze"
-      className="mx-auto max-w-7xl px-6 my-8"
+      className={`w-full ${getMaxWidthClass(
+        container.maxWidth
+      )} ${getPaddingClass(container.padding)} ${getMarginClass(
+        container.margin
+      )} ${getBorderRadiusClass(container.borderRadius)} ${getShadowClass(
+        container.shadow
+      )} mx-auto`}
+      role="region"
+      aria-label={title}
     >
       <div
-        className={`flex items-end justify-between mb-6 ${ANIMATION_PRESETS.sectionHeader(
-          isLoaded && isInView
-        )}`}
+        className={`${getHeightClass(container.height)} ${getBackgroundColorClass(
+          container.backgroundColor
+        )} ${getBorderRadiusClass(container.borderRadius)}`}
       >
-        <SectionHeader title="Najnowsze artykuły" />
-        {showViewAll && (
-          <Link href={viewAllHref} variant="underline">
-            Zobacz wszystko
-          </Link>
-        )}
-      </div>
+        <div
+          className={`flex items-end justify-between mb-6 ${getAnimationClass({
+            type: "sectionHeader",
+            delay: "none",
+            isInView,
+            isLoaded,
+          })}`}
+        >
+          <SectionHeader title={title} />
+          {showViewAll && viewAllHref && (
+            <Link href={viewAllHref} variant="underline">
+              Zobacz wszystko
+            </Link>
+          )}
+        </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {displayedArticles.map((article, index) => (
-          <article
-            key={article.id}
-            className={`rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-hidden hover:shadow-lg transition-all duration-500 hover:scale-105 ${getItemClass(
-              index
-            )}`}
-          >
-            <div className="relative aspect-[16/10] bg-gray-50 dark:bg-gray-700">
-              <Image
-                src={article.image}
-                alt={article.title}
-                fill
-                className="object-contain p-6 dark:invert"
-              />
-            </div>
-            <div className="p-4 space-y-2">
-              <p className="text-xs font-sans text-gray-500 dark:text-gray-400">
-                {article.category} · {article.publishedAt}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {isLoading ? (
+            // Loading skeleton
+            Array.from({ length: maxArticles }).map((_, index) => (
+              <div
+                key={`loading-${index}`}
+                className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-hidden animate-pulse"
+              >
+                <div className="aspect-[16/10] bg-gray-300 dark:bg-gray-700" />
+                <div className="p-4 space-y-2">
+                  <div className="h-3 bg-gray-300 dark:bg-gray-700 rounded w-1/2" />
+                  <div className="h-4 bg-gray-300 dark:bg-gray-700 rounded w-3/4" />
+                  <div className="h-3 bg-gray-300 dark:bg-gray-700 rounded w-full" />
+                </div>
+              </div>
+            ))
+          ) : displayedArticles.length > 0 ? (
+            displayedArticles.map((article, index) => {
+              const delay = index < 3 ? "short" : index < 6 ? "medium" : "long";
+
+              return (
+                <article
+                  key={article._id}
+                  className={`rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-hidden hover:shadow-lg transition-all duration-500 hover:scale-105 ${getAnimationClass(
+                    {
+                      type: "text",
+                      delay,
+                      isInView,
+                      isLoaded,
+                    }
+                  )}`}
+                >
+                  <div className="relative aspect-[16/10] bg-gray-50 dark:bg-gray-700">
+                    <ResponsiveImage
+                      desktopImage={article.coverMobileImage}
+                      mobileImage={article.coverMobileImage}
+                      fallback={{
+                        src: "/demo-images/demo-asset.png",
+                        alt: article.title,
+                      }}
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                      quality={95}
+                    />
+
+                    {/* Badge kategorii na obrazie */}
+                    <div className="absolute top-3 left-3">
+                      {article.categories && article.categories.length > 0 ? (
+                        <div className="flex flex-wrap items-center gap-1">
+                          {article.categories.slice(0, 2).map((category) => (
+                            <CategoryBadge
+                              key={category._id}
+                              category={category}
+                            />
+                          ))}
+                          {(article.categories?.length || 0) > 2 && (
+                            <span className="text-xs font-medium text-white bg-black/50 px-2 py-1 rounded-full">
+                              +{(article.categories?.length || 0) - 2} więcej
+                            </span>
+                          )}
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
+                  <div className="p-4 space-y-2">
+                    <div className="flex items-center gap-2 text-xs font-sans text-gray-500 dark:text-gray-400">
+                      <span>{formatDate(article.publishedAt)}</span>
+                    </div>
+                    <h3 className="font-serif text-2xl font-medium text-gray-900 dark:text-gray-100">
+                      {article.title}
+                    </h3>
+                    {article.description && (
+                      <p className="text-sm font-sans text-gray-600 dark:text-gray-300 line-clamp-4 mb-4">
+                        {article.description}
+                      </p>
+                    )}
+                    {article.slug?.current && (
+                      <Link
+                        href={`/post/${article.slug.current}`}
+                        variant="arrow"
+                      >
+                        Czytaj dalej
+                      </Link>
+                    )}
+                  </div>
+                </article>
+              );
+            })
+          ) : (
+            // Brak artykułów
+            <div className="col-span-full text-center py-12">
+              <p className="text-gray-500 dark:text-gray-400 font-sans">
+                Brak artykułów do wyświetlenia
               </p>
-              <h3 className="font-sans font-medium text-gray-900 dark:text-gray-100">
-                {article.title}
-              </h3>
-              <p className="text-sm font-sans text-gray-600 dark:text-gray-300">
-                {article.excerpt}
-              </p>
-              <Link href={`/post/${article.slug}`} variant="arrow">
-                Czytaj dalej
-              </Link>
             </div>
-          </article>
-        ))}
+          )}
+        </div>
       </div>
-    </section>
+    </div>
   );
 }

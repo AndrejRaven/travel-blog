@@ -2,25 +2,13 @@ export default {
   name: 'heroBanner',
   type: 'object',
   title: 'Hero Banner',
-  fieldsets: [
-    {
-      name: 'content',
-      title: 'Treść',
-      options: { collapsible: true, collapsed: false }
-    },
-    {
-      name: 'properties',
-      title: 'Właściwości',
-      options: { collapsible: true, collapsed: true }
-    }
-  ],
   fields: [
     {
       name: 'container',
       title: 'Kontener',
       type: 'baseContainer',
       description: 'Podstawowe ustawienia layoutu (szerokość, odstępy, wyrównanie, wysokość)',
-      fieldset: 'properties',
+      group: 'properties',
     },
     {
       name: 'content',
@@ -28,7 +16,7 @@ export default {
       type: 'richText',
       validation: (Rule: any) => Rule.required(),
       description: 'Tytuł i opis w jednym polu. Użyj nagłówków (H1, H2, H3) dla tytułów i zwykłego tekstu dla opisu.',
-      fieldset: 'content'
+      group: 'content'
     },
     {
       name: 'image',
@@ -37,7 +25,7 @@ export default {
       options: { hotspot: true },
       validation: (Rule: any) => Rule.required(),
       description: 'Obraz wyświetlany na desktop i jako fallback na mobile',
-      fieldset: 'content'
+      group: 'content'
     },
     {
       name: 'mobileImage',
@@ -45,20 +33,20 @@ export default {
       type: 'image',
       options: { hotspot: true },
       description: 'Opcjonalny obraz specjalnie dla mobile. Jeśli nie zostanie wybrany, będzie używany obraz desktop.',
-      fieldset: 'content'
+      group: 'content'
     },
     {
       name: 'buttons',
       title: 'Przyciski',
       type: 'array',
       of: [{ type: 'button' }],
-      fieldset: 'content'
+      group: 'content'
     },
     {
       name: 'layout',
       title: 'Układ',
       type: 'object',
-      fieldset: 'properties',
+      group: 'properties',
       fields: [
         {
           name: 'textAlignment',
@@ -115,6 +103,17 @@ export default {
           initialValue: 'top',
         }
       ],
+    },
+  ],
+  groups: [
+    {
+      name: 'content',
+      title: 'Treść',
+      default: true,
+    },
+    {
+      name: 'properties',
+      title: 'Właściwości',
     },
   ],
   preview: {

@@ -4,7 +4,8 @@ import BackgroundHeroBanner from "@/components/sections/BackgroundHeroBanner";
 import TextContent from "@/components/sections/TextContent";
 import ImageCollage from "@/components/sections/ImageCollage";
 import EmbedYoutube from "@/components/sections/EmbedYoutube";
-import { PostComponent } from "@/lib/component-types";
+import Articles from "@/components/sections/LatestArticles";
+import { PostComponent, Articles as ArticlesType } from "@/lib/component-types";
 import { SanityImage } from "@/lib/sanity";
 
 // Helper do konwersji obrazu Sanity na format komponentu
@@ -22,7 +23,16 @@ const convertToComponentData = (comp: PostComponent) => {
 
   // Mapowanie pól z komponentu do baseData
   const fieldMap = {
-    container: comp.container,
+    container: comp.container || {
+      maxWidth: "6xl",
+      padding: "lg",
+      margin: { top: "lg", bottom: "lg" },
+      backgroundColor: "transparent",
+      borderRadius: "none",
+      shadow: "none",
+      height: "auto",
+      contentTitle: (comp as any).title || "Najnowsze artykuły",
+    },
     content: "content" in comp ? comp.content || [] : undefined,
     buttons: "buttons" in comp ? comp.buttons : undefined,
     image: "image" in comp ? convertImage(comp.image) : undefined,
@@ -75,6 +85,19 @@ const componentMap = {
         images:
           (comp as any).images?.map((img: any) => img as SanityImage) || [],
         layout: (comp as any).layout,
+      }}
+    />
+  ),
+  articles: (comp: PostComponent) => (
+    <Articles
+      data={{
+        ...convertToComponentData(comp),
+        title: (comp as ArticlesType).title || "Najnowsze artykuły",
+        showViewAll: (comp as ArticlesType).showViewAll || false,
+        viewAllHref: (comp as ArticlesType).viewAllHref,
+        articlesType: (comp as ArticlesType).articlesType || "latest",
+        selectedArticles: (comp as ArticlesType).selectedArticles || [],
+        maxArticles: (comp as ArticlesType).maxArticles || 3,
       }}
     />
   ),

@@ -16,6 +16,7 @@ type ButtonProps = {
   onClick?: () => void;
   disabled?: boolean;
   external?: boolean;
+  type?: "button" | "submit" | "reset";
 };
 
 const variantStyles = {
@@ -39,6 +40,7 @@ export default function Button({
   onClick,
   disabled = false,
   external = false,
+  type = "button",
 }: ButtonProps) {
   const baseStyles =
     "inline-flex items-center justify-center rounded-md px-8 py-2 text-sm font-sans font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed relative z-10";
@@ -67,7 +69,7 @@ export default function Button({
 
   return (
     <button
-      type="button"
+      type={type}
       className={combinedClassName}
       onClick={onClick}
       disabled={disabled}
