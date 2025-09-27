@@ -460,6 +460,355 @@ export const QUERIES = {
           "external": @.external
         }
       }
+    }`,
+
+    // Pobierz dane strony głównej z Sanity
+    HOMEPAGE_DATA: `*[_type == "homepage"][0] {
+      _id,
+      seo {
+        seoTitle,
+        seoDescription,
+        seoKeywords,
+        canonicalUrl,
+        noIndex,
+        noFollow,
+        ogTitle,
+        ogDescription,
+        ogImage {
+          asset-> {
+            _id,
+            url,
+            metadata {
+              dimensions {
+                width,
+                height
+              }
+            }
+          },
+          hotspot,
+          crop
+        }
+      },
+      heroComponents[] {
+        _type,
+        _key,
+        ...,
+        container {
+          ...,
+          "contentTitle": @.contentTitle
+        },
+        content[] {
+          ...,
+          children[] {
+            ...,
+            marks[],
+            markDefs[] {
+              ...,
+              _type == "link" => {
+                ...,
+                "href": @.href,
+                "blank": @.blank
+              },
+              _type == "customStyle" => {
+                ...,
+                "style": @.style
+              }
+            }
+          }
+        },
+        image {
+          asset-> {
+            _id,
+            url,
+            metadata {
+              dimensions {
+                width,
+                height
+              }
+            }
+          },
+          hotspot,
+          crop
+        },
+        images[] {
+          asset-> {
+            _id,
+            url,
+            metadata {
+              dimensions {
+                width,
+                height
+              }
+            }
+          },
+          hotspot,
+          crop,
+          alt
+        },
+        buttons[] {
+          ...,
+          _type == "button" => {
+            ...,
+            "label": @.label,
+            "href": @.href,
+            "variant": @.variant,
+            "external": @.external
+          }
+        }
+      },
+      mainComponents[] {
+        _type,
+        _key,
+        ...,
+        container {
+          ...,
+          "contentTitle": @.contentTitle
+        },
+        content[] {
+          ...,
+          children[] {
+            ...,
+            marks[],
+            markDefs[] {
+              ...,
+              _type == "link" => {
+                ...,
+                "href": @.href,
+                "blank": @.blank
+              },
+              _type == "customStyle" => {
+                ...,
+                "style": @.style
+              }
+            }
+          }
+        },
+        image {
+          asset-> {
+            _id,
+            url,
+            metadata {
+              dimensions {
+                width,
+                height
+              }
+            }
+          },
+          hotspot,
+          crop
+        },
+        images[] {
+          asset-> {
+            _id,
+            url,
+            metadata {
+              dimensions {
+                width,
+                height
+              }
+            }
+          },
+          hotspot,
+          crop,
+          alt
+        },
+        buttons[] {
+          ...,
+          _type == "button" => {
+            ...,
+            "label": @.label,
+            "href": @.href,
+            "variant": @.variant,
+            "external": @.external
+          }
+        },
+        // Specjalne pola dla nowych komponentów
+        title,
+        subtitle,
+        description,
+        channelName,
+        channelDescription,
+        channelHref,
+        buttonText,
+        buttonVariant,
+        contactHref,
+        contactText,
+        imageAlt,
+        instagramHandle,
+        instagramUrl,
+        placeholder,
+        successMessage,
+        errorMessage,
+        privacyText,
+        showBackground,
+        thankYouMessage,
+        supportOptions[] {
+          id,
+          name,
+          href,
+          icon {
+            asset-> {
+              _id,
+              url
+            }
+          },
+          iconSvg,
+          variant
+        },
+        categories[] {
+          id,
+          name,
+          description,
+          href,
+          icon {
+            asset-> {
+              _id,
+              url
+            }
+          },
+          articleCount
+        },
+        posts[] {
+          id,
+          imageUrl {
+            asset-> {
+              _id,
+              url,
+              metadata {
+                dimensions {
+                  width,
+                  height
+                }
+              }
+            },
+            hotspot,
+            crop
+          },
+          caption,
+          likes
+        }
+      },
+      asideComponents[] {
+        _type,
+        _key,
+        ...,
+        container {
+          ...,
+          "contentTitle": @.contentTitle
+        },
+        title,
+        subtitle,
+        description,
+        channelName,
+        channelDescription,
+        channelHref,
+        buttonText,
+        buttonVariant,
+        contactHref,
+        contactText,
+        image {
+          asset-> {
+            _id,
+            url,
+            metadata {
+              dimensions {
+                width,
+                height
+              }
+            }
+          },
+          hotspot,
+          crop
+        },
+        imageAlt,
+        thankYouMessage,
+        supportOptions[] {
+          id,
+          name,
+          href,
+          icon {
+            asset-> {
+              _id,
+              url
+            }
+          },
+          iconSvg,
+          variant
+        }
+      },
+      additionalComponents[] {
+        _type,
+        _key,
+        ...,
+        container {
+          ...,
+          "contentTitle": @.contentTitle
+        },
+        content[] {
+          ...,
+          children[] {
+            ...,
+            marks[],
+            markDefs[] {
+              ...,
+              _type == "link" => {
+                ...,
+                "href": @.href,
+                "blank": @.blank
+              },
+              _type == "customStyle" => {
+                ...,
+                "style": @.style
+              }
+            }
+          }
+        },
+        image {
+          asset-> {
+            _id,
+            url,
+            metadata {
+              dimensions {
+                width,
+                height
+              }
+            }
+          },
+          hotspot,
+          crop
+        },
+        images[] {
+          asset-> {
+            _id,
+            url,
+            metadata {
+              dimensions {
+                width,
+                height
+              }
+            }
+          },
+          hotspot,
+          crop,
+          alt
+        },
+        buttons[] {
+          ...,
+          _type == "button" => {
+            ...,
+            "label": @.label,
+            "href": @.href,
+            "variant": @.variant,
+            "external": @.external
+          }
+        }
+      },
+      pageSettings {
+        showBreadcrumbs,
+        showLastUpdated,
+        enableComments,
+        showSocialShare
+      }
     }`
   }
 } as const;

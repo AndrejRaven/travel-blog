@@ -10,6 +10,7 @@ import "swiper/css";
 import { Instagram, Heart } from "lucide-react";
 import "swiper/css/pagination";
 import AnimatedSection from "@/components/shared/AnimatedSection";
+import { useAnimation } from "@/lib/useAnimation";
 
 interface InstagramPost {
   id: string;
@@ -61,6 +62,7 @@ export default function InstagramSection() {
   const [activeSlide, setActiveSlide] = useState(0);
   const [realIndex, setRealIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const { isLoaded, isInView, containerRef } = useAnimation();
 
   return (
     <AnimatedSection
@@ -68,6 +70,9 @@ export default function InstagramSection() {
       aria-labelledby="instagram-heading"
       itemScope
       itemType="https://schema.org/ItemList"
+      isLoaded={isLoaded}
+      isInView={isInView}
+      containerRef={containerRef}
     >
       <div className="mx-auto max-w-7xl px-0 md:px-6">
         {/* HEADER */}

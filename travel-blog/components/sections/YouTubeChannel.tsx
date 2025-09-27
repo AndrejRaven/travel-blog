@@ -3,6 +3,7 @@
 import React from "react";
 import Button from "@/components/ui/Button";
 import AnimatedSection from "@/components/shared/AnimatedSection";
+import { useAnimation } from "@/lib/useAnimation";
 
 interface YouTubeChannelProps {
   title?: string;
@@ -21,8 +22,15 @@ export default function YouTubeChannel({
   buttonText = "Przejdź na kanał",
   buttonVariant = "youtube",
 }: YouTubeChannelProps) {
+  const { isLoaded, isInView, containerRef } = useAnimation();
+
   return (
-    <AnimatedSection className="rounded-xl border border-gray-200 dark:border-gray-700 p-6 bg-white dark:bg-gray-800">
+    <AnimatedSection
+      className="rounded-xl border border-gray-200 dark:border-gray-700 p-6 bg-white dark:bg-gray-800"
+      isLoaded={isLoaded}
+      isInView={isInView}
+      containerRef={containerRef}
+    >
       <h3 className="text-lg font-serif font-semibold text-gray-900 dark:text-gray-100 mb-4">
         {title}
       </h3>
@@ -32,6 +40,8 @@ export default function YouTubeChannel({
           animationType="text"
           animationDelay="short"
           className="flex items-center space-x-3"
+          isLoaded={isLoaded}
+          isInView={isInView}
         >
           <div className="w-10 h-10 bg-red-600 rounded-full flex items-center justify-center transition-transform duration-300 hover:scale-110">
             <svg
@@ -52,14 +62,24 @@ export default function YouTubeChannel({
           </div>
         </AnimatedSection>
 
-        <AnimatedSection animationType="text" animationDelay="medium">
+        <AnimatedSection
+          animationType="text"
+          animationDelay="medium"
+          isLoaded={isLoaded}
+          isInView={isInView}
+        >
           <p className="text-xs text-gray-600 dark:text-gray-300">
             Obejrzyj nasze najnowsze filmy z podróży i dowiedz się więcej o
             miejscach, które odwiedzamy.
           </p>
         </AnimatedSection>
 
-        <AnimatedSection animationType="button" animationDelay="longer">
+        <AnimatedSection
+          animationType="button"
+          animationDelay="longer"
+          isLoaded={isLoaded}
+          isInView={isInView}
+        >
           <Button
             href={channelHref}
             variant={buttonVariant}

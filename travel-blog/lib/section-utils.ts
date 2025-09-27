@@ -102,18 +102,18 @@ const TEXT_STYLE_MAP = {
 } as const;
 
 const HEIGHT_MAP = {
-  "10vh": "lg:h-[10vh]",
-  "20vh": "lg:h-[20vh]", 
-  "25vh": "lg:min-h-[25vh]",
-  "30vh": "lg:h-[30vh]",
-  "40vh": "lg:h-[40vh]",
-  "50vh": "lg:min-h-[50vh]",
-  "60vh": "lg:h-[60vh]",
-  "70vh": "lg:min-h-[75vh]",
-  "75vh": "lg:min-h-[75vh]",
-  "80vh": "lg:h-[80vh]",
-  "90vh": "lg:h-[90vh]",
-  "100vh": "lg:min-h-[100vh]",
+  "10vh": "h-[10vh]",
+  "20vh": "h-[20vh]", 
+  "25vh": "h-[25vh]",
+  "30vh": "h-[30vh]",
+  "40vh": "h-[40vh]",
+  "50vh": "h-[50vh]",
+  "60vh": "h-[60vh]",
+  "70vh": "h-[70vh]",
+  "75vh": "h-[75vh]",
+  "80vh": "h-[80vh]",
+  "90vh": "h-[90vh]",
+  "100vh": "h-[100vh]",
   auto: "h-auto",
 } as const;
 

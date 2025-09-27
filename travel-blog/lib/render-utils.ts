@@ -320,3 +320,18 @@ export const getNavigationClasses = (direction: "prev" | "next"): string => {
   
   return [baseClasses, positionClasses].join(" ");
 };
+
+/**
+ * Generuje klasy dla wyrównania wertykalnego tekstu
+ */
+export const getVerticalAlignmentClasses = (alignment: "top" | "center" | "bottom"): string => {
+  switch (alignment) {
+    case "top":
+      return "items-start";
+    case "bottom":
+      return "items-end";
+    case "center":
+    default:
+      return "items-center";
+  }
+};

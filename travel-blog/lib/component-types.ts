@@ -79,6 +79,7 @@ export type BackgroundHeroBanner = {
   _key: string;
   container: BaseContainer;
   content: RichTextBlock[];
+  mobileContent?: RichTextBlock[];
   image: {
     asset?: {
       _id: string;
@@ -94,6 +95,7 @@ export type BackgroundHeroBanner = {
   buttons?: Button[];
   layout: {
     textAlignment: 'left' | 'center' | 'right';
+    verticalAlignment: 'top' | 'center' | 'bottom';
     overlayOpacity: 10 | 20 | 30 | 40 | 50 | 60 | 70 | 80 | 90;
     textStyle: 'normal' | 'bold' | 'outline' | 'shadow';
     showScrollIndicator?: boolean;

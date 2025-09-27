@@ -26,6 +26,7 @@ import {
   getFlexLayoutClasses,
   getContainerMarginClasses,
   getImagePlaceholderClasses,
+  getVerticalAlignmentClasses,
 } from "@/lib/render-utils";
 
 type Props = {
@@ -34,6 +35,13 @@ type Props = {
 
 export default function BackgroundHeroBanner({ data }: Props) {
   const { container, layout } = data;
+
+  // Console.log do sprawdzenia danych layout
+  console.log("BackgroundHeroBanner - Layout data:", {
+    layout,
+    verticalAlignment: layout?.verticalAlignment,
+    textAlignment: layout?.textAlignment,
+  });
 
   // Zabezpieczenie na wypadek gdyby container był undefined
   if (!container || !layout) {
@@ -47,19 +55,24 @@ export default function BackgroundHeroBanner({ data }: Props) {
   const [imageLoaded, setImageLoaded] = useState(false);
   const { isLoaded, isInView, containerRef } = useAnimation();
   const { showScrollButton, hideScrollButton } = useScrollIndicator();
-  const { getCurrentImage, getOptimizedImageProps } = useResponsiveImage({
-    width: 1920,
-    mobileWidth: 1200,
-    quality: 95,
-    format: "webp",
-    fit: "fillmax",
-  });
+  const { isMobile, getCurrentImage, getOptimizedImageProps } =
+    useResponsiveImage({
+      width: 1920,
+      mobileWidth: 1200,
+      quality: 95,
+      format: "webp",
+      fit: "fillmax",
+    });
 
   const selectedImage = getCurrentImage(data.image, data.mobileImage, {
     src: "/demo-images/demo-asset.png",
     alt: "Tło hero",
   });
   const imageProps = getOptimizedImageProps(selectedImage);
+
+  // Wybierz treść w zależności od urządzenia
+  const selectedContent =
+    data.mobileContent && isMobile ? data.mobileContent : data.content;
 
   // Generuj ID na podstawie tytułu treści
   const sectionId = container.contentTitle
@@ -120,9 +133,9 @@ export default function BackgroundHeroBanner({ data }: Props) {
 
         {/* Zawartość tekstowa */}
         <div
-          className={`relative z-10 w-full h-full flex items-center px-6 lg:px-12 py-8 lg:py-16 ${getFlexLayoutClasses(
+          className={`relative z-10 w-full h-full flex px-6 lg:px-12 py-8 lg:py-16 ${getFlexLayoutClasses(
             layout.textAlignment
-          )}`}
+          )} ${getVerticalAlignmentClasses(layout.verticalAlignment)}`}
         >
           <div
             className={`max-w-4xl w-full space-y-6 ${getContainerMarginClasses(
@@ -135,7 +148,7 @@ export default function BackgroundHeroBanner({ data }: Props) {
             })}`}
           >
             <h2 id="section-heading" className="sr-only">
-              {data.content?.[0]?.children?.[0]?.text || "Sekcja treści"}
+              {selectedContent?.[0]?.children?.[0]?.text || "Sekcja treści"}
             </h2>
 
             <div
@@ -143,7 +156,7 @@ export default function BackgroundHeroBanner({ data }: Props) {
                 layout.textStyle
               )} ${getTextAlignmentClasses(layout.textAlignment)}`}
             >
-              <RichText blocks={data.content} textColor="white" />
+              <RichText blocks={selectedContent} textColor="white" />
             </div>
 
             {data.buttons && data.buttons.length > 0 && (

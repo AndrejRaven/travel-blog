@@ -4,6 +4,7 @@ import React from "react";
 import Image from "next/image";
 import Button from "@/components/ui/Button";
 import AnimatedSection from "@/components/shared/AnimatedSection";
+import { useAnimation } from "@/lib/useAnimation";
 
 interface AboutUsProps {
   title?: string;
@@ -28,10 +29,15 @@ export default function AboutUs({
   contactHref = "#kontakt",
   contactText = "Skontaktuj się z nami",
 }: AboutUsProps) {
+  const { isLoaded, isInView, containerRef } = useAnimation();
+
   return (
     <AnimatedSection
       id="o-nas"
       className="rounded-xl my-8 border border-gray-200 dark:border-gray-700 p-6 bg-white dark:bg-gray-800"
+      isLoaded={isLoaded}
+      isInView={isInView}
+      containerRef={containerRef}
     >
       <h2 className="text-xl font-serif font-semibold text-gray-900 dark:text-gray-100 mb-4">
         {title}
@@ -42,6 +48,8 @@ export default function AboutUs({
         animationType="image"
         animationDelay="medium"
         className="relative w-full aspect-square overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 mb-4"
+        isLoaded={isLoaded}
+        isInView={isInView}
       >
         <Image
           src={image}
@@ -56,6 +64,8 @@ export default function AboutUs({
         animationType="text"
         animationDelay="long"
         className="space-y-3 mb-4"
+        isLoaded={isLoaded}
+        isInView={isInView}
       >
         {description.map((paragraph, index) => (
           <p
@@ -70,7 +80,12 @@ export default function AboutUs({
         ))}
       </AnimatedSection>
 
-      <AnimatedSection animationType="button" animationDelay="longest">
+      <AnimatedSection
+        animationType="button"
+        animationDelay="longest"
+        isLoaded={isLoaded}
+        isInView={isInView}
+      >
         <Button
           href={contactHref}
           variant="outline"

@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useRef } from "react";
-import { useAnimation } from "@/lib/useAnimation";
 import { ANIMATION_PRESETS } from "@/lib/animations";
 
 interface AnimatedSectionProps {
@@ -14,6 +13,10 @@ interface AnimatedSectionProps {
   "aria-labelledby"?: string;
   itemScope?: boolean;
   itemType?: string;
+  // Nowe props dla animacji
+  isLoaded?: boolean;
+  isInView?: boolean;
+  containerRef?: React.RefObject<HTMLDivElement | null>;
 }
 
 /**
@@ -30,8 +33,13 @@ export default function AnimatedSection({
   "aria-labelledby": ariaLabelledBy,
   itemScope,
   itemType,
+  // Nowe props z wartościami domyślnymi
+  isLoaded = true,
+  isInView = true,
+  containerRef,
 }: AnimatedSectionProps) {
-  const { isLoaded, isInView, containerRef } = useAnimation();
+  const internalRef = useRef<HTMLDivElement>(null);
+  const ref = containerRef || internalRef;
 
   const getAnimationClass = () => {
     switch (animationType) {
@@ -50,7 +58,7 @@ export default function AnimatedSection({
 
   return (
     <div
-      ref={containerRef}
+      ref={ref}
       id={id}
       className={`${getAnimationClass()} ${className}`}
       role={role}

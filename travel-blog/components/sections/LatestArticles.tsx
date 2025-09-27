@@ -123,18 +123,22 @@ export default function Articles({ data }: Props) {
         )} ${getBorderRadiusClass(container.borderRadius)}`}
       >
         <div
-          className={`flex items-end justify-between mb-6 ${getAnimationClass({
-            type: "sectionHeader",
-            delay: "none",
-            isInView,
-            isLoaded,
-          })}`}
+          className={`flex flex-col md:flex-row md:items-end justify-between mb-6 ${getAnimationClass(
+            {
+              type: "sectionHeader",
+              delay: "none",
+              isInView,
+              isLoaded,
+            }
+          )}`}
         >
           <SectionHeader title={title} />
           {showViewAll && viewAllHref && (
-            <Link href={viewAllHref} variant="underline">
-              Zobacz wszystko
-            </Link>
+            <div className="flex justify-end mt-2 md:mt-0">
+              <Link href={viewAllHref} variant="underline">
+                Zobacz wszystko
+              </Link>
+            </div>
           )}
         </div>
 

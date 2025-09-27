@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { ANIMATION_PRESETS, createProgressiveDelayStyle } from "./animations";
 
 // Re-export ANIMATION_PRESETS for easier imports
@@ -13,26 +13,34 @@ export { ANIMATION_PRESETS };
  * - Intersection Observer dla uruchamiania animacji
  * - Spójne stany isLoaded i isInView
  * - Automatyczne czyszczenie observera
+ * - Lepsze zarządzanie wieloma elementami
  */
 export const useAnimation = () => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [isInView, setIsInView] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const observerRef = useRef<IntersectionObserver | null>(null);
 
   useEffect(() => {
+    // Sprawdź czy element istnieje
+    if (!containerRef.current) return;
+
     // Responsywne ustawienia dla różnych urządzeń
     const isMobile = window.innerWidth < 768;
     const rootMargin = isMobile ? "0px 0px -10px 0px" : "0px 0px -20px 0px";
     const threshold = isMobile ? 0.05 : 0.1; // Niższy próg dla mobilnych
 
-    const observer = new IntersectionObserver(
+    // Utwórz nowy observer
+    observerRef.current = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
-          if (entry.isIntersecting) {
+          if (entry.isIntersecting && !isInView) {
+            console.log("🎬 Element entered viewport:", entry.target);
             setIsInView(true);
             // Mniejsze opóźnienie dla mobilnych
             const delay = isMobile ? 100 : 200;
             setTimeout(() => {
+              console.log("🎬 Setting isLoaded to true");
               setIsLoaded(true);
             }, delay);
           }
@@ -44,16 +52,16 @@ export const useAnimation = () => {
       }
     );
 
-    if (containerRef.current) {
-      observer.observe(containerRef.current);
-    }
+    // Obserwuj element
+    observerRef.current.observe(containerRef.current);
 
     return () => {
-      if (containerRef.current) {
-        observer.unobserve(containerRef.current);
+      if (observerRef.current && containerRef.current) {
+        observerRef.current.unobserve(containerRef.current);
+        observerRef.current.disconnect();
       }
     };
-  }, []);
+  }, [isInView]); // Dodaj isInView jako dependency
 
   return {
     isLoaded,

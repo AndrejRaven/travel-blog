@@ -12,10 +12,17 @@ export default {
     },
     {
       name: 'content',
-      title: 'Treść',
+      title: 'Treść (desktop)',
       type: 'richText',
       validation: (Rule: any) => Rule.required(),
-      description: 'Tytuł i opis w jednym polu. Użyj nagłówków (H1, H2, H3) dla tytułów i zwykłego tekstu dla opisu.',
+      description: 'Tytuł i opis wyświetlane na desktop. Użyj nagłówków (H1, H2, H3) dla tytułów i zwykłego tekstu dla opisu.',
+      group: 'content'
+    },
+    {
+      name: 'mobileContent',
+      title: 'Treść (mobile)',
+      type: 'richText',
+      description: 'Opcjonalna treść specjalnie dla mobile. Jeśli nie zostanie wybrana, będzie używana treść desktop.',
       group: 'content'
     },
     {
@@ -50,7 +57,7 @@ export default {
       fields: [
         {
           name: 'textAlignment',
-          title: 'Wyrównanie tekstu',
+          title: 'Wyrównanie tekstu (poziome)',
           type: 'string',
           options: {
             list: [
@@ -61,6 +68,20 @@ export default {
             layout: 'radio',
           },
           initialValue: 'left',
+        },
+        {
+          name: 'verticalAlignment',
+          title: 'Wyrównanie tekstu (wertykalne)',
+          type: 'string',
+          options: {
+            list: [
+              { title: 'Góra', value: 'top' },
+              { title: 'Środek', value: 'center' },
+              { title: 'Dół', value: 'bottom' },
+            ],
+            layout: 'radio',
+          },
+          initialValue: 'center',
         },
         {
           name: 'textStyle',

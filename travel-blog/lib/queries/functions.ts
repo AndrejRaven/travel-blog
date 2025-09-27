@@ -149,3 +149,15 @@ export async function getHomePageComponents(): Promise<any[]> {
     return [];
   }
 }
+
+/**
+ * Pobierz dane strony głównej z Sanity
+ */
+export async function getHomepageData(): Promise<any | null> {
+  try {
+    return await fetchGroq<any>(QUERIES.HOME.HOMEPAGE_DATA);
+  } catch (error) {
+    console.error('❌ Error fetching homepage data:', error);
+    return null;
+  }
+}
