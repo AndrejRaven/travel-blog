@@ -11,7 +11,7 @@ interface Category {
   name: string;
   description: string;
   href: string;
-  icon: string;
+  icon: string | { asset?: { url?: string } };
   articleCount?: number;
 }
 
@@ -103,13 +103,21 @@ export default function CategoriesSection({
                   </p>
                 )}
               </div>
-              <Image
-                src={category.icon}
-                alt="Ikona"
-                width={28}
-                height={28}
-                className="opacity-70 group-hover:opacity-100 dark:invert transition-opacity duration-300"
-              />
+              {(() => {
+                const iconUrl =
+                  typeof category.icon === "string"
+                    ? category.icon
+                    : category.icon.asset?.url;
+                return iconUrl ? (
+                  <Image
+                    src={iconUrl}
+                    alt="Ikona"
+                    width={28}
+                    height={28}
+                    className="opacity-70 group-hover:opacity-100 dark:invert transition-opacity duration-300"
+                  />
+                ) : null;
+              })()}
             </div>
           </Link>
         ))}

@@ -35,12 +35,10 @@ export const useAnimation = () => {
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting && !isInView) {
-            console.log("🎬 Element entered viewport:", entry.target);
             setIsInView(true);
             // Mniejsze opóźnienie dla mobilnych
             const delay = isMobile ? 100 : 200;
             setTimeout(() => {
-              console.log("🎬 Setting isLoaded to true");
               setIsLoaded(true);
             }, delay);
           }

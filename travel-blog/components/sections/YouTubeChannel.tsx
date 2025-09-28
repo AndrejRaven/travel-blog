@@ -12,6 +12,10 @@ interface YouTubeChannelProps {
   channelHref?: string;
   buttonText?: string;
   buttonVariant?: "primary" | "secondary" | "outline" | "youtube";
+  // Props dla animacji z głównej strony
+  isLoaded?: boolean;
+  isInView?: boolean;
+  containerRef?: React.RefObject<HTMLDivElement | null>;
 }
 
 export default function YouTubeChannel({
@@ -21,8 +25,23 @@ export default function YouTubeChannel({
   channelHref = "https://www.youtube.com/channel/UCUUm2vkbs-W7KulrJZIpNDA",
   buttonText = "Przejdź na kanał",
   buttonVariant = "youtube",
+  // Props dla animacji z głównej strony
+  isLoaded: externalIsLoaded,
+  isInView: externalIsInView,
+  containerRef: externalContainerRef,
 }: YouTubeChannelProps) {
-  const { isLoaded, isInView, containerRef } = useAnimation();
+  // Użyj zewnętrznych props jeśli są dostępne, w przeciwnym razie użyj własnego hook
+  const {
+    isLoaded: internalIsLoaded,
+    isInView: internalIsInView,
+    containerRef: internalContainerRef,
+  } = useAnimation();
+
+  const isLoaded =
+    externalIsLoaded !== undefined ? externalIsLoaded : internalIsLoaded;
+  const isInView =
+    externalIsInView !== undefined ? externalIsInView : internalIsInView;
+  const containerRef = externalContainerRef || internalContainerRef;
 
   return (
     <AnimatedSection

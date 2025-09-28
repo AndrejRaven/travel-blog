@@ -66,6 +66,9 @@ export const ANIMATION_DELAY_CLASSES = {
 
 // Hover efekty
 export const HOVER_EFFECTS = {
+  // Brak efektu hover
+  none: "",
+  
   // Podstawowy hover (scale + shadow)
   basic: "hover:scale-105 hover:shadow-lg",
   
@@ -106,8 +109,8 @@ export const createConditionalAnimationClass = (
   const delayClass = ANIMATION_DELAY_CLASSES[delay] || "";
   const hoverClass = HOVER_EFFECTS[hoverEffect] || "";
   const stateClass = isVisible ? 
-    (state.includes("visible") ? ANIMATION_STATES[state] : ANIMATION_STATES[state.replace("initial", "visible")]) :
-    (state.includes("initial") ? ANIMATION_STATES[state] : ANIMATION_STATES[state.replace("visible", "initial")]);
+    (state.includes("visible") ? ANIMATION_STATES[state as keyof typeof ANIMATION_STATES] : ANIMATION_STATES[state.replace("initial", "visible") as keyof typeof ANIMATION_STATES]) :
+    (state.includes("initial") ? ANIMATION_STATES[state as keyof typeof ANIMATION_STATES] : ANIMATION_STATES[state.replace("visible", "initial") as keyof typeof ANIMATION_STATES]);
   
   return `${baseClass} ${stateClass} ${delayClass} ${hoverClass}`.trim();
 };

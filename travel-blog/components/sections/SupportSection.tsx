@@ -10,7 +10,7 @@ interface SupportOption {
   id: string;
   name: string;
   href: string;
-  icon?: string;
+  icon?: string | { asset?: { url?: string } };
   iconSvg?: string;
   variant?: "primary" | "secondary" | "outline" | "youtube";
 }
@@ -20,6 +20,10 @@ interface SupportSectionProps {
   description?: string;
   supportOptions?: SupportOption[];
   thankYouMessage?: string;
+  // Props dla animacji z głównej strony
+  isLoaded?: boolean;
+  isInView?: boolean;
+  containerRef?: React.RefObject<HTMLDivElement | null>;
 }
 
 const defaultSupportOptions: SupportOption[] = [
@@ -54,9 +58,36 @@ export default function SupportSection({
   description = "Jeśli podoba Ci się nasza treść, możesz nas wesprzeć. Każda złotówka pomaga nam w tworzeniu lepszych artykułów i filmów.",
   supportOptions = defaultSupportOptions,
   thankYouMessage = "Dziękujemy za wsparcie! ❤️",
+  // Props dla animacji z głównej strony
+  isLoaded: externalIsLoaded,
+  isInView: externalIsInView,
+  containerRef: externalContainerRef,
 }: SupportSectionProps) {
-  const { isLoaded, isInView, containerRef, getItemClass } =
-    useProgressiveAnimation(supportOptions.length);
+  // Użyj zewnętrznych props jeśli są dostępne, w przeciwnym razie użyj własnego hook
+  const {
+    isLoaded: internalIsLoaded,
+    isInView: internalIsInView,
+    containerRef: internalContainerRef,
+    getItemClass: internalGetItemClass,
+  } = useProgressiveAnimation(supportOptions.length);
+
+  const isLoaded =
+    externalIsLoaded !== undefined ? externalIsLoaded : internalIsLoaded;
+  const isInView =
+    externalIsInView !== undefined ? externalIsInView : internalIsInView;
+  const containerRef = externalContainerRef || internalContainerRef;
+
+  // Utwórz własną funkcję getItemClass używającą globalnych stanów
+  const getItemClass = (
+    index: number,
+    preset: keyof typeof ANIMATION_PRESETS = "listItem"
+  ) => {
+    if (preset === "listItem") {
+      return ANIMATION_PRESETS[preset](isLoaded && isInView, index);
+    }
+    // Dla innych presetów używamy domyślnego opóźnienia
+    return ANIMATION_PRESETS[preset](isLoaded && isInView, "medium");
+  };
 
   return (
     <section
@@ -90,15 +121,23 @@ export default function SupportSection({
               className="w-full text-xs px-3 py-2 flex items-center justify-center space-x-2 transition-all duration-300 hover:scale-105 hover:shadow-lg"
             >
               {option.icon ? (
-                <Image
-                  src={option.icon}
-                  alt={option.name}
-                  width={16}
-                  height={16}
-                  className={`w-4 h-4 ${
-                    option.id === "revolut" ? "dark:invert" : ""
-                  }`}
-                />
+                (() => {
+                  const iconUrl =
+                    typeof option.icon === "string"
+                      ? option.icon
+                      : option.icon.asset?.url;
+                  return iconUrl ? (
+                    <Image
+                      src={iconUrl}
+                      alt={option.name}
+                      width={16}
+                      height={16}
+                      className={`w-4 h-4 ${
+                        option.id === "revolut" ? "dark:invert" : ""
+                      }`}
+                    />
+                  ) : null;
+                })()
               ) : option.iconSvg ? (
                 <div dangerouslySetInnerHTML={{ __html: option.iconSvg }} />
               ) : null}

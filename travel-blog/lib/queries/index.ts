@@ -111,6 +111,20 @@ export const QUERIES = {
           hotspot,
           crop
         },
+        mobileImage {
+          asset-> {
+            _id,
+            url,
+            metadata {
+              dimensions {
+                width,
+                height
+              }
+            }
+          },
+          hotspot,
+          crop
+        },
         images[] {
           asset-> {
             _id,
@@ -134,6 +148,26 @@ export const QUERIES = {
             "href": @.href,
             "variant": @.variant,
             "external": @.external
+          }
+        },
+        // Specjalne pola dla backgroundHeroBanner
+        mobileContent[] {
+          ...,
+          children[] {
+            ...,
+            marks[],
+            markDefs[] {
+              ...,
+              _type == "link" => {
+                ...,
+                "href": @.href,
+                "blank": @.blank
+              },
+              _type == "customStyle" => {
+                ...,
+                "style": @.style
+              }
+            }
           }
         }
       }
@@ -459,6 +493,26 @@ export const QUERIES = {
           "variant": @.variant,
           "external": @.external
         }
+      },
+      // Specjalne pola dla backgroundHeroBanner
+      mobileContent[] {
+        ...,
+        children[] {
+          ...,
+          marks[],
+          markDefs[] {
+            ...,
+            _type == "link" => {
+              ...,
+              "href": @.href,
+              "blank": @.blank
+            },
+            _type == "customStyle" => {
+              ...,
+              "style": @.style
+            }
+          }
+        }
       }
     }`,
 
@@ -530,6 +584,20 @@ export const QUERIES = {
           hotspot,
           crop
         },
+        mobileImage {
+          asset-> {
+            _id,
+            url,
+            metadata {
+              dimensions {
+                width,
+                height
+              }
+            }
+          },
+          hotspot,
+          crop
+        },
         images[] {
           asset-> {
             _id,
@@ -553,6 +621,26 @@ export const QUERIES = {
             "href": @.href,
             "variant": @.variant,
             "external": @.external
+          }
+        },
+        // Specjalne pola dla backgroundHeroBanner
+        mobileContent[] {
+          ...,
+          children[] {
+            ...,
+            marks[],
+            markDefs[] {
+              ...,
+              _type == "link" => {
+                ...,
+                "href": @.href,
+                "blank": @.blank
+              },
+              _type == "customStyle" => {
+                ...,
+                "style": @.style
+              }
+            }
           }
         }
       },
@@ -597,6 +685,20 @@ export const QUERIES = {
           hotspot,
           crop
         },
+        mobileImage {
+          asset-> {
+            _id,
+            url,
+            metadata {
+              dimensions {
+                width,
+                height
+              }
+            }
+          },
+          hotspot,
+          crop
+        },
         images[] {
           asset-> {
             _id,
@@ -620,6 +722,26 @@ export const QUERIES = {
             "href": @.href,
             "variant": @.variant,
             "external": @.external
+          }
+        },
+        // Specjalne pola dla backgroundHeroBanner
+        mobileContent[] {
+          ...,
+          children[] {
+            ...,
+            marks[],
+            markDefs[] {
+              ...,
+              _type == "link" => {
+                ...,
+                "href": @.href,
+                "blank": @.blank
+              },
+              _type == "customStyle" => {
+                ...,
+                "style": @.style
+              }
+            }
           }
         },
         // Specjalne pola dla nowych komponentów
@@ -720,6 +842,20 @@ export const QUERIES = {
           hotspot,
           crop
         },
+        mobileImage {
+          asset-> {
+            _id,
+            url,
+            metadata {
+              dimensions {
+                width,
+                height
+              }
+            }
+          },
+          hotspot,
+          crop
+        },
         imageAlt,
         thankYouMessage,
         supportOptions[] {
@@ -777,6 +913,20 @@ export const QUERIES = {
           hotspot,
           crop
         },
+        mobileImage {
+          asset-> {
+            _id,
+            url,
+            metadata {
+              dimensions {
+                width,
+                height
+              }
+            }
+          },
+          hotspot,
+          crop
+        },
         images[] {
           asset-> {
             _id,
@@ -800,6 +950,26 @@ export const QUERIES = {
             "href": @.href,
             "variant": @.variant,
             "external": @.external
+          }
+        },
+        // Specjalne pola dla backgroundHeroBanner
+        mobileContent[] {
+          ...,
+          children[] {
+            ...,
+            marks[],
+            markDefs[] {
+              ...,
+              _type == "link" => {
+                ...,
+                "href": @.href,
+                "blank": @.blank
+              },
+              _type == "customStyle" => {
+                ...,
+                "style": @.style
+              }
+            }
           }
         }
       },

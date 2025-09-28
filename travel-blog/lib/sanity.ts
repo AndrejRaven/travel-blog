@@ -2,6 +2,9 @@ import imageUrlBuilder from '@sanity/image-url';
 import { createClient } from 'next-sanity';
 import { ArticlesData } from './component-types';
 
+// Re-export ArticlesData for use in other files
+export type { ArticlesData } from './component-types';
+
 export const projectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID || "k5fsny25";
 export const dataset = process.env.NEXT_PUBLIC_SANITY_DATASET || "production";
 export const apiVersion = process.env.NEXT_PUBLIC_SANITY_API_VERSION || "2023-10-10";
@@ -164,6 +167,14 @@ export type MenuItem = {
   isExternal?: boolean;
   hasDropdown?: boolean;
   dropdownItems?: DropdownItem[];
+};
+
+export type Category = {
+  _id: string;
+  name: string;
+  slug: { current: string };
+  color: string;
+  description?: string;
 };
 
 export type HeaderData = {

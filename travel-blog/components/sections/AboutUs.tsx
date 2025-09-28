@@ -13,6 +13,10 @@ interface AboutUsProps {
   description?: string[];
   contactHref?: string;
   contactText?: string;
+  // Props dla animacji z głównej strony
+  isLoaded?: boolean;
+  isInView?: boolean;
+  containerRef?: React.RefObject<HTMLDivElement | null>;
 }
 
 const defaultDescription = [
@@ -28,8 +32,23 @@ export default function AboutUs({
   description = defaultDescription,
   contactHref = "#kontakt",
   contactText = "Skontaktuj się z nami",
+  // Props dla animacji z głównej strony
+  isLoaded: externalIsLoaded,
+  isInView: externalIsInView,
+  containerRef: externalContainerRef,
 }: AboutUsProps) {
-  const { isLoaded, isInView, containerRef } = useAnimation();
+  // Użyj zewnętrznych props jeśli są dostępne, w przeciwnym razie użyj własnego hook
+  const {
+    isLoaded: internalIsLoaded,
+    isInView: internalIsInView,
+    containerRef: internalContainerRef,
+  } = useAnimation();
+
+  const isLoaded =
+    externalIsLoaded !== undefined ? externalIsLoaded : internalIsLoaded;
+  const isInView =
+    externalIsInView !== undefined ? externalIsInView : internalIsInView;
+  const containerRef = externalContainerRef || internalContainerRef;
 
   return (
     <AnimatedSection

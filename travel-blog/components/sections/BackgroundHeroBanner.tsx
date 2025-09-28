@@ -36,13 +36,6 @@ type Props = {
 export default function BackgroundHeroBanner({ data }: Props) {
   const { container, layout } = data;
 
-  // Console.log do sprawdzenia danych layout
-  console.log("BackgroundHeroBanner - Layout data:", {
-    layout,
-    verticalAlignment: layout?.verticalAlignment,
-    textAlignment: layout?.textAlignment,
-  });
-
   // Zabezpieczenie na wypadek gdyby container był undefined
   if (!container || !layout) {
     console.error("BackgroundHeroBanner: Missing container or layout data", {
@@ -123,11 +116,13 @@ export default function BackgroundHeroBanner({ data }: Props) {
           )}
         </div>
 
-        {/* Nakładka przyciemniająca */}
+        {/* Nakładka przyciemniająca - gradient */}
         <div
-          className="absolute inset-0 w-full h-full bg-black"
+          className="absolute inset-0 w-full h-full"
           style={{
-            opacity: Math.min((layout.overlayOpacity || 30) / 100, 0.6),
+            background: `linear-gradient(${
+              isMobile ? "to bottom" : "to right"
+            }, rgba(0, 0, 0, ${Math.min((layout.overlayOpacity || 30) / 100, 0.8)}), rgba(0, 0, 0, 0))`,
           }}
         />
 

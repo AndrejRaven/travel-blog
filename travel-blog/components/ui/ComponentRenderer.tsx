@@ -34,11 +34,13 @@ const convertToComponentData = (comp: PostComponent) => {
       contentTitle: (comp as any).title || "Najnowsze artykuły",
     },
     content: "content" in comp ? comp.content || [] : undefined,
+    mobileContent:
+      "mobileContent" in comp ? (comp as any).mobileContent : undefined,
     buttons: "buttons" in comp ? comp.buttons : undefined,
     image: "image" in comp ? convertImage(comp.image) : undefined,
     mobileImage:
       "mobileImage" in comp && comp.mobileImage?.asset?.url
-        ? (comp.mobileImage as SanityImage)
+        ? convertImage(comp.mobileImage)
         : undefined,
   };
 

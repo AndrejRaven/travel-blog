@@ -91,6 +91,13 @@ export default function Home() {
   const renderAsideComponent = (component: any, index: number) => {
     const { _type, ...props } = component;
 
+    // Przekaż globalne stany animacji do komponentów aside
+    const animationProps = {
+      isLoaded,
+      isInView,
+      containerRef,
+    };
+
     switch (_type) {
       case "aboutUs":
         return (
@@ -102,6 +109,7 @@ export default function Home() {
             description={props.description}
             contactHref={props.contactHref}
             contactText={props.contactText}
+            {...animationProps}
           />
         );
       case "youtubeChannel":
@@ -114,6 +122,7 @@ export default function Home() {
             channelHref={props.channelHref}
             buttonText={props.buttonText}
             buttonVariant={props.buttonVariant}
+            {...animationProps}
           />
         );
       case "supportSection":
@@ -124,6 +133,7 @@ export default function Home() {
             description={props.description}
             supportOptions={props.supportOptions}
             thankYouMessage={props.thankYouMessage}
+            {...animationProps}
           />
         );
       default:
