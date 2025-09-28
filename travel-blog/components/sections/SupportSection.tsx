@@ -3,8 +3,8 @@
 import React from "react";
 import Image from "next/image";
 import Button from "@/components/ui/Button";
-import { useProgressiveAnimation } from "@/lib/useAnimation";
-import { ANIMATION_PRESETS } from "@/lib/animations";
+import AnimatedSection from "@/components/shared/AnimatedSection";
+import { useAnimation } from "@/lib/useAnimation";
 
 interface SupportOption {
   id: string;
@@ -20,10 +20,6 @@ interface SupportSectionProps {
   description?: string;
   supportOptions?: SupportOption[];
   thankYouMessage?: string;
-  // Props dla animacji z głównej strony
-  isLoaded?: boolean;
-  isInView?: boolean;
-  containerRef?: React.RefObject<HTMLDivElement | null>;
 }
 
 const defaultSupportOptions: SupportOption[] = [
@@ -58,62 +54,45 @@ export default function SupportSection({
   description = "Jeśli podoba Ci się nasza treść, możesz nas wesprzeć. Każda złotówka pomaga nam w tworzeniu lepszych artykułów i filmów.",
   supportOptions = defaultSupportOptions,
   thankYouMessage = "Dziękujemy za wsparcie! ❤️",
-  // Props dla animacji z głównej strony
-  isLoaded: externalIsLoaded,
-  isInView: externalIsInView,
-  containerRef: externalContainerRef,
 }: SupportSectionProps) {
-  // Użyj zewnętrznych props jeśli są dostępne, w przeciwnym razie użyj własnego hook
-  const {
-    isLoaded: internalIsLoaded,
-    isInView: internalIsInView,
-    containerRef: internalContainerRef,
-    getItemClass: internalGetItemClass,
-  } = useProgressiveAnimation(supportOptions.length);
-
-  const isLoaded =
-    externalIsLoaded !== undefined ? externalIsLoaded : internalIsLoaded;
-  const isInView =
-    externalIsInView !== undefined ? externalIsInView : internalIsInView;
-  const containerRef = externalContainerRef || internalContainerRef;
-
-  // Utwórz własną funkcję getItemClass używającą globalnych stanów
-  const getItemClass = (
-    index: number,
-    preset: keyof typeof ANIMATION_PRESETS = "listItem"
-  ) => {
-    if (preset === "listItem") {
-      return ANIMATION_PRESETS[preset](isLoaded && isInView, index);
-    }
-    // Dla innych presetów używamy domyślnego opóźnienia
-    return ANIMATION_PRESETS[preset](isLoaded && isInView, "medium");
-  };
+  // Użyj ujednoliconego hook useAnimation
+  const { isLoaded, isInView, containerRef } = useAnimation();
 
   return (
     <section
       ref={containerRef}
       className="rounded-xl border border-gray-200 dark:border-gray-700 p-6 bg-white dark:bg-gray-800"
     >
-      <h3
-        className={`text-lg font-serif font-semibold text-gray-900 dark:text-gray-100 mb-4 ${ANIMATION_PRESETS.sectionHeader(
-          isLoaded && isInView
-        )}`}
+      <AnimatedSection
+        animationType="sectionHeader"
+        className="text-lg font-serif font-semibold text-gray-900 dark:text-gray-100 mb-4"
+        isLoaded={isLoaded}
+        isInView={isInView}
       >
         {title}
-      </h3>
+      </AnimatedSection>
 
       <div className="space-y-4">
-        <p
-          className={`text-xs text-gray-600 dark:text-gray-300 ${ANIMATION_PRESETS.text(
-            isLoaded && isInView,
-            "short"
-          )}`}
+        <AnimatedSection
+          animationType="text"
+          animationDelay="short"
+          className="text-xs text-gray-600 dark:text-gray-300"
+          isLoaded={isLoaded}
+          isInView={isInView}
         >
           {description}
-        </p>
+        </AnimatedSection>
 
         {supportOptions.map((option, index) => (
-          <div key={option.id} className={getItemClass(index)}>
+          <AnimatedSection
+            key={option.id}
+            animationType="text"
+            animationDelay={
+              index === 0 ? "medium" : index === 1 ? "long" : "longer"
+            }
+            isLoaded={isLoaded}
+            isInView={isInView}
+          >
             <Button
               href={option.href}
               variant={option.variant || "outline"}
@@ -143,17 +122,18 @@ export default function SupportSection({
               ) : null}
               <span>{option.name}</span>
             </Button>
-          </div>
+          </AnimatedSection>
         ))}
 
-        <p
-          className={`text-xs text-gray-500 dark:text-gray-400 text-center ${ANIMATION_PRESETS.subtle(
-            isLoaded && isInView,
-            "longest"
-          )}`}
+        <AnimatedSection
+          animationType="text"
+          animationDelay="longest"
+          className="text-xs text-gray-500 dark:text-gray-400 text-center"
+          isLoaded={isLoaded}
+          isInView={isInView}
         >
           {thankYouMessage}
-        </p>
+        </AnimatedSection>
       </div>
     </section>
   );

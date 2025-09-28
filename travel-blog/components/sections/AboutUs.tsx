@@ -13,10 +13,6 @@ interface AboutUsProps {
   description?: string[];
   contactHref?: string;
   contactText?: string;
-  // Props dla animacji z głównej strony
-  isLoaded?: boolean;
-  isInView?: boolean;
-  containerRef?: React.RefObject<HTMLDivElement | null>;
 }
 
 const defaultDescription = [
@@ -32,23 +28,23 @@ export default function AboutUs({
   description = defaultDescription,
   contactHref = "#kontakt",
   contactText = "Skontaktuj się z nami",
-  // Props dla animacji z głównej strony
-  isLoaded: externalIsLoaded,
-  isInView: externalIsInView,
-  containerRef: externalContainerRef,
 }: AboutUsProps) {
-  // Użyj zewnętrznych props jeśli są dostępne, w przeciwnym razie użyj własnego hook
-  const {
-    isLoaded: internalIsLoaded,
-    isInView: internalIsInView,
-    containerRef: internalContainerRef,
-  } = useAnimation();
+  // Animacje z opóźnieniem po załadowaniu strony
+  const [isLoaded, setIsLoaded] = React.useState(false);
+  const [isInView, setIsInView] = React.useState(false);
+  const containerRef = React.useRef<HTMLDivElement>(null);
 
-  const isLoaded =
-    externalIsLoaded !== undefined ? externalIsLoaded : internalIsLoaded;
-  const isInView =
-    externalIsInView !== undefined ? externalIsInView : internalIsInView;
-  const containerRef = externalContainerRef || internalContainerRef;
+  // Uruchom animacje po załadowaniu komponentu
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsInView(true);
+      setTimeout(() => {
+        setIsLoaded(true);
+      }, 100);
+    }, 200);
+
+    return () => clearTimeout(timer);
+  }, []);
 
   return (
     <AnimatedSection
@@ -79,25 +75,22 @@ export default function AboutUs({
       </AnimatedSection>
 
       {/* OPIS */}
-      <AnimatedSection
-        animationType="text"
-        animationDelay="long"
-        className="space-y-3 mb-4"
-        isLoaded={isLoaded}
-        isInView={isInView}
-      >
+      <div className="space-y-3 mb-4">
         {description.map((paragraph, index) => (
-          <p
+          <AnimatedSection
             key={index}
+            animationType="text"
+            animationDelay={
+              index === 0 ? "long" : index === 1 ? "longer" : "longest"
+            }
             className="text-sm text-gray-600 dark:text-gray-300"
-            style={{
-              transitionDelay: `${400 + index * 100}ms`,
-            }}
+            isLoaded={isLoaded}
+            isInView={isInView}
           >
             {paragraph}
-          </p>
+          </AnimatedSection>
         ))}
-      </AnimatedSection>
+      </div>
 
       <AnimatedSection
         animationType="button"

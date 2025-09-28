@@ -4,6 +4,7 @@ import React from "react";
 import { getHomepageData } from "@/lib/queries/functions";
 import ComponentRenderer from "@/components/ui/ComponentRenderer";
 import Popup from "@/components/ui/Popup";
+import { useAnimation } from "@/lib/useAnimation";
 
 // Import komponentów dla nowych typów
 import AboutUs from "@/components/sections/AboutUs";
@@ -57,9 +58,9 @@ export default function Home() {
   );
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
-  const [isLoaded, setIsLoaded] = React.useState(false);
-  const [isInView, setIsInView] = React.useState(false);
-  const containerRef = React.useRef<HTMLDivElement>(null);
+
+  // Użyj ujednoliconego hook useAnimation
+  const { isLoaded, isInView, containerRef } = useAnimation();
 
   // Pobieranie danych homepage z Sanity
   React.useEffect(() => {
@@ -77,26 +78,9 @@ export default function Home() {
     fetchHomepageData();
   }, []);
 
-  // Ustaw animacje po załadowaniu danych
-  React.useEffect(() => {
-    if (homepageData && !isLoading) {
-      setTimeout(() => {
-        setIsInView(true);
-        setIsLoaded(true);
-      }, 200);
-    }
-  }, [homepageData, isLoading]);
-
   // Funkcja do renderowania komponentów aside
   const renderAsideComponent = (component: any, index: number) => {
     const { _type, ...props } = component;
-
-    // Przekaż globalne stany animacji do komponentów aside
-    const animationProps = {
-      isLoaded,
-      isInView,
-      containerRef,
-    };
 
     switch (_type) {
       case "aboutUs":
@@ -109,7 +93,6 @@ export default function Home() {
             description={props.description}
             contactHref={props.contactHref}
             contactText={props.contactText}
-            {...animationProps}
           />
         );
       case "youtubeChannel":
@@ -122,7 +105,6 @@ export default function Home() {
             channelHref={props.channelHref}
             buttonText={props.buttonText}
             buttonVariant={props.buttonVariant}
-            {...animationProps}
           />
         );
       case "supportSection":
@@ -133,7 +115,6 @@ export default function Home() {
             description={props.description}
             supportOptions={props.supportOptions}
             thankYouMessage={props.thankYouMessage}
-            {...animationProps}
           />
         );
       default:
@@ -236,10 +217,7 @@ export default function Home() {
       <div
         ref={containerRef}
         data-main-content
-        className="mx-auto max-w-7xl px-6 py-4 transition-all duration-1000 ease-out translate-y-0"
-        style={{
-          opacity: isLoaded && isInView ? 1 : 0.3,
-        }}
+        className="mx-auto max-w-7xl px-6 py-4"
       >
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* MAIN CONTENT - 75% */}

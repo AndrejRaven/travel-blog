@@ -15,7 +15,8 @@ import {
   getHeightClass,
   generateSectionId,
 } from "@/lib/section-utils";
-import { useAnimation, getAnimationClass } from "@/lib/render-utils";
+import { useAnimation } from "@/lib/useAnimation";
+import AnimatedSection from "@/components/shared/AnimatedSection";
 import { ArticlesData } from "@/lib/component-types";
 import { ArticleForList } from "@/lib/sanity";
 import { getSelectedPosts, getLatestPosts } from "@/lib/queries/functions";
@@ -122,15 +123,12 @@ export default function Articles({ data }: Props) {
           container.backgroundColor
         )} ${getBorderRadiusClass(container.borderRadius)}`}
       >
-        <div
-          className={`flex flex-col md:flex-row md:items-end justify-between mb-6 ${getAnimationClass(
-            {
-              type: "sectionHeader",
-              delay: "none",
-              isInView,
-              isLoaded,
-            }
-          )}`}
+        <AnimatedSection
+          animationType="sectionHeader"
+          animationDelay="none"
+          className="flex flex-col md:flex-row md:items-end justify-between mb-6"
+          isLoaded={isLoaded}
+          isInView={isInView}
         >
           <SectionHeader title={title} />
           {showViewAll && viewAllHref && (
@@ -140,7 +138,7 @@ export default function Articles({ data }: Props) {
               </Link>
             </div>
           )}
-        </div>
+        </AnimatedSection>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {isLoading ? (
@@ -163,16 +161,13 @@ export default function Articles({ data }: Props) {
               const delay = index < 3 ? "short" : index < 6 ? "medium" : "long";
 
               return (
-                <article
+                <AnimatedSection
                   key={article._id}
-                  className={`rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-hidden hover:shadow-lg transition-all duration-500 hover:scale-105 ${getAnimationClass(
-                    {
-                      type: "text",
-                      delay,
-                      isInView,
-                      isLoaded,
-                    }
-                  )}`}
+                  animationType="text"
+                  animationDelay={delay}
+                  className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-hidden hover:shadow-lg transition-all duration-500 hover:scale-105"
+                  isLoaded={isLoaded}
+                  isInView={isInView}
                 >
                   <div className="relative aspect-[16/10] bg-gray-50 dark:bg-gray-700">
                     <ResponsiveImage
@@ -228,7 +223,7 @@ export default function Articles({ data }: Props) {
                       </Link>
                     )}
                   </div>
-                </article>
+                </AnimatedSection>
               );
             })
           ) : (
