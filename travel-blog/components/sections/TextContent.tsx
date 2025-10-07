@@ -16,7 +16,7 @@ export default function TextContent({ data }: Props) {
   return (
     <SectionContainer config={container}>
       <div
-        className={`prose max-w-none px-6 md:px-0 ${getTextSizeClass(
+        className={`prose max-w-none ${getTextSizeClass(
           layout.textSize
         )} prose-serif`}
       >

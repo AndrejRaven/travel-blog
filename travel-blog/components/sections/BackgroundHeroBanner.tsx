@@ -7,15 +7,11 @@ import RichText from "@/components/ui/RichText";
 import { BackgroundHeroBannerData } from "@/lib/component-types";
 import { ChevronDown } from "lucide-react";
 import {
-  getMaxWidthClass,
-  getPaddingClass,
-  getMarginClass,
   getBackgroundColorClass,
   getBorderRadiusClass,
   getShadowClass,
   getHeightClass,
   getTextStyleClass,
-  generateSectionId,
 } from "@/lib/section-utils";
 import {
   useResponsiveImage,
@@ -28,6 +24,7 @@ import {
   getImagePlaceholderClasses,
   getVerticalAlignmentClasses,
 } from "@/lib/render-utils";
+import SectionContainer from "@/components/shared/SectionContainer";
 
 type Props = {
   data: BackgroundHeroBannerData;
@@ -46,14 +43,13 @@ export default function BackgroundHeroBanner({ data }: Props) {
   }
 
   const [imageLoaded, setImageLoaded] = useState(false);
-  const { isLoaded, isInView, containerRef } = useAnimation();
   const { showScrollButton, hideScrollButton } = useScrollIndicator();
   const { isMobile, getCurrentImage, getOptimizedImageProps } =
     useResponsiveImage({
-      width: 1920,
-      mobileWidth: 1200,
-      quality: 95,
-      format: "webp",
+      width: 2560, // Zwiększona rozdzielczość dla lepszej jakości
+      mobileWidth: 1920, // Zwiększona rozdzielczość mobilna
+      quality: 100, // Maksymalna jakość
+      format: "webp", // Zachowaj WebP dla optymalizacji
       fit: "fillmax",
     });
 
@@ -67,26 +63,9 @@ export default function BackgroundHeroBanner({ data }: Props) {
   const selectedContent =
     data.mobileContent && isMobile ? data.mobileContent : data.content;
 
-  // Generuj ID na podstawie tytułu treści
-  const sectionId = container.contentTitle
-    ? generateSectionId(container.contentTitle)
-    : undefined;
-
   return (
-    <div
-      id={sectionId}
-      className={`w-full ${getMaxWidthClass(
-        container.maxWidth
-      )} ${getPaddingClass(container.padding)} ${getMarginClass(
-        container.margin
-      )} ${getBackgroundColorClass(container.backgroundColor)} ${getShadowClass(
-        container.shadow
-      )} ${getBorderRadiusClass(
-        container.borderRadius
-      )} overflow-hidden mx-auto`}
-    >
+    <SectionContainer config={container}>
       <div
-        ref={containerRef}
         className={`relative w-full ${getHeightClass(
           container.height
         )} overflow-hidden`}
@@ -105,10 +84,11 @@ export default function BackgroundHeroBanner({ data }: Props) {
               }
               fill
               className={`object-cover ${
-                imageLoaded && isInView ? "opacity-100" : "opacity-0"
+                imageLoaded ? "opacity-100" : "opacity-0"
               }`}
               priority
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 100vw, 100vw"
+              quality={100}
+              sizes="(max-width: 768px) 100vw, (max-width: 1920px) 100vw, 2560px"
               onLoad={() => setImageLoaded(true)}
             />
           ) : (
@@ -138,8 +118,8 @@ export default function BackgroundHeroBanner({ data }: Props) {
             )} ${getAnimationClass({
               type: "text",
               delay: "none",
-              isInView,
-              isLoaded,
+              isInView: true,
+              isLoaded: true,
             })}`}
           >
             <h2 id="section-heading" className="sr-only">
@@ -165,8 +145,8 @@ export default function BackgroundHeroBanner({ data }: Props) {
                     className={getAnimationClass({
                       type: "button",
                       delay: "none",
-                      isInView,
-                      isLoaded,
+                      isInView: true,
+                      isLoaded: true,
                     })}
                   >
                     {button.label}
@@ -218,6 +198,6 @@ export default function BackgroundHeroBanner({ data }: Props) {
           <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-white dark:from-gray-900 to-transparent pointer-events-none" />
         )}
       </div>
-    </div>
+    </SectionContainer>
   );
 }

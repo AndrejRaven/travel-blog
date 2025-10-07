@@ -6,21 +6,16 @@ import Button from "@/components/ui/Button";
 import RichText from "@/components/ui/RichText";
 import { HeroBannerData } from "@/lib/component-types";
 import {
-  getMaxWidthClass,
-  getPaddingClass,
-  getMarginClass,
   getBackgroundColorClass,
   getBorderRadiusClass,
-  getShadowClass,
   getHeightClass,
-  generateSectionId,
 } from "@/lib/section-utils";
 import {
   useResponsiveImage,
-  useAnimation,
   getAnimationClass,
   getTextAlignmentClasses,
 } from "@/lib/render-utils";
+import SectionContainer from "@/components/shared/SectionContainer";
 
 type Props = {
   data: HeroBannerData;
@@ -34,7 +29,6 @@ export default function HeroBanner({ data }: Props) {
     return null;
   }
 
-  const { isLoaded, isInView, containerRef } = useAnimation();
   const { getCurrentImage, getOptimizedImageProps } = useResponsiveImage({
     width: 1600,
     mobileWidth: 800,
@@ -45,9 +39,6 @@ export default function HeroBanner({ data }: Props) {
 
   const selectedImage = getCurrentImage(data.image, data.mobileImage);
   const imageProps = getOptimizedImageProps(selectedImage);
-  const sectionId = container.contentTitle
-    ? generateSectionId(container.contentTitle)
-    : undefined;
 
   // Mapowanie szerokości obrazka na   kolumny grid
   const imageColumnMap = { 25: 3, 50: 6, 75: 9 } as const;
@@ -64,24 +55,13 @@ export default function HeroBanner({ data }: Props) {
   const mobileTextOrder = layout.mobileLayout === "top" ? "order-2" : "order-1";
 
   return (
-    <div
-      id={sectionId}
-      ref={containerRef}
-      className={`w-full ${getMaxWidthClass(
-        container.maxWidth
-      )} ${getPaddingClass(container.padding)} ${getMarginClass(
-        container.margin
-      )} ${getBorderRadiusClass(container.borderRadius)} ${getShadowClass(
-        container.shadow
-      )} mx-auto`}
-      role="banner"
-    >
+    <SectionContainer config={container} role="banner">
       <div
-        className={`grid grid-cols-1 lg:grid-cols-12 gap-0 overflow-hidden ${getHeightClass(
+        className={`grid grid-cols-1 lg:grid-cols-12 gap-0 h-auto lg:${getHeightClass(
           container.height
         )} ${getBackgroundColorClass(
           container.backgroundColor
-        )} ${getBorderRadiusClass(container.borderRadius)}`}
+        )} ${getBorderRadiusClass(container.borderRadius)} relative overflow-hidden`}
       >
         {/* Tekst */}
         <div
@@ -95,8 +75,8 @@ export default function HeroBanner({ data }: Props) {
             )} ${getAnimationClass({
               type: "text",
               delay: "none",
-              isInView,
-              isLoaded,
+              isInView: true,
+              isLoaded: true,
             })}`}
           >
             <RichText blocks={data.content} />
@@ -111,8 +91,8 @@ export default function HeroBanner({ data }: Props) {
                     className={getAnimationClass({
                       type: "button",
                       delay: "none",
-                      isInView,
-                      isLoaded,
+                      isInView: true,
+                      isLoaded: true,
                     })}
                   >
                     {button.label}
@@ -125,9 +105,9 @@ export default function HeroBanner({ data }: Props) {
 
         {/* Obraz */}
         <div
-          className={`${mobileImageOrder} ${imageOrder} lg:col-span-${imageColumns} w-full aspect-square lg:aspect-auto lg:h-full`}
+          className={`${mobileImageOrder} ${imageOrder} lg:col-span-${imageColumns} w-full aspect-[4/3] lg:aspect-auto lg:h-full overflow-hidden`}
         >
-          <div className="relative w-full h-full overflow-hidden">
+          <div className="relative w-full h-full">
             {imageProps?.src ? (
               <Image
                 src={imageProps.src as string}
@@ -147,6 +127,6 @@ export default function HeroBanner({ data }: Props) {
           </div>
         </div>
       </div>
-    </div>
+    </SectionContainer>
   );
 }

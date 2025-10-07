@@ -105,6 +105,7 @@ export default function Home() {
             channelHref={props.channelHref}
             buttonText={props.buttonText}
             buttonVariant={props.buttonVariant}
+            channelImage={props.channelImage}
           />
         );
       case "supportSection":
@@ -140,8 +141,13 @@ export default function Home() {
         return (
           <InstagramSection
             key={`main-${index}`}
-            // Przekaż dane z Sanity do komponentu
-            // InstagramSection będzie musiał być zaktualizowany, żeby przyjmować props
+            title={props.title}
+            subtitle={props.subtitle}
+            instagramHandle={props.instagramHandle}
+            instagramUrl={props.instagramUrl}
+            buttonText={props.buttonText}
+            posts={props.posts}
+            container={props.container}
           />
         );
       case "newsletter":

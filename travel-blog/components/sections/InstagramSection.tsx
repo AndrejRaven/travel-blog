@@ -11,58 +11,172 @@ import { Instagram, Heart } from "lucide-react";
 import "swiper/css/pagination";
 import AnimatedSection from "@/components/shared/AnimatedSection";
 import { useAnimation } from "@/lib/useAnimation";
+import { useResponsiveImage } from "@/lib/render-utils";
 
 interface InstagramPost {
   id: string;
-  imageUrl: string;
-  caption: string;
-  likes: string;
+  imageUrl?: {
+    asset: {
+      _id: string;
+      url: string;
+      metadata: {
+        dimensions: {
+          width: number;
+          height: number;
+        };
+      };
+    };
+    hotspot?: any;
+    crop?: any;
+  };
+  caption?: string;
+  likes?: string;
 }
 
-const posts: InstagramPost[] = [
+interface InstagramSectionProps {
+  title?: string;
+  subtitle?: string;
+  instagramHandle?: string;
+  instagramUrl?: string;
+  buttonText?: string;
+  posts?: InstagramPost[];
+  container?: {
+    maxWidth?: string;
+    padding?: string;
+    alignment?: string;
+    height?: string;
+    innerMargin?: string;
+  };
+}
+
+// Domyślne posty jako fallback
+const defaultPosts: InstagramPost[] = [
   {
     id: "1",
-    imageUrl: "/demo-images/demo-asset.png",
+    imageUrl: {
+      asset: {
+        _id: "default-1",
+        url: "/demo-images/demo-asset.png",
+        metadata: {
+          dimensions: {
+            width: 400,
+            height: 400,
+          },
+        },
+      },
+    },
     caption: "Piękny zachód słońca nad morzem w Grecji 🇬🇷 #podróże #grecja",
     likes: "1.2k",
   },
   {
     id: "2",
-    imageUrl: "/demo-images/demo-asset1.png",
+    imageUrl: {
+      asset: {
+        _id: "default-2",
+        url: "/demo-images/demo-asset1.png",
+        metadata: {
+          dimensions: {
+            width: 400,
+            height: 400,
+          },
+        },
+      },
+    },
     caption: "Włoska kuchnia to najlepsza na świecie! 🍝 #włochy #kuchnia",
     likes: "856",
   },
   {
     id: "3",
-    imageUrl: "/demo-images/demo-asset.png",
+    imageUrl: {
+      asset: {
+        _id: "default-3",
+        url: "/demo-images/demo-asset.png",
+        metadata: {
+          dimensions: {
+            width: 400,
+            height: 400,
+          },
+        },
+      },
+    },
     caption: "Górskie wędrówki w Alpach 🏔️ #góry #alpy #wędrówki",
     likes: "2.1k",
   },
   {
     id: "4",
-    imageUrl: "/demo-images/demo-asset1.png",
+    imageUrl: {
+      asset: {
+        _id: "default-4",
+        url: "/demo-images/demo-asset1.png",
+        metadata: {
+          dimensions: {
+            width: 400,
+            height: 400,
+          },
+        },
+      },
+    },
     caption: "Kolorowe ulice Lizbony 🌈 #portugalia #lizbona",
     likes: "743",
   },
   {
     id: "5",
-    imageUrl: "/demo-images/demo-asset.png",
+    imageUrl: {
+      asset: {
+        _id: "default-5",
+        url: "/demo-images/demo-asset.png",
+        metadata: {
+          dimensions: {
+            width: 400,
+            height: 400,
+          },
+        },
+      },
+    },
     caption: "Tradycyjne targi w Maroku 🛍️ #maroko #targi",
     likes: "1.5k",
   },
   {
     id: "6",
-    imageUrl: "/demo-images/demo-asset1.png",
+    imageUrl: {
+      asset: {
+        _id: "default-6",
+        url: "/demo-images/demo-asset1.png",
+        metadata: {
+          dimensions: {
+            width: 400,
+            height: 400,
+          },
+        },
+      },
+    },
     caption: "Plaża w Tajlandii 🏖️ #tajlandia #plaża",
     likes: "3.2k",
   },
 ];
 
-export default function InstagramSection() {
+export default function InstagramSection({
+  title = "Śledź nas na Instagramie",
+  subtitle = "Najnowsze zdjęcia z naszych podróży",
+  instagramHandle = "@naszblog",
+  instagramUrl = "https://instagram.com",
+  buttonText = "@naszblog",
+  posts = defaultPosts,
+  container,
+}: InstagramSectionProps) {
   const [activeSlide, setActiveSlide] = useState(0);
   const [realIndex, setRealIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const { isLoaded, isInView, containerRef } = useAnimation();
+
+  // Użyj useResponsiveImage dla optymalizacji obrazków Instagram
+  const { getOptimizedImageProps } = useResponsiveImage({
+    width: 600,
+    height: 600,
+    quality: 95,
+    format: "webp",
+    fit: "fillmax",
+  });
 
   return (
     <AnimatedSection
@@ -82,20 +196,20 @@ export default function InstagramSection() {
               id="instagram-heading"
               className="text-2xl md:text-3xl font-serif font-bold mb-2"
             >
-              Śledź nas na Instagramie
+              {title}
             </h2>
             <p className="text-lg text-gray-600 dark:text-gray-300">
-              Najnowsze zdjęcia z naszych podróży
+              {subtitle}
             </p>
           </div>
           <Button
-            href="https://instagram.com"
+            href={instagramUrl}
             variant="outline"
             external
             className="flex items-center space-x-2 w-full md:w-auto justify-center md:justify-start transition-all duration-300 hover:scale-105 hover:shadow-lg"
           >
             <Instagram className="w-4 h-4" />
-            <span>@naszblog</span>
+            <span>{buttonText}</span>
           </Button>
         </div>
 
@@ -151,6 +265,17 @@ export default function InstagramSection() {
             {posts.map((post, index) => {
               const isActive = index === activeSlide;
               const isTransitioningOut = isTransitioning && !isActive;
+              const caption = post.caption || "";
+              const likes = post.likes || "0";
+
+              // Przygotuj dane obrazka dla useResponsiveImage
+              const imageData = post.imageUrl?.asset
+                ? {
+                    asset: post.imageUrl.asset,
+                    hotspot: post.imageUrl.hotspot,
+                    crop: post.imageUrl.crop,
+                  }
+                : null;
 
               return (
                 <SwiperSlide key={post.id}>
@@ -162,40 +287,35 @@ export default function InstagramSection() {
                     itemType="https://schema.org/ImageObject"
                   >
                     <div className="relative h-[250px] w-full">
-                      <Image
-                        src={post.imageUrl}
-                        alt={post.caption}
-                        fill
-                        className={`object-cover transition-all duration-500 group-hover:scale-105 transform-gpu will-change-transform `}
-                        itemProp="contentUrl"
-                      />
+                      {imageData ? (
+                        (() => {
+                          const imageProps = getOptimizedImageProps(imageData);
+                          return (
+                            <img
+                              {...imageProps}
+                              className={`object-cover transition-all duration-500 group-hover:scale-105 transform-gpu will-change-transform w-full h-full`}
+                              itemProp="contentUrl"
+                            />
+                          );
+                        })()
+                      ) : (
+                        <Image
+                          src="/demo-images/demo-asset.png"
+                          alt={caption}
+                          fill
+                          className={`object-cover transition-all duration-500 group-hover:scale-105 transform-gpu will-change-transform `}
+                          itemProp="contentUrl"
+                        />
+                      )}
 
-                      {/* OVERLAY Z INFORMACJAMI */}
-                      <div
-                        className={`absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent transition-opacity duration-500 ${
-                          isActive ? "opacity-100" : "opacity-0"
-                        }`}
-                      >
-                        <div className="absolute bottom-0 left-0 right-0 p-4 m-1 text-white">
-                          <div className="flex items-center space-x-4 mb-3">
-                            <div className="flex items-center space-x-2">
-                              <Heart className="w-5 h-5" />
-                              <span className="text-lg font-medium">
-                                {post.likes}
-                              </span>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <Instagram className="w-5 h-5" />
-                              <span className="text-sm">@naszblog</span>
-                            </div>
-                          </div>
-                          <p
-                            className="text-sm leading-relaxed"
-                            itemProp="description"
-                          >
-                            {post.caption}
-                          </p>
-                        </div>
+                      {/* TEKST Z OPISEM - BEZ PRZYCIEMNIENIA */}
+                      <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
+                        <p
+                          className="text-sm leading-relaxed"
+                          itemProp="description"
+                        >
+                          {caption}
+                        </p>
                       </div>
                     </div>
                   </article>

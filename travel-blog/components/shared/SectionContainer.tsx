@@ -7,6 +7,13 @@ import {
   ContainerConfig,
   getContainerClasses,
   generateSectionId,
+  getMaxWidthClass,
+  getPaddingClass,
+  getMarginClass,
+  getBackgroundColorClass,
+  getBorderRadiusClass,
+  getShadowClass,
+  getInnerMarginClass,
 } from "@/lib/section-utils";
 
 interface SectionContainerProps {
@@ -38,20 +45,46 @@ export default function SectionContainer({
     ? generateSectionId(config.contentTitle)
     : undefined;
 
-  const containerClasses = getContainerClasses(config);
+  // Zewnętrzny kontener - tylko zewnętrzne rzeczy (szerokość, marginesy)
+  const outerContainerClasses = [
+    "w-full",
+    getMaxWidthClass(config.maxWidth),
+    getMarginClass(config.margin),
+    "mx-auto",
+  ];
+
+  // Wewnętrzny kontener - wszystkie style wizualne + innerMargin
+  const innerContainerClasses = [getPaddingClass(config.padding)];
+
+  if (config.innerMargin && config.innerMargin !== "none") {
+    innerContainerClasses.push(getInnerMarginClass(config.innerMargin));
+  }
+
+  if (config.backgroundColor) {
+    innerContainerClasses.push(getBackgroundColorClass(config.backgroundColor));
+  }
+
+  if (config.borderRadius) {
+    innerContainerClasses.push(getBorderRadiusClass(config.borderRadius));
+  }
+
+  if (config.shadow) {
+    innerContainerClasses.push(getShadowClass(config.shadow));
+  }
+
   const animationClass = ANIMATION_PRESETS.text(isLoaded && isInView, "none");
 
   return (
     <div
       id={sectionId}
       ref={containerRef}
-      className={`${containerClasses} ${animationClass} ${className || ""}`}
+      className={`${outerContainerClasses.join(" ")} ${animationClass} ${className || ""} relative`}
       role={role}
       aria-labelledby={ariaLabelledBy}
       itemScope={itemScope}
       itemType={itemType}
     >
-      {children}
+      <div className={innerContainerClasses.join(" ")}>{children}</div>
     </div>
   );
 }

@@ -148,3 +148,7 @@
 .animate-fade-in {
   animation: fade-in 0.3s ease-out;
 }
+
+.mt-6 {
+  margin-top: 1.5rem;
+}

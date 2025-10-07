@@ -6,17 +6,12 @@ import CategoryBadge from "@/components/ui/CategoryBadge";
 import SectionHeader from "@/components/shared/SectionHeader";
 import ResponsiveImage from "@/components/shared/ResponsiveImage";
 import {
-  getMaxWidthClass,
-  getPaddingClass,
-  getMarginClass,
   getBackgroundColorClass,
   getBorderRadiusClass,
-  getShadowClass,
   getHeightClass,
-  generateSectionId,
 } from "@/lib/section-utils";
-import { useAnimation } from "@/lib/useAnimation";
 import AnimatedSection from "@/components/shared/AnimatedSection";
+import SectionContainer from "@/components/shared/SectionContainer";
 import { ArticlesData } from "@/lib/component-types";
 import { ArticleForList } from "@/lib/sanity";
 import { getSelectedPosts, getLatestPosts } from "@/lib/queries/functions";
@@ -80,8 +75,6 @@ export default function Articles({ data }: Props) {
     fetchArticles();
   }, [articlesType, selectedArticleIds, maxArticles]);
 
-  const { isLoaded, isInView, containerRef } = useAnimation();
-
   // Mapowanie kolorów kategorii do klas Tailwind
 
   // Funkcja do formatowania daty
@@ -99,36 +92,13 @@ export default function Articles({ data }: Props) {
     return date.toLocaleDateString("pl-PL");
   };
 
-  // Generowanie ID sekcji
-  const sectionId = container.contentTitle
-    ? generateSectionId(container.contentTitle)
-    : undefined;
-
   return (
-    <div
-      id={sectionId}
-      ref={containerRef}
-      className={`w-full ${getMaxWidthClass(
-        container.maxWidth
-      )} ${getPaddingClass(container.padding)} ${getMarginClass(
-        container.margin
-      )} ${getBorderRadiusClass(container.borderRadius)} ${getShadowClass(
-        container.shadow
-      )} mx-auto`}
-      role="region"
-      aria-label={title}
-    >
-      <div
-        className={`${getHeightClass(container.height)} ${getBackgroundColorClass(
-          container.backgroundColor
-        )} ${getBorderRadiusClass(container.borderRadius)}`}
-      >
+    <SectionContainer config={container} role="region" aria-labelledby={title}>
+      <div className={`${getHeightClass(container.height)}`}>
         <AnimatedSection
           animationType="sectionHeader"
           animationDelay="none"
           className="flex flex-col md:flex-row md:items-end justify-between mb-6"
-          isLoaded={isLoaded}
-          isInView={isInView}
         >
           <SectionHeader title={title} />
           {showViewAll && viewAllHref && (
@@ -165,9 +135,7 @@ export default function Articles({ data }: Props) {
                   key={article._id}
                   animationType="text"
                   animationDelay={delay}
-                  className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-hidden hover:shadow-lg transition-all duration-500 hover:scale-105"
-                  isLoaded={isLoaded}
-                  isInView={isInView}
+                  className="relative rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-hidden hover:shadow-lg transition-all duration-500 hover:scale-105"
                 >
                   <div className="relative aspect-[16/10] bg-gray-50 dark:bg-gray-700">
                     <ResponsiveImage
@@ -202,27 +170,31 @@ export default function Articles({ data }: Props) {
                       ) : null}
                     </div>
                   </div>
-                  <div className="p-4 space-y-2">
-                    <div className="flex items-center gap-2 text-xs font-sans text-gray-500 dark:text-gray-400">
-                      <span>{formatDate(article.publishedAt)}</span>
+                  <div className="p-4 pb-16">
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-xs font-sans text-gray-500 dark:text-gray-400">
+                        <span>{formatDate(article.publishedAt)}</span>
+                      </div>
+                      <h3 className="font-serif text-2xl font-medium text-gray-900 dark:text-gray-100">
+                        {article.title}
+                      </h3>
+                      {article.description && (
+                        <p className="text-sm font-sans text-gray-600 dark:text-gray-300 line-clamp-4">
+                          {article.description}
+                        </p>
+                      )}
                     </div>
-                    <h3 className="font-serif text-2xl font-medium text-gray-900 dark:text-gray-100">
-                      {article.title}
-                    </h3>
-                    {article.description && (
-                      <p className="text-sm font-sans text-gray-600 dark:text-gray-300 line-clamp-4 mb-4">
-                        {article.description}
-                      </p>
-                    )}
-                    {article.slug?.current && (
+                  </div>
+                  {article.slug?.current && (
+                    <div className="absolute bottom-4 left-4 right-4">
                       <Link
                         href={`/post/${article.slug.current}`}
                         variant="arrow"
                       >
                         Czytaj dalej
                       </Link>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </AnimatedSection>
               );
             })
@@ -236,6 +208,6 @@ export default function Articles({ data }: Props) {
           )}
         </div>
       </div>
-    </div>
+    </SectionContainer>
   );
 }

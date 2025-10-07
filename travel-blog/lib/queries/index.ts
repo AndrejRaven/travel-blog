@@ -428,7 +428,7 @@ export const QUERIES = {
   // Zapytania dla strony głównej
   HOME: {
     // Pobierz wszystkie komponenty strony głównej
-    COMPONENTS: `*[_type in ["heroBanner", "backgroundHeroBanner", "textContent", "imageCollage", "articles", "embedYoutube", "instagramSection", "newsletter"]] | order(_createdAt asc) {
+    COMPONENTS: `*[_type in ["heroBanner", "backgroundHeroBanner", "textContent", "imageCollage", "articles", "embedYoutube", "instagramSection", "newsletter", "youtubeChannel"]] | order(_createdAt asc) {
       _type,
       _key,
       ...,
@@ -512,6 +512,28 @@ export const QUERIES = {
               "style": @.style
             }
           }
+        },
+        // Specjalne pola dla youtubeChannel
+        title,
+        channelName,
+        channelDescription,
+        channelHref,
+        buttonText,
+        buttonVariant,
+        channelImage {
+          asset-> {
+            _id,
+            url,
+            metadata {
+              dimensions {
+                width,
+                height
+              }
+            }
+          },
+          hotspot,
+          crop,
+          alt
         }
       }
     }`,
@@ -756,6 +778,21 @@ export const QUERIES = {
         contactHref,
         contactText,
         imageAlt,
+        channelImage {
+          asset-> {
+            _id,
+            url,
+            metadata {
+              dimensions {
+                width,
+                height
+              }
+            }
+          },
+          hotspot,
+          crop,
+          alt
+        },
         instagramHandle,
         instagramUrl,
         placeholder,
@@ -828,6 +865,21 @@ export const QUERIES = {
         buttonVariant,
         contactHref,
         contactText,
+        channelImage {
+          asset-> {
+            _id,
+            url,
+            metadata {
+              dimensions {
+                width,
+                height
+              }
+            }
+          },
+          hotspot,
+          crop,
+          alt
+        },
         image {
           asset-> {
             _id,
@@ -898,6 +950,28 @@ export const QUERIES = {
               }
             }
           }
+        },
+        // Specjalne pola dla youtubeChannel
+        title,
+        channelName,
+        channelDescription,
+        channelHref,
+        buttonText,
+        buttonVariant,
+        channelImage {
+          asset-> {
+            _id,
+            url,
+            metadata {
+              dimensions {
+                width,
+                height
+              }
+            }
+          },
+          hotspot,
+          crop,
+          alt
         },
         image {
           asset-> {

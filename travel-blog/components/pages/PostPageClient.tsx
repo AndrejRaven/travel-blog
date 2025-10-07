@@ -5,6 +5,7 @@ import ComponentRenderer from "@/components/ui/ComponentRenderer";
 import TableOfContents from "@/components/ui/TableOfContents";
 import CategoryBadge from "@/components/ui/CategoryBadge";
 import CommentsSection from "@/components/ui/CommentsSection";
+import ShareButtons from "@/components/ui/ShareButtons";
 import ResponsiveImage from "@/components/shared/ResponsiveImage";
 import { Post } from "@/lib/sanity";
 import { PostComponent } from "@/lib/component-types";
@@ -18,11 +19,19 @@ interface PostPageClientProps {
     title: string;
     level: number;
   }>;
+  postUrl?: string;
+  ogTitle?: string;
+  ogDescription?: string;
+  ogImageUrl?: string;
 }
 
 export default function PostPageClient({
   post,
   tableOfContentsItems,
+  postUrl,
+  ogTitle,
+  ogDescription,
+  ogImageUrl,
 }: PostPageClientProps) {
   const [isTocOpen, setIsTocOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -194,6 +203,28 @@ export default function PostPageClient({
         allowReplies={post.comments?.moderation?.allowReplies !== false}
         maxLength={post.comments?.moderation?.maxLength || 1000}
       />
+
+      {/* Sekcja udostępniania */}
+      <section className="py-8">
+        <div className="max-w-4xl mx-auto px-6">
+          {(() => {
+            const finalUrl =
+              postUrl ||
+              `${typeof window !== "undefined" ? window.location.origin : ""}/post/${post.slug?.current || ""}`;
+
+            return (
+              <ShareButtons
+                postTitle={post.title}
+                postUrl={finalUrl}
+                postDescription={post.subtitle}
+                ogTitle={ogTitle}
+                ogDescription={ogDescription}
+                ogImageUrl={ogImageUrl}
+              />
+            );
+          })()}
+        </div>
+      </section>
     </main>
   );
 }

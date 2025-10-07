@@ -78,7 +78,7 @@ export default function EmbedYoutube({
           </p>
         </div>
         <div className="relative w-full max-w-4xl mx-auto mb-8">
-          <div className="relative aspect-video rounded-2xl overflow-hidden shadow-2xl bg-gray-200 dark:bg-gray-700 animate-pulse">
+          <div className="relative aspect-video rounded-2xl overflow-hidden bg-gray-200 dark:bg-gray-700 animate-pulse">
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="w-16 h-16 bg-gray-300 dark:bg-gray-600 rounded-full flex items-center justify-center">
                 <svg
@@ -118,7 +118,7 @@ export default function EmbedYoutube({
           </p>
         </div>
         <div className="relative w-full max-w-4xl mx-auto mb-8">
-          <div className="relative aspect-video rounded-2xl overflow-hidden shadow-2xl transition-transform duration-300 hover:scale-105">
+          <div className="relative aspect-video rounded-2xl overflow-hidden transition-transform duration-300 hover:scale-105">
             <iframe
               src="https://www.youtube.com/embed/dQw4w9WgXcQ?rel=0&modestbranding=1&showinfo=0"
               title={title}
@@ -156,7 +156,7 @@ export default function EmbedYoutube({
 
       {/* VIDEO CONTAINER */}
       <div className="relative w-full max-w-4xl mx-auto mb-8">
-        <div className="relative aspect-video rounded-2xl overflow-hidden shadow-2xl transition-transform duration-300 hover:scale-105">
+        <div className="relative aspect-video rounded-2xl overflow-hidden transition-transform duration-300 hover:scale-105">
           <iframe
             src={`https://www.youtube.com/embed/${resolvedVideoId}?rel=0&modestbranding=1&showinfo=0`}
             title={title}

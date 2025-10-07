@@ -16,12 +16,27 @@ export default defineType({
           { title: "Pełna szerokość", value: "full" },
         ],
       },
-      initialValue: "4xl",
+      initialValue: "6xl",
       validation: (Rule) => Rule.required().error("Maksymalna szerokość jest wymagana"),
     }),
     defineField({
       name: "padding",
-      title: "Wewnętrzny odstęp",
+      title: "Wewnętrzny odstęp (Padding)",
+      type: "string",
+      options: {
+        list: [
+          { title: "Brak", value: "none" },
+          { title: "MD", value: "md" },
+          { title: "XL", value: "xl" },
+          { title: "2XL", value: "2xl" },
+        ],
+      },
+      initialValue: "none",
+      validation: (Rule) => Rule.required().error("Wewnętrzny odstęp jest wymagany"),
+    }),
+    defineField({
+      name: "innerMargin",
+      title: "Mobilny margines",
       type: "string",
       options: {
         list: [
@@ -32,7 +47,7 @@ export default defineType({
         ],
       },
       initialValue: "md",
-      validation: (Rule) => Rule.required().error("Wewnętrzny odstęp jest wymagany"),
+      validation: (Rule) => Rule.required().error("Wewnętrzny margines jest wymagany"),
     }),
     defineField({
       name: "margin",
@@ -150,15 +165,17 @@ export default defineType({
     select: {
       maxWidth: "maxWidth",
       padding: "padding",
+      innerMargin: "innerMargin",
       backgroundColor: "backgroundColor",
       height: "height",
       contentTitle: "contentTitle",
     },
-    prepare({ maxWidth, padding, backgroundColor, height, contentTitle }) {
+    prepare({ maxWidth, padding, innerMargin, backgroundColor, height, contentTitle }) {
       const title = contentTitle ? `"${contentTitle}"` : "Base Container";
+      const innerMarginText = innerMargin && innerMargin !== "none" ? ` | m-${innerMargin}` : "";
       return {
         title: title,
-        subtitle: `${maxWidth || "4xl"} | ${padding || "md"} | ${backgroundColor || "transparent"} | ${height || "auto"}`,
+        subtitle: `${maxWidth || "4xl"} | ${padding || "md"}${innerMarginText} | ${backgroundColor || "transparent"} | ${height || "auto"}`,
       };
     },
   },

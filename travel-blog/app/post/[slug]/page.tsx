@@ -112,6 +112,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 export default async function PostPage({ params }: Params) {
   const { slug } = await params;
   const post = await getPostBySlug(slug);
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://nasz-blog.com";
 
   if (!post) {
     return (
@@ -127,6 +128,21 @@ export default async function PostPage({ params }: Params) {
       </div>
     );
   }
+
+  // Generuj dane Open Graph dla przycisków udostępniania
+  const seoDescription =
+    post.seo?.seoDescription ||
+    post.subtitle ||
+    `Przeczytaj artykuł: ${post.title}`;
+
+  const ogTitle = post.seo?.ogTitle || post.title;
+  const ogDescription =
+    post.seo?.ogDescription || post.subtitle || seoDescription;
+  const ogImage = post.seo?.ogImage || post.coverImage;
+  const ogImageUrl = ogImage
+    ? getImageUrl(ogImage, { width: 1200, height: 630, format: "webp" }) ||
+      undefined
+    : undefined;
 
   const formattedDate = post.publishedAt
     ? new Intl.DateTimeFormat("pl-PL", {
@@ -205,7 +221,14 @@ export default async function PostPage({ params }: Params) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <PostPageClient post={post} tableOfContentsItems={tableOfContentsItems} />
+      <PostPageClient
+        post={post}
+        tableOfContentsItems={tableOfContentsItems}
+        postUrl={`${siteUrl}/post/${slug}`}
+        ogTitle={ogTitle}
+        ogDescription={ogDescription}
+        ogImageUrl={ogImageUrl}
+      />
     </>
   );
 }

@@ -5,36 +5,47 @@ export default {
   type: 'object',
   title: 'Sekcja Instagram (Main)',
   fields: [
-    ...baseContainer.fields,
+    {
+      name: 'container',
+      title: 'Kontener',
+      type: 'baseContainer',
+      description: 'Podstawowe ustawienia layoutu (szerokość, odstępy, wyrównanie, wysokość)',
+      group: 'properties',
+    },
     {
       name: 'title',
       title: 'Tytuł',
       type: 'string',
       initialValue: 'Śledź nas na Instagramie',
+      group: 'content',
     },
     {
       name: 'subtitle',
       title: 'Podtytuł',
       type: 'string',
       initialValue: 'Najnowsze zdjęcia z naszych podróży',
+      group: 'content',
     },
     {
       name: 'instagramHandle',
       title: 'Handle Instagram',
       type: 'string',
       initialValue: '@naszblog',
+      group: 'content',
     },
     {
       name: 'instagramUrl',
       title: 'Link do Instagram',
       type: 'url',
       initialValue: 'https://instagram.com',
+      group: 'content',
     },
     {
       name: 'buttonText',
       title: 'Tekst przycisku',
       type: 'string',
       initialValue: '@naszblog',
+      group: 'content',
     },
     {
       name: 'posts',
@@ -120,6 +131,18 @@ export default {
           likes: '3.2k',
         },
       ],
+      group: 'content',
+    },
+  ],
+  groups: [
+    {
+      name: 'content',
+      title: 'Treść',
+      default: true,
+    },
+    {
+      name: 'properties',
+      title: 'Właściwości',
     },
   ],
   preview: {

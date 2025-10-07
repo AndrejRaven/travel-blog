@@ -84,6 +84,7 @@ export type SanityImage = {
     left: number;
     right: number;
   };
+  alt?: string;
 };
 
 export type Post = {

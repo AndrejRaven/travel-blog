@@ -81,14 +81,14 @@ export const useResponsiveImage = (config: ImageConfig = {}) => {
       const width = isMobile ? (config.mobileWidth || config.width || 800) : (config.width || 1200);
       const imageUrl = urlFor(image)
         .width(width)
-        .quality(config.quality || 95)
+        .quality(config.quality || 100)
         .format(config.format || "webp")
         .fit(config.fit || "fillmax")
         .url();
       
       return {
         src: imageUrl,
-        alt: "alt" in image ? image.alt : "Obraz"
+        alt: image.alt || "Obraz"
       };
     }
 
@@ -189,7 +189,7 @@ export const getAnimationClass = (config: AnimationConfig): string => {
  * Generuje klasy dla obrazków z hover effects
  */
 export const getImageClasses = (withHover: boolean = true, customClasses: string = ""): string => {
-  const baseClasses = "object-cover";
+  const baseClasses = "object-cover w-full h-full";
   const hoverClasses = withHover ? `${ANIMATION_CLASSES.hover} ${HOVER_EFFECTS.transform}` : "";
   
   return [baseClasses, hoverClasses, customClasses].filter(Boolean).join(" ");

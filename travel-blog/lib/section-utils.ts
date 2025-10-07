@@ -10,6 +10,7 @@ import { SanityImage } from "./sanity";
 export interface ContainerConfig {
   maxWidth: string;
   padding: string;
+  innerMargin?: string;
   margin: { top: string; bottom: string };
   alignment?: string;
   backgroundColor?: string;
@@ -49,6 +50,13 @@ const PADDING_MAP = {
   lg: "p-8",
   xl: "p-12",
   "2xl": "p-16",
+} as const;
+
+const INNER_MARGIN_MAP = {
+  none: "m-0",
+  md: "m-6 md:m-0",
+  xl: "m-8 md:m-0",
+  "2xl": "m-12 md:m-0",
 } as const;
 
 const MARGIN_MAP = {
@@ -158,6 +166,13 @@ export const getPaddingClass = (padding: string): string => {
 };
 
 /**
+ * Klasy dla wewnętrznego marginesu
+ */
+export const getInnerMarginClass = (innerMargin: string): string => {
+  return getClassFromMap(INNER_MARGIN_MAP, innerMargin, "m-0");
+};
+
+/**
  * Klasy dla marginesów
  */
 export const getMarginClass = (margin: { top: string; bottom: string }): string => {
@@ -222,6 +237,10 @@ export const getContainerClasses = (config: ContainerConfig): string => {
     getPaddingClass(config.padding),
     getMarginClass(config.margin),
   ];
+
+  if (config.innerMargin) {
+    classes.push(getInnerMarginClass(config.innerMargin));
+  }
 
   if (config.backgroundColor) {
     classes.push(getBackgroundColorClass(config.backgroundColor));

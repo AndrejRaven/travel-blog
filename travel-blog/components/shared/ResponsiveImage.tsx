@@ -82,6 +82,7 @@ export default function ResponsiveImage({
         fill
         className={imageClasses}
         priority={priority}
+        quality={quality}
         sizes={sizes}
         onLoad={handleLoad}
       />
@@ -96,6 +97,7 @@ export default function ResponsiveImage({
       height={height}
       className={imageClasses}
       priority={priority}
+      quality={quality}
       sizes={sizes}
       onLoad={handleLoad}
     />
