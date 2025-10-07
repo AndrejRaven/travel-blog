@@ -58,8 +58,8 @@ const latestPosts = await getLatestPosts(5);
 import { QUERIES } from "@/lib/queries";
 import { fetchGroq } from "@/lib/sanity";
 
-// Użyj zapytania bezpośrednio
-const posts = await fetchGroq(QUERIES.POST.LATEST, { limit: 3 });
+// Użyj zapytania bezpośrednio (z strategią cache)
+const posts = await fetchGroq(QUERIES.POST.LATEST, { limit: 3 }, "POSTS");
 ```
 
 ## ✅ Korzyści
@@ -71,6 +71,9 @@ const posts = await fetchGroq(QUERIES.POST.LATEST, { limit: 3 });
 5. **Czytelność** - jasna struktura i nazewnictwo
 6. **Testowanie** - łatwiejsze testowanie zapytań
 7. **Prostota** - brak dodatkowych warstw abstrakcji
+8. **Wydajność** - optymalizowane zapytania z indeksami
+9. **Cacheowanie** - inteligentne strategie cache dla różnych typów danych
+10. **Obsługa błędów** - zaawansowana obsługa błędów z retry logic
 
 ## 🔧 Dodawanie nowych zapytań
 
@@ -96,12 +99,16 @@ export async function getNewFeatureById(
   id: string
 ): Promise<NewFeature | null> {
   try {
-    return await fetchGroq<NewFeature | null>(QUERIES.NEW_FEATURE.BY_ID, {
-      id,
-    });
+    return await fetchGroq<NewFeature | null>(
+      QUERIES.NEW_FEATURE.BY_ID,
+      { id },
+      "STATIC" // Wybierz odpowiednią strategię cache
+    );
   } catch (error) {
-    console.error("❌ Error fetching new feature:", error);
-    return null;
+    if (error.message?.includes("Not found")) {
+      return null; // Feature nie istnieje
+    }
+    handleSanityError(error, "Error fetching new feature");
   }
 }
 ```
@@ -117,12 +124,15 @@ const feature = await getNewFeatureById("feature-id");
 ## 🎯 Best Practices
 
 1. **Zawsze używaj funkcji z `functions.ts`** zamiast bezpośrednich zapytań
-2. **Dodawaj obsługę błędów** w każdej funkcji
+2. **Dodawaj obsługę błędów** w każdej funkcji z `handleSanityError`
 3. **Używaj TypeScript** dla typów zwracanych
 4. **Grupuj zapytania** według funkcjonalności
 5. **Dokumentuj** nowe zapytania w komentarzach
 6. **Testuj** nowe zapytania przed commitem
 7. **Kopiuj wzorce** z istniejących zapytań dla konsystencji
+8. **Wybierz odpowiednią strategię cache** dla typu danych
+9. **Dodawaj indeksy** do schematów Sanity dla lepszej wydajności
+10. **Używaj `readOnlyClient`** dla zapytań tylko do odczytu
 
 ## 🔄 Migracja z starych funkcji
 

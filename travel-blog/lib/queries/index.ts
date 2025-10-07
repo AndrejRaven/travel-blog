@@ -176,8 +176,8 @@ export const QUERIES = {
     // Pobierz wszystkie slugi postów
     ALL_SLUGS: `*[_type == "post" && defined(slug.current)][].slug.current`,
 
-    // Pobierz najnowsze posty
-    LATEST: `*[_type == "post"] | order(_createdAt desc) [0...$limit] {
+    // Pobierz najnowsze posty (zoptymalizowane z indeksem)
+    LATEST: `*[_type == "post" && defined(publishedAt)] | order(publishedAt desc, _createdAt desc) [0...$limit] {
       _id,
       title,
       subtitle,
@@ -376,8 +376,8 @@ export const QUERIES = {
       description
     }`,
 
-    // Pobierz posty z kategorii
-    POSTS: `*[_type == "post" && $slug in categories[]->slug.current] {
+    // Pobierz posty z kategorii (zoptymalizowane)
+    POSTS: `*[_type == "post" && defined(publishedAt) && $slug in categories[]->slug.current] | order(publishedAt desc, _createdAt desc) {
       _id,
       title,
       subtitle,
@@ -427,8 +427,8 @@ export const QUERIES = {
 
   // Zapytania dla strony głównej
   HOME: {
-    // Pobierz wszystkie komponenty strony głównej
-    COMPONENTS: `*[_type in ["heroBanner", "backgroundHeroBanner", "textContent", "imageCollage", "articles", "embedYoutube", "instagramSection", "newsletter", "youtubeChannel"]] | order(_createdAt asc) {
+    // Pobierz wszystkie komponenty strony głównej (z limitem dla wydajności)
+    COMPONENTS: `*[_type in ["heroBanner", "backgroundHeroBanner", "textContent", "imageCollage", "articles", "embedYoutube", "instagramSection", "newsletter", "youtubeChannel"]] | order(_createdAt asc) [0...50] {
       _type,
       _key,
       ...,

@@ -1,4 +1,4 @@
-import { fetchGroq } from '@/lib/sanity';
+import { fetchGroq, CACHE_STRATEGIES } from '@/lib/sanity';
 import { QUERIES } from './index';
 import type { 
   Post, 
@@ -8,6 +8,38 @@ import type {
   Category
 } from '@/lib/sanity';
 
+// Typy błędów dla lepszej obsługi
+type SanityError = {
+  status: number;
+  message: string;
+  details?: any;
+};
+
+// Funkcja pomocnicza do obsługi błędów
+function handleSanityError(error: any, context: string): never {
+  const status = error.status || 500;
+  const message = error.message || 'Unknown error';
+  
+  console.error(`❌ ${context}:`, {
+    status,
+    message,
+    details: error.details || error
+  });
+  
+  // Różne strategie dla różnych błędów
+  if (status === 404) {
+    throw new Error(`Not found: ${message}`);
+  }
+  if (status === 401 || status === 403) {
+    throw new Error(`Authentication error: ${message}`);
+  }
+  if (status >= 500) {
+    throw new Error(`Server error: ${message}`);
+  }
+  
+  throw new Error(`${context}: ${message}`);
+}
+
 // ===== POST FUNCTIONS =====
 
 /**
@@ -15,10 +47,16 @@ import type {
  */
 export async function getPostBySlug(slug: string): Promise<Post | null> {
   try {
-    return await fetchGroq<Post | null>(QUERIES.POST.BY_SLUG, { slug });
+    return await fetchGroq<Post | null>(
+      QUERIES.POST.BY_SLUG, 
+      { slug }, 
+      'POSTS'
+    );
   } catch (error) {
-    console.error('❌ Error fetching post by slug:', error);
-    return null;
+    if (error.message?.includes('Not found')) {
+      return null; // Post nie istnieje
+    }
+    handleSanityError(error, 'Error fetching post by slug');
   }
 }
 
@@ -27,10 +65,13 @@ export async function getPostBySlug(slug: string): Promise<Post | null> {
  */
 export async function getAllPostSlugs(): Promise<string[]> {
   try {
-    return await fetchGroq<string[]>(QUERIES.POST.ALL_SLUGS);
+    return await fetchGroq<string[]>(
+      QUERIES.POST.ALL_SLUGS, 
+      {}, 
+      'STATIC'
+    );
   } catch (error) {
-    console.error('❌ Error fetching post slugs:', error);
-    return [];
+    handleSanityError(error, 'Error fetching post slugs');
   }
 }
 
@@ -39,10 +80,13 @@ export async function getAllPostSlugs(): Promise<string[]> {
  */
 export async function getLatestPosts(limit: number = 3): Promise<ArticleForList[]> {
   try {
-    return await fetchGroq<ArticleForList[]>(QUERIES.POST.LATEST, { limit });
+    return await fetchGroq<ArticleForList[]>(
+      QUERIES.POST.LATEST, 
+      { limit }, 
+      'POSTS'
+    );
   } catch (error) {
-    console.error('❌ Error fetching latest posts:', error);
-    return [];
+    handleSanityError(error, 'Error fetching latest posts');
   }
 }
 
@@ -58,10 +102,13 @@ export async function getSelectedPosts(articleIds: string[]): Promise<ArticleFor
   if (!articleIds || articleIds.length === 0) return [];
   
   try {
-    return await fetchGroq<ArticleForList[]>(QUERIES.POST.SELECTED, { articleIds });
+    return await fetchGroq<ArticleForList[]>(
+      QUERIES.POST.SELECTED, 
+      { articleIds }, 
+      'POSTS'
+    );
   } catch (error) {
-    console.error('❌ Error fetching selected posts:', error);
-    return [];
+    handleSanityError(error, 'Error fetching selected posts');
   }
 }
 
@@ -77,10 +124,13 @@ export const getSelectedArticles = getSelectedPosts;
  */
 export async function getHeaderData(): Promise<HeaderData | null> {
   try {
-    return await fetchGroq<HeaderData>(QUERIES.HEADER.DATA);
+    return await fetchGroq<HeaderData>(
+      QUERIES.HEADER.DATA, 
+      {}, 
+      'HEADER'
+    );
   } catch (error) {
-    console.error('❌ Error fetching header data:', error);
-    return null;
+    handleSanityError(error, 'Error fetching header data');
   }
 }
 
@@ -91,10 +141,13 @@ export async function getHeaderData(): Promise<HeaderData | null> {
  */
 export async function getArticlesComponentData(): Promise<ArticlesData | null> {
   try {
-    return await fetchGroq<ArticlesData>(QUERIES.ARTICLES.COMPONENT_DATA);
+    return await fetchGroq<ArticlesData>(
+      QUERIES.ARTICLES.COMPONENT_DATA, 
+      {}, 
+      'COMPONENTS'
+    );
   } catch (error) {
-    console.error('❌ Error fetching articles component data:', error);
-    return null;
+    handleSanityError(error, 'Error fetching articles component data');
   }
 }
 
@@ -105,10 +158,13 @@ export async function getArticlesComponentData(): Promise<ArticlesData | null> {
  */
 export async function getAllCategories(): Promise<Category[]> {
   try {
-    return await fetchGroq<Category[]>(QUERIES.CATEGORY.ALL);
+    return await fetchGroq<Category[]>(
+      QUERIES.CATEGORY.ALL, 
+      {}, 
+      'CATEGORIES'
+    );
   } catch (error) {
-    console.error('❌ Error fetching categories:', error);
-    return [];
+    handleSanityError(error, 'Error fetching categories');
   }
 }
 
@@ -117,10 +173,16 @@ export async function getAllCategories(): Promise<Category[]> {
  */
 export async function getCategoryBySlug(slug: string): Promise<Category | null> {
   try {
-    return await fetchGroq<Category | null>(QUERIES.CATEGORY.BY_SLUG, { slug });
+    return await fetchGroq<Category | null>(
+      QUERIES.CATEGORY.BY_SLUG, 
+      { slug }, 
+      'CATEGORIES'
+    );
   } catch (error) {
-    console.error('❌ Error fetching category by slug:', error);
-    return null;
+    if (error.message?.includes('Not found')) {
+      return null; // Kategoria nie istnieje
+    }
+    handleSanityError(error, 'Error fetching category by slug');
   }
 }
 
@@ -129,10 +191,13 @@ export async function getCategoryBySlug(slug: string): Promise<Category | null> 
  */
 export async function getCategoryPosts(slug: string): Promise<ArticleForList[]> {
   try {
-    return await fetchGroq<ArticleForList[]>(QUERIES.CATEGORY.POSTS, { slug });
+    return await fetchGroq<ArticleForList[]>(
+      QUERIES.CATEGORY.POSTS, 
+      { slug }, 
+      'POSTS'
+    );
   } catch (error) {
-    console.error('❌ Error fetching category posts:', error);
-    return [];
+    handleSanityError(error, 'Error fetching category posts');
   }
 }
 
@@ -143,10 +208,13 @@ export async function getCategoryPosts(slug: string): Promise<ArticleForList[]> 
  */
 export async function getHomePageComponents(): Promise<any[]> {
   try {
-    return await fetchGroq<any[]>(QUERIES.HOME.COMPONENTS);
+    return await fetchGroq<any[]>(
+      QUERIES.HOME.COMPONENTS, 
+      {}, 
+      'COMPONENTS'
+    );
   } catch (error) {
-    console.error('❌ Error fetching home page components:', error);
-    return [];
+    handleSanityError(error, 'Error fetching home page components');
   }
 }
 
@@ -155,9 +223,12 @@ export async function getHomePageComponents(): Promise<any[]> {
  */
 export async function getHomepageData(): Promise<any | null> {
   try {
-    return await fetchGroq<any>(QUERIES.HOME.HOMEPAGE_DATA);
+    return await fetchGroq<any>(
+      QUERIES.HOME.HOMEPAGE_DATA, 
+      {}, 
+      'COMPONENTS'
+    );
   } catch (error) {
-    console.error('❌ Error fetching homepage data:', error);
-    return null;
+    handleSanityError(error, 'Error fetching homepage data');
   }
 }

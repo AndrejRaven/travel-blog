@@ -2,6 +2,16 @@ export default {
   name: 'post',
   type: 'document',
   title: 'Post',
+  // Indeksy dla lepszej wydajności zapytań
+  indexes: [
+    { name: 'slug', fields: [{ name: 'slug.current', direction: 'asc' }] },
+    { name: 'publishedAt', fields: [{ name: 'publishedAt', direction: 'desc' }] },
+    { name: 'categories', fields: [{ name: 'categories', direction: 'asc' }] },
+    { name: 'type_publishedAt', fields: [
+      { name: '_type', direction: 'asc' },
+      { name: 'publishedAt', direction: 'desc' }
+    ]},
+  ],
   fields: [
     // GŁÓWNA ZAKŁADKA
     {

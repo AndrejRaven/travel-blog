@@ -2,6 +2,12 @@ export default {
   name: 'category',
   type: 'document',
   title: 'Kategoria',
+  // Indeksy dla lepszej wydajności zapytań
+  indexes: [
+    { name: 'slug', fields: [{ name: 'slug.current', direction: 'asc' }] },
+    { name: 'isActive', fields: [{ name: 'isActive', direction: 'asc' }] },
+    { name: 'name', fields: [{ name: 'name', direction: 'asc' }] },
+  ],
   fields: [
     {
       name: 'name',

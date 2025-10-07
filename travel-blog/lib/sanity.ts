@@ -7,26 +7,29 @@ export type { ArticlesData } from './component-types';
 
 export const projectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID || "k5fsny25";
 export const dataset = process.env.NEXT_PUBLIC_SANITY_DATASET || "production";
-export const apiVersion = process.env.NEXT_PUBLIC_SANITY_API_VERSION || "2023-10-10";
+export const apiVersion = process.env.NEXT_PUBLIC_SANITY_API_VERSION || "2024-01-01";
 
-// Konfiguracja Sanity client
-export const client = createClient({
-  projectId,
-  dataset,
-  apiVersion,
-  useCdn: false, // Używaj zawsze najnowszych danych
-  token: process.env.SANITY_API_TOKEN, // Token dla operacji write
-  perspective: 'published', // Używaj tylko opublikowanych danych
-});
-
-// Client tylko do odczytu (bez tokenu)
+// Client tylko do odczytu (z CDN dla lepszej wydajności)
 export const readOnlyClient = createClient({
   projectId,
   dataset,
   apiVersion,
-  useCdn: false,
+  useCdn: true, // ✅ CDN dla read-only queries
   perspective: 'published',
 });
+
+// Client do operacji write (bez CDN)
+export const writeClient = createClient({
+  projectId,
+  dataset,
+  apiVersion,
+  useCdn: false, // ✅ Bez CDN dla write operations
+  token: process.env.SANITY_API_TOKEN,
+  perspective: 'published',
+});
+
+// Alias dla kompatybilności wstecznej
+export const client = writeClient;
 
 // Konfiguracja dla image-url builder
 const builder = imageUrlBuilder({
@@ -39,13 +42,26 @@ export const urlFor = (source: SanityImage) => builder.image(source);
 
 type GroqParams = Record<string, unknown>;
 
-export async function fetchGroq<T>(query: string, params: GroqParams = {}): Promise<T> {
+// Strategie cacheowania dla różnych typów danych
+export const CACHE_STRATEGIES = {
+  POSTS: { revalidate: 300 },      // 5 min - często aktualizowane
+  CATEGORIES: { revalidate: 3600 }, // 1h - rzadko zmieniane
+  HEADER: { revalidate: 1800 },     // 30 min - średnio często
+  COMPONENTS: { revalidate: 600 },  // 10 min - komponenty strony
+  STATIC: { revalidate: 86400 },    // 24h - dane statyczne
+} as const;
+
+export async function fetchGroq<T>(
+  query: string, 
+  params: GroqParams = {},
+  cacheStrategy: keyof typeof CACHE_STRATEGIES = 'POSTS'
+): Promise<T> {
   const url = `https://${projectId}.api.sanity.io/v${apiVersion}/data/query/${dataset}`;
   const res = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ query, params }),
-    next: { revalidate: 60 },
+    next: CACHE_STRATEGIES[cacheStrategy],
   });
   if (!res.ok) {
     const text = await res.text().catch(() => "");
