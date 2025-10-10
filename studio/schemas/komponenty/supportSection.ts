@@ -1,16 +1,21 @@
-import baseContainer from "../shared/baseContainer";
-
 export default {
   name: 'supportSection',
   type: 'object',
   title: 'Sekcja wsparcia (Aside)',
   fields: [
-    ...baseContainer.fields,
+    {
+      name: 'container',
+      title: 'Kontener',
+      type: 'baseContainer',
+      description: 'Podstawowe ustawienia layoutu (szerokość, odstępy, wyrównanie, wysokość)',
+      group: 'properties',
+    },
     {
       name: 'title',
       title: 'Tytuł',
       type: 'string',
       initialValue: 'Wsparcie naszego bloga',
+      group: 'content',
     },
     {
       name: 'description',
@@ -18,11 +23,13 @@ export default {
       type: 'text',
       rows: 3,
       initialValue: 'Jeśli podoba Ci się nasza treść, możesz nas wesprzeć. Każda złotówka pomaga nam w tworzeniu lepszych artykułów i filmów.',
+      group: 'content',
     },
     {
       name: 'supportOptions',
       title: 'Opcje wsparcia',
       type: 'array',
+      group: 'content',
       of: [
         {
           type: 'object',
@@ -106,6 +113,18 @@ export default {
       title: 'Wiadomość podziękowania',
       type: 'string',
       initialValue: 'Dziękujemy za wsparcie! ❤️',
+      group: 'content',
+    },
+  ],
+  groups: [
+    {
+      name: 'content',
+      title: 'Treść',
+      default: true,
+    },
+    {
+      name: 'properties',
+      title: 'Właściwości',
     },
   ],
   preview: {

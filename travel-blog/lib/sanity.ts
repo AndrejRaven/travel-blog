@@ -115,6 +115,16 @@ export type Post = {
     name: string;
     slug: { current: string };
     color: string;
+    mainCategory?: {
+      _id: string;
+      name: string;
+      slug: { current: string };
+      superCategory?: {
+        _id: string;
+        name: string;
+        slug: { current: string };
+      };
+    };
   }>;
   coverImage?: SanityImage | null;
   coverMobileImage?: SanityImage | null;
@@ -159,6 +169,16 @@ export type ArticleForList = {
     name: string;
     slug: { current: string };
     color: string;
+    mainCategory?: {
+      _id: string;
+      name: string;
+      slug: { current: string };
+      superCategory?: {
+        _id: string;
+        name: string;
+        slug: { current: string };
+      };
+    };
   }>;
 };
 
@@ -186,12 +206,45 @@ export type MenuItem = {
   dropdownItems?: DropdownItem[];
 };
 
+export type SuperCategory = {
+  _id: string;
+  name: string;
+  slug: { current: string };
+  color: string;
+  description?: string;
+  icon?: SanityImage | null;
+};
+
+export type MainCategory = {
+  _id: string;
+  name: string;
+  slug: { current: string };
+  color: string;
+  description?: string;
+  icon?: SanityImage | null;
+  superCategory?: {
+    _id: string;
+    name: string;
+    slug: { current: string };
+  };
+};
+
 export type Category = {
   _id: string;
   name: string;
   slug: { current: string };
   color: string;
   description?: string;
+  mainCategory?: {
+    _id: string;
+    name: string;
+    slug: { current: string };
+    superCategory?: {
+      _id: string;
+      name: string;
+      slug: { current: string };
+    };
+  };
 };
 
 export type HeaderData = {

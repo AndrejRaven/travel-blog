@@ -1,16 +1,21 @@
-import baseContainer from "../shared/baseContainer";
-
 export default {
   name: 'categoriesSection',
   type: 'object',
   title: 'Sekcja kategorii (Main)',
   fields: [
-    ...baseContainer.fields,
+    {
+      name: 'container',
+      title: 'Kontener',
+      type: 'baseContainer',
+      description: 'Podstawowe ustawienia layoutu (szerokość, odstępy, wyrównanie, wysokość)',
+      group: 'properties',
+    },
     {
       name: 'title',
       title: 'Tytuł',
       type: 'string',
       initialValue: 'Kategorie artykułów',
+      group: 'content',
     },
     {
       name: 'showBackground',
@@ -18,15 +23,17 @@ export default {
       type: 'boolean',
       initialValue: true,
       description: 'Czy sekcja ma mieć szare tło',
+      group: 'content',
     },
     {
       name: 'categories',
       title: 'Kategorie',
       type: 'array',
+      group: 'content',
       of: [
         {
           type: 'object',
-          name: 'category',
+          name: 'categoryItem',
           title: 'Kategoria',
           fields: [
             {
@@ -103,6 +110,17 @@ export default {
           articleCount: 6,
         },
       ],
+    },
+  ],
+  groups: [
+    {
+      name: 'content',
+      title: 'Treść',
+      default: true,
+    },
+    {
+      name: 'properties',
+      title: 'Właściwości',
     },
   ],
   preview: {

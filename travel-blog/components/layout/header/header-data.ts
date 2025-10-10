@@ -1,4 +1,6 @@
-import { HeaderData, MenuItem, DropdownSection, DropdownItem, SubmenuItem } from '@/lib/sanity';
+import { HeaderData, MenuItem, DropdownSection, DropdownItem, SubmenuItem, SuperCategory, MainCategory, Category } from '@/lib/sanity';
+import { fetchGroq } from '@/lib/sanity';
+import { QUERIES } from '@/lib/queries';
 
 export type LegacyMenuItem = {
   label: string;
@@ -15,7 +17,80 @@ export type Section = {
   items: LegacyMenuItem[];
 };
 
-// Funkcja do konwersji danych z Sanity na format używany w komponentach
+export type HierarchicalSection = {
+  key: string;
+  title: string;
+  emoji: string;
+  items: Array<{
+    label: string;
+    href: string;
+    isExternal?: boolean;
+    subcategories?: Array<{
+      label: string;
+      href: string;
+      isExternal?: boolean;
+    }>;
+  }>;
+};
+
+// Funkcja do pobierania hierarchicznych kategorii
+export async function getHierarchicalCategories(): Promise<HierarchicalSection[]> {
+  try {
+    const [superCategories, mainCategories, allCategories] = await Promise.all([
+      fetchGroq<SuperCategory[]>(QUERIES.SUPER_CATEGORY.ALL, {}, "CATEGORIES"),
+      fetchGroq<MainCategory[]>(QUERIES.MAIN_CATEGORY.ALL, {}, "CATEGORIES"),
+      fetchGroq<Category[]>(QUERIES.CATEGORY.ALL, {}, "CATEGORIES")
+    ]);
+
+    return superCategories.map(superCategory => {
+      const relatedMainCategories = mainCategories.filter(mainCat => 
+        mainCat.superCategory?._id === superCategory._id
+      );
+
+      return {
+        key: superCategory.slug.current,
+        title: superCategory.name,
+        emoji: getCategoryEmoji(superCategory.name),
+        items: relatedMainCategories.map(mainCategory => {
+          const subcategories = allCategories.filter(cat => 
+            cat.mainCategory?._id === mainCategory._id
+          );
+
+          return {
+            label: mainCategory.name,
+            href: `/${superCategory.slug.current}/${mainCategory.slug.current}`,
+            isExternal: false,
+            subcategories: subcategories.map(sub => ({
+              label: sub.name,
+              href: `/${superCategory.slug.current}/${mainCategory.slug.current}/${sub.slug.current}`,
+              isExternal: false,
+            }))
+          };
+        })
+      };
+    });
+  } catch (error) {
+    console.error('Error fetching hierarchical categories:', error);
+    return [];
+  }
+}
+
+// Funkcja do mapowania nazw kategorii na emoji
+function getCategoryEmoji(categoryName: string): string {
+  const emojiMap: Record<string, string> = {
+    'Kierunki': '🗺️',
+    'Porady': '💡',
+    'Azja': '🌏',
+    'Europa': '🌍',
+    'Ameryka': '🌎',
+    'Afryka': '🌍',
+    'Oceania': '🌏',
+  };
+  
+  return emojiMap[categoryName] || '📁';
+}
+
+// Funkcja do konwersji danych z Sanity na format używany w komponentach (legacy)
 export function getSectionsFromHeaderData(headerData: HeaderData | null): Section[] {
   if (!headerData?.categoriesDropdown?.sections) {
     return [];

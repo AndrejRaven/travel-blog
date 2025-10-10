@@ -51,18 +51,8 @@ export type HeroBanner = {
   _key: string;
   container: BaseContainer;
   content: RichTextBlock[];
-  image: {
-    asset?: {
-      _id: string;
-      url: string;
-    };
-  };
-  mobileImage?: {
-    asset?: {
-      _id: string;
-      url: string;
-    };
-  };
+  image: SanityImage;
+  mobileImage?: SanityImage;
   buttons?: Button[];
   layout: {
     textAlignment: 'left' | 'center' | 'right';
@@ -80,18 +70,8 @@ export type BackgroundHeroBanner = {
   container: BaseContainer;
   content: RichTextBlock[];
   mobileContent?: RichTextBlock[];
-  image: {
-    asset?: {
-      _id: string;
-      url: string;
-    };
-  };
-  mobileImage?: {
-    asset?: {
-      _id: string;
-      url: string;
-    };
-  };
+  image: SanityImage;
+  mobileImage?: SanityImage;
   buttons?: Button[];
   layout: {
     textAlignment: 'left' | 'center' | 'right';
@@ -103,11 +83,12 @@ export type BackgroundHeroBanner = {
   };
 };
 
-// Union type dla wszystkich komponentów
-export type PostComponent = HeroBanner | BackgroundHeroBanner | TextContent | ImageCollage | EmbedYoutube | Articles;
+// Union type dla wszystkich komponentów - zostanie zaktualizowany na końcu
 
-// Utility type do usunięcia _type i _key z PostComponent
-export type ComponentData<T extends PostComponent> = Omit<T, '_type' | '_key'>;
+// Utility type do usunięcia _type i _key z komponentów
+export type ComponentData<T extends { _type: string; _key: string }> = Omit<T, '_type' | '_key'>;
+
+// Type guard functions dla bezpiecznego sprawdzania typów komponentów - zostaną zaktualizowane na końcu
 
 // Typy dla danych komponentu (używają utility type)
 export type HeroBannerData = ComponentData<HeroBanner>;
@@ -129,13 +110,7 @@ export type ImageCollage = {
   _type: 'imageCollage';
   _key: string;
   container: BaseContainer;
-  images: Array<{
-    asset?: {
-      _id: string;
-      url: string;
-    };
-    alt?: string;
-  }>;
+  images: Array<SanityImage>;
   layout: {
     thumbnailCount: 2 | 3 | 4;
   };
@@ -169,5 +144,239 @@ export type Articles = {
   maxArticles: number;
 };
 
-export type ArticlesData = Omit<Articles, '_type' | '_key'>;
+export type ArticlesData = ComponentData<Articles>;
+
+// Typy dla komponentów sekcji bez Sanity CMS
+export type AboutUs = {
+  _type: 'aboutUs';
+  _key: string;
+  container: BaseContainer;
+  title: string;
+  image: SanityImage;
+  imageAlt: string;
+  description: string[];
+  contactHref: string;
+  contactText: string;
+};
+
+export type AboutUsData = ComponentData<AboutUs>;
+
+export type CategoriesSection = {
+  _type: 'categoriesSection';
+  _key: string;
+  container: BaseContainer;
+  title: string;
+  showBackground: boolean;
+  categories: Array<{
+    id: string;
+    name: string;
+    description: string;
+    href: string;
+    icon: string | { asset?: { url?: string } };
+    articleCount?: number;
+  }>;
+};
+
+export type SubcategoryList = {
+  _type: 'subcategoryList';
+  _key: string;
+  container: BaseContainer;
+  title: string;
+  subcategories: Array<{
+    id: string;
+    name: string;
+    description: string;
+    href: string;
+    color: string;
+    articleCount?: number;
+  }>;
+};
+
+export type MainCategoryList = {
+  _type: 'mainCategoryList';
+  _key: string;
+  container: BaseContainer;
+  title: string;
+  mainCategories: Array<{
+    id: string;
+    name: string;
+    description: string;
+    href: string;
+    color: string;
+    icon?: {
+      asset?: {
+        url?: string;
+      };
+    };
+    articleCount?: number;
+  }>;
+};
+
+export type CategoriesSectionData = ComponentData<CategoriesSection>;
+export type SubcategoryListData = ComponentData<SubcategoryList>;
+export type MainCategoryListData = ComponentData<MainCategoryList>;
+
+export type InstagramSection = {
+  _type: 'instagramSection';
+  _key: string;
+  container: BaseContainer;
+  title: string;
+  subtitle: string;
+  instagramHandle: string;
+  instagramUrl: string;
+  buttonText: string;
+  posts: Array<{
+    id: string;
+    imageUrl?: {
+      asset: {
+        _id: string;
+        url: string;
+        metadata: {
+          dimensions: {
+            width: number;
+            height: number;
+          };
+        };
+      };
+      hotspot?: any;
+      crop?: any;
+    };
+    caption?: string;
+    likes?: string;
+  }>;
+};
+
+export type InstagramSectionData = ComponentData<InstagramSection>;
+
+export type Newsletter = {
+  _type: 'newsletter';
+  _key: string;
+  container: BaseContainer;
+  title: string;
+  subtitle: string;
+  buttonText: string;
+  privacyText: string;
+  placeholder?: string;
+  successMessage?: string;
+  errorMessage?: string;
+  features: Array<{
+    icon: string;
+    text: string;
+  }>;
+};
+
+export type NewsletterData = ComponentData<Newsletter>;
+
+export type Slider = {
+  _type: 'slider';
+  _key: string;
+  container: BaseContainer;
+  title: string;
+  slides: Array<{
+    id: string;
+    imageUrl: string;
+    title: string;
+    caption: string;
+  }>;
+};
+
+export type SliderData = ComponentData<Slider>;
+
+export type SupportSection = {
+  _type: 'supportSection';
+  _key: string;
+  container: BaseContainer;
+  title: string;
+  description: string;
+  thankYouMessage: string;
+  supportOptions: Array<{
+    id: string;
+    name: string;
+    href: string;
+    icon?: string | { asset?: { url?: string } };
+    iconSvg?: string;
+    variant?: 'primary' | 'secondary' | 'outline' | 'youtube';
+  }>;
+};
+
+export type SupportSectionData = ComponentData<SupportSection>;
+
+export type YouTubeChannel = {
+  _type: 'youtubeChannel';
+  _key: string;
+  container: BaseContainer;
+  title: string;
+  channelName: string;
+  channelDescription: string;
+  channelHref: string;
+  buttonText: string;
+  buttonVariant: 'primary' | 'secondary' | 'outline' | 'youtube';
+  channelImage?: SanityImage;
+};
+
+export type YouTubeChannelData = ComponentData<YouTubeChannel>;
+
+// Union type dla wszystkich komponentów
+export type PostComponent = HeroBanner | BackgroundHeroBanner | TextContent | ImageCollage | EmbedYoutube | Articles | AboutUs | CategoriesSection | SubcategoryList | MainCategoryList | InstagramSection | Newsletter | Slider | SupportSection | YouTubeChannel;
+
+// Type guard functions dla wszystkich komponentów
+export function isHeroBanner(component: PostComponent): component is HeroBanner {
+  return component._type === 'heroBanner';
+}
+
+export function isBackgroundHeroBanner(component: PostComponent): component is BackgroundHeroBanner {
+  return component._type === 'backgroundHeroBanner';
+}
+
+export function isTextContent(component: PostComponent): component is TextContent {
+  return component._type === 'textContent';
+}
+
+export function isImageCollage(component: PostComponent): component is ImageCollage {
+  return component._type === 'imageCollage';
+}
+
+export function isEmbedYoutube(component: PostComponent): component is EmbedYoutube {
+  return component._type === 'embedYoutube';
+}
+
+export function isArticles(component: PostComponent): component is Articles {
+  return component._type === 'articles';
+}
+
+export function isAboutUs(component: PostComponent): component is AboutUs {
+  return component._type === 'aboutUs';
+}
+
+export function isCategoriesSection(component: PostComponent): component is CategoriesSection {
+  return component._type === 'categoriesSection';
+}
+
+export function isSubcategoryList(component: PostComponent): component is SubcategoryList {
+  return component._type === 'subcategoryList';
+}
+
+export function isMainCategoryList(component: PostComponent): component is MainCategoryList {
+  return component._type === 'mainCategoryList';
+}
+
+export function isInstagramSection(component: PostComponent): component is InstagramSection {
+  return component._type === 'instagramSection';
+}
+
+export function isNewsletter(component: PostComponent): component is Newsletter {
+  return component._type === 'newsletter';
+}
+
+export function isSlider(component: PostComponent): component is Slider {
+  return component._type === 'slider';
+}
+
+export function isSupportSection(component: PostComponent): component is SupportSection {
+  return component._type === 'supportSection';
+}
+
+export function isYouTubeChannel(component: PostComponent): component is YouTubeChannel {
+  return component._type === 'youtubeChannel';
+}
 

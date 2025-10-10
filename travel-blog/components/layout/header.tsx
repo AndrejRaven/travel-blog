@@ -6,6 +6,8 @@ import MobileMenu from "@/components/layout/header/MobileMenu";
 import {
   getSectionsFromHeaderData,
   getMainMenuFromHeaderData,
+  getHierarchicalCategories,
+  HierarchicalSection,
 } from "@/components/layout/header/header-data";
 import { HeaderData } from "@/lib/sanity";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
@@ -23,6 +25,9 @@ const Header = memo(function Header() {
   const [headerData, setHeaderData] = useState<HeaderData | null>(
     getCachedHeaderData()
   );
+  const [hierarchicalCategories, setHierarchicalCategories] = useState<
+    HierarchicalSection[]
+  >([]);
 
   // Pobierz dane header z cache
   useEffect(() => {
@@ -30,12 +35,16 @@ const Header = memo(function Header() {
     const cachedData = getCachedHeaderData();
     if (cachedData) {
       setHeaderData(cachedData);
-      return;
     }
 
     // Pobierz dane w tle
     fetchHeaderData().then((data) => {
       setHeaderData(data);
+    });
+
+    // Pobierz hierarchiczne kategorie
+    getHierarchicalCategories().then((categories) => {
+      setHierarchicalCategories(categories);
     });
   }, []); // Pusta dependency array - uruchamia się tylko raz
 
@@ -62,6 +71,7 @@ const Header = memo(function Header() {
           <DesktopNav
             sections={currentSections}
             mainMenu={currentMainMenu}
+            hierarchicalCategories={hierarchicalCategories}
             open={openSections}
             onToggle={(key) => toggleSection(key as keyof typeof openSections)}
           />

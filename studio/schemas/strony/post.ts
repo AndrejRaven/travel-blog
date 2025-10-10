@@ -36,7 +36,7 @@ export default {
     },
     {
       name: 'categories',
-      title: 'Kategorie',
+      title: 'Podkategorie',
       type: 'array',
       of: [
         {
@@ -44,7 +44,7 @@ export default {
           to: [{ type: 'category' }],
         },
       ],
-      validation: (Rule: any) => Rule.min(1).error('Post musi mieć przynajmniej jedną kategorię'),
+      description: 'Wybierz podkategorie (np. Kambodża, Tajlandia)',
       group: 'main',
     },
     {

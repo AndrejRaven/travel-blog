@@ -66,7 +66,7 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${inter.variable} ${playfairDisplay.variable} ${sourceCodePro.variable} antialiased`}
+        className={`${inter.variable} ${playfairDisplay.variable} ${sourceCodePro.variable} antialiased bg-white dark:bg-gray-900`}
       >
         <ThemeProvider>
           <NotificationProvider>

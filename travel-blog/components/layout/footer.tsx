@@ -138,8 +138,8 @@ const Footer = memo(function Footer() {
         <div className="border-t border-gray-200 dark:border-gray-700 pt-8">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <p className="text-sm font-sans text-gray-600 dark:text-gray-400">
-              © <span suppressHydrationWarning>{YEAR}</span> Nasz Blog. Wszelkie
-              prawa zastrzeżone.
+              © <span suppressHydrationWarning>{YEAR}</span> Nasz Blog.
+              Wszelkie prawa zastrzeżone.
             </p>
             <p className="text-xs font-sans text-gray-500 dark:text-gray-500">
               Stworzone z ❤️ dla podróżników

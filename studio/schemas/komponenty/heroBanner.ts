@@ -1,3 +1,5 @@
+import baseContainer from "../shared/baseContainer";
+
 export default {
   name: 'heroBanner',
   type: 'object',

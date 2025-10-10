@@ -1,7 +1,7 @@
 export default {
-  name: 'category',
+  name: 'superCategory',
   type: 'document',
-  title: 'Podkategoria',
+  title: 'Kategoria nadrzędna',
   // Indeksy dla lepszej wydajności zapytań
   indexes: [
     { name: 'slug', fields: [{ name: 'slug.current', direction: 'asc' }] },
@@ -11,7 +11,7 @@ export default {
   fields: [
     {
       name: 'name',
-      title: 'Nazwa podkategorii',
+      title: 'Nazwa kategorii nadrzędnej',
       type: 'string',
       validation: (Rule: any) => Rule.required().min(2).max(50),
     },
@@ -24,17 +24,10 @@ export default {
     },
     {
       name: 'description',
-      title: 'Opis podkategorii',
+      title: 'Opis kategorii nadrzędnej',
       type: 'text',
       rows: 3,
       validation: (Rule: any) => Rule.max(200),
-    },
-    {
-      name: 'mainCategory',
-      title: 'Kategoria główna',
-      type: 'reference',
-      to: [{ type: 'mainCategory' }],
-      validation: (Rule: any) => Rule.required().error('Podkategoria musi mieć przypisaną kategorię główną'),
     },
     {
       name: 'color',
@@ -54,10 +47,17 @@ export default {
       initialValue: 'blue',
     },
     {
+      name: 'icon',
+      title: 'Ikona kategorii',
+      type: 'image',
+      options: { hotspot: true },
+      description: 'Opcjonalna ikona dla kategorii nadrzędnej',
+    },
+    {
       name: 'isActive',
       title: 'Aktywna',
       type: 'boolean',
-      description: 'Czy podkategoria ma być widoczna na stronie',
+      description: 'Czy kategoria nadrzędna ma być widoczna na stronie',
       initialValue: true,
     },
   ],
@@ -66,10 +66,10 @@ export default {
       title: 'name',
       subtitle: 'description',
       color: 'color',
-      mainCategory: 'mainCategory.name',
+      icon: 'icon',
     },
     prepare(selection: any) {
-      const { title, subtitle, color, mainCategory } = selection;
+      const { title, subtitle, color, icon } = selection;
       const colorEmojis: Record<string, string> = {
         blue: '🔵',
         green: '🟢',
@@ -81,7 +81,8 @@ export default {
       
       return {
         title: `${colorEmojis[color] || '⚪'} ${title}`,
-        subtitle: mainCategory ? `${mainCategory} • ${subtitle || 'Brak opisu'}` : subtitle || 'Brak opisu',
+        subtitle: subtitle || 'Brak opisu',
+        media: icon,
       };
     },
   },

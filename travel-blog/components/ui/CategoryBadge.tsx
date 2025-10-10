@@ -37,10 +37,7 @@ export default function CategoryBadge({
 
   if (showLink) {
     return (
-      <Link
-        href={`/kategoria/${category.slug.current}`}
-        className={badgeClasses}
-      >
+      <Link href={`/${category.slug.current}`} className={badgeClasses}>
         {category.name}
       </Link>
     );

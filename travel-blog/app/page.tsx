@@ -84,40 +84,11 @@ export default function Home() {
 
     switch (_type) {
       case "aboutUs":
-        return (
-          <AboutUs
-            key={`aside-${index}`}
-            title={props.title}
-            image={props.image?.asset?.url}
-            imageAlt={props.imageAlt}
-            description={props.description}
-            contactHref={props.contactHref}
-            contactText={props.contactText}
-          />
-        );
+        return <AboutUs key={`aside-${index}`} data={props} />;
       case "youtubeChannel":
-        return (
-          <YouTubeChannel
-            key={`aside-${index}`}
-            title={props.title}
-            channelName={props.channelName}
-            channelDescription={props.channelDescription}
-            channelHref={props.channelHref}
-            buttonText={props.buttonText}
-            buttonVariant={props.buttonVariant}
-            channelImage={props.channelImage}
-          />
-        );
+        return <YouTubeChannel key={`aside-${index}`} data={props} />;
       case "supportSection":
-        return (
-          <SupportSection
-            key={`aside-${index}`}
-            title={props.title}
-            description={props.description}
-            supportOptions={props.supportOptions}
-            thankYouMessage={props.thankYouMessage}
-          />
-        );
+        return <SupportSection key={`aside-${index}`} data={props} />;
       default:
         return null;
     }
@@ -129,35 +100,11 @@ export default function Home() {
 
     switch (_type) {
       case "categoriesSection":
-        return (
-          <CategoriesSection
-            key={`main-${index}`}
-            categories={props.categories}
-            title={props.title}
-            showBackground={props.showBackground}
-          />
-        );
+        return <CategoriesSection key={`main-${index}`} data={props} />;
       case "instagramSection":
-        return (
-          <InstagramSection
-            key={`main-${index}`}
-            title={props.title}
-            subtitle={props.subtitle}
-            instagramHandle={props.instagramHandle}
-            instagramUrl={props.instagramUrl}
-            buttonText={props.buttonText}
-            posts={props.posts}
-            container={props.container}
-          />
-        );
+        return <InstagramSection key={`main-${index}`} data={props} />;
       case "newsletter":
-        return (
-          <Newsletter
-            key={`main-${index}`}
-            // Przekaż dane z Sanity do komponentu
-            // Newsletter będzie musiał być zaktualizowany, żeby przyjmować props
-          />
-        );
+        return <Newsletter key={`main-${index}`} data={props} />;
       default:
         // Dla pozostałych komponentów używaj ComponentRenderer
         return (

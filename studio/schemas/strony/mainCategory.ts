@@ -1,7 +1,7 @@
 export default {
-  name: 'category',
+  name: 'mainCategory',
   type: 'document',
-  title: 'Podkategoria',
+  title: 'Kategoria główna',
   // Indeksy dla lepszej wydajności zapytań
   indexes: [
     { name: 'slug', fields: [{ name: 'slug.current', direction: 'asc' }] },
@@ -11,7 +11,7 @@ export default {
   fields: [
     {
       name: 'name',
-      title: 'Nazwa podkategorii',
+      title: 'Nazwa kategorii głównej',
       type: 'string',
       validation: (Rule: any) => Rule.required().min(2).max(50),
     },
@@ -24,17 +24,10 @@ export default {
     },
     {
       name: 'description',
-      title: 'Opis podkategorii',
+      title: 'Opis kategorii głównej',
       type: 'text',
       rows: 3,
       validation: (Rule: any) => Rule.max(200),
-    },
-    {
-      name: 'mainCategory',
-      title: 'Kategoria główna',
-      type: 'reference',
-      to: [{ type: 'mainCategory' }],
-      validation: (Rule: any) => Rule.required().error('Podkategoria musi mieć przypisaną kategorię główną'),
     },
     {
       name: 'color',
@@ -54,10 +47,24 @@ export default {
       initialValue: 'blue',
     },
     {
+      name: 'icon',
+      title: 'Ikona kategorii',
+      type: 'image',
+      options: { hotspot: true },
+      description: 'Opcjonalna ikona dla kategorii głównej',
+    },
+    {
+      name: 'superCategory',
+      title: 'Kategoria nadrzędna',
+      type: 'reference',
+      to: [{ type: 'superCategory' }],
+      validation: (Rule: any) => Rule.required().error('Kategoria główna musi mieć przypisaną kategorię nadrzędną'),
+    },
+    {
       name: 'isActive',
       title: 'Aktywna',
       type: 'boolean',
-      description: 'Czy podkategoria ma być widoczna na stronie',
+      description: 'Czy kategoria główna ma być widoczna na stronie',
       initialValue: true,
     },
   ],
@@ -66,10 +73,11 @@ export default {
       title: 'name',
       subtitle: 'description',
       color: 'color',
-      mainCategory: 'mainCategory.name',
+      icon: 'icon',
+      superCategory: 'superCategory.name',
     },
     prepare(selection: any) {
-      const { title, subtitle, color, mainCategory } = selection;
+      const { title, subtitle, color, icon, superCategory } = selection;
       const colorEmojis: Record<string, string> = {
         blue: '🔵',
         green: '🟢',
@@ -81,7 +89,8 @@ export default {
       
       return {
         title: `${colorEmojis[color] || '⚪'} ${title}`,
-        subtitle: mainCategory ? `${mainCategory} • ${subtitle || 'Brak opisu'}` : subtitle || 'Brak opisu',
+        subtitle: superCategory ? `${superCategory} • ${subtitle || 'Brak opisu'}` : subtitle || 'Brak opisu',
+        media: icon,
       };
     },
   },
