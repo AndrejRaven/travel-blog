@@ -1,4 +1,4 @@
-import { HeaderData, MenuItem, DropdownSection, DropdownItem, SubmenuItem, SuperCategory, MainCategory, Category } from '@/lib/sanity';
+import { HeaderData, MenuItem, SuperCategory, MainCategory, Category } from '@/lib/sanity';
 import { fetchGroq } from '@/lib/sanity';
 import { QUERIES } from '@/lib/queries';
 

@@ -26,7 +26,111 @@ const DesktopNav = memo(function DesktopNav({
 }: Props) {
   const [hoveredMenu, setHoveredMenu] = useState<string | null>(null);
 
-  // Jeśli mamy hierarchiczne kategorie, używamy ich
+  // Jeśli mamy nowe menu z Sanity, używamy go
+  if (mainMenu && mainMenu.length > 0) {
+    return (
+      <nav className="hidden md:flex items-center gap-6 text-sm font-sans text-gray-600 dark:text-gray-300">
+        {mainMenu.map((menuItem, index) => (
+          <div
+            key={index}
+            className="group relative"
+            onMouseEnter={() => setHoveredMenu(menuItem.label)}
+            onMouseLeave={() => setHoveredMenu(null)}
+          >
+            {menuItem.href ? (
+              <NavLink
+                href={menuItem.href}
+                external={menuItem.isExternal}
+                className="inline-flex items-center gap-1 transition-colors duration-200 group-hover:text-gray-900 dark:group-hover:text-gray-100"
+              >
+                <span>{menuItem.label}</span>
+                {menuItem.hasDropdown && (
+                  <ChevronIcon
+                    className="h-4 w-4 transition-transform duration-300 group-hover:rotate-180"
+                    aria-hidden
+                  />
+                )}
+              </NavLink>
+            ) : (
+              <button
+                aria-haspopup="true"
+                aria-expanded={hoveredMenu === menuItem.label}
+                className="inline-flex items-center gap-1 transition-colors duration-200 group-hover:text-gray-900 dark:group-hover:text-gray-100"
+              >
+                <span>{menuItem.label}</span>
+                {menuItem.hasDropdown && (
+                  <ChevronIcon
+                    className="h-4 w-4 transition-transform duration-300 group-hover:rotate-180"
+                    aria-hidden
+                  />
+                )}
+              </button>
+            )}
+            <span className="pointer-events-none absolute -bottom-1 left-0 h-[2px] w-0 bg-gray-900 dark:bg-gray-100 transition-all duration-300 group-hover:w-full" />
+
+            {menuItem.hasDropdown && menuItem.dropdownItems && (
+              <div className="invisible opacity-0 translate-y-2 group-hover:visible group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-200 absolute right-0 top-full mt-3 w-64 rounded-lg border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg">
+                <div className="p-2">
+                  {menuItem.dropdownItems.map((item, itemIdx) => (
+                    <React.Fragment key={itemIdx}>
+                      <div className="relative group/item">
+                        {item.hasSubmenu && item.submenuItems ? (
+                          <div className="relative">
+                            <button
+                              className="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md transition-colors duration-200 flex items-center justify-between"
+                              onMouseEnter={() =>
+                                setHoveredMenu(
+                                  `${menuItem.label}-${item.label}`
+                                )
+                              }
+                            >
+                              <span>{item.label}</span>
+                              <ChevronIcon className="h-3 w-3 -rotate-90 group-hover/item:rotate-90 transition-transform duration-300" />
+                            </button>
+                            <div className="invisible opacity-0 translate-x-2 group-hover/item:visible group-hover/item:opacity-100 group-hover/item:translate-x-0 transition-all duration-200 absolute left-full top-0 ml-1 w-48 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-md shadow-lg z-10">
+                              <div className="p-2">
+                                {item.submenuItems.map((subItem, subIdx) => (
+                                  <React.Fragment key={subIdx}>
+                                    <NavLink
+                                      href={subItem.href}
+                                      external={subItem.isExternal}
+                                      className="block px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md transition-colors duration-200"
+                                    >
+                                      {subItem.label}
+                                    </NavLink>
+                                    {subIdx < item.submenuItems.length - 1 && (
+                                      <div className="border-t border-gray-200 dark:border-gray-700 my-1"></div>
+                                    )}
+                                  </React.Fragment>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <NavLink
+                            href={item.href!}
+                            external={item.isExternal}
+                            className="block px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md transition-colors duration-200"
+                          >
+                            {item.label}
+                          </NavLink>
+                        )}
+                      </div>
+                      {itemIdx < menuItem.dropdownItems.length - 1 && (
+                        <div className="border-t border-gray-200 dark:border-gray-700 my-1"></div>
+                      )}
+                    </React.Fragment>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
+      </nav>
+    );
+  }
+
+  // Jeśli mamy hierarchiczne kategorie, używamy ich jako fallback
   if (hierarchicalCategories && hierarchicalCategories.length > 0) {
     return (
       <nav className="hidden md:flex items-center gap-6 text-sm font-sans text-gray-600 dark:text-gray-300">
@@ -131,110 +235,6 @@ const DesktopNav = memo(function DesktopNav({
           </NavLink>
           <span className="pointer-events-none absolute -bottom-1 left-0 h-[2px] w-0 bg-gray-900 dark:bg-gray-100 transition-all duration-300 group-hover:w-full" />
         </div>
-      </nav>
-    );
-  }
-
-  // Jeśli mamy nowe menu, używamy go, w przeciwnym razie używamy starego
-  if (mainMenu && mainMenu.length > 0) {
-    return (
-      <nav className="hidden md:flex items-center gap-6 text-sm font-sans text-gray-600 dark:text-gray-300">
-        {mainMenu.map((menuItem, index) => (
-          <div
-            key={index}
-            className="group relative"
-            onMouseEnter={() => setHoveredMenu(menuItem.label)}
-            onMouseLeave={() => setHoveredMenu(null)}
-          >
-            {menuItem.href ? (
-              <NavLink
-                href={menuItem.href}
-                external={menuItem.isExternal}
-                className="inline-flex items-center gap-1 transition-colors duration-200 group-hover:text-gray-900 dark:group-hover:text-gray-100"
-              >
-                <span>{menuItem.label}</span>
-                {menuItem.hasDropdown && (
-                  <ChevronIcon
-                    className="h-4 w-4 transition-transform duration-300 group-hover:rotate-180"
-                    aria-hidden
-                  />
-                )}
-              </NavLink>
-            ) : (
-              <button
-                aria-haspopup="true"
-                aria-expanded={hoveredMenu === menuItem.label}
-                className="inline-flex items-center gap-1 transition-colors duration-200 group-hover:text-gray-900 dark:group-hover:text-gray-100"
-              >
-                <span>{menuItem.label}</span>
-                {menuItem.hasDropdown && (
-                  <ChevronIcon
-                    className="h-4 w-4 transition-transform duration-300 group-hover:rotate-180"
-                    aria-hidden
-                  />
-                )}
-              </button>
-            )}
-            <span className="pointer-events-none absolute -bottom-1 left-0 h-[2px] w-0 bg-gray-900 dark:bg-gray-100 transition-all duration-300 group-hover:w-full" />
-
-            {menuItem.hasDropdown && menuItem.dropdownItems && (
-              <div className="invisible opacity-0 translate-y-2 group-hover:visible group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-200 absolute right-0 top-full mt-3 w-64 rounded-lg border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg">
-                <div className="p-2">
-                  {menuItem.dropdownItems.map((item, itemIdx) => (
-                    <React.Fragment key={itemIdx}>
-                      <div className="relative group/item">
-                        {item.hasSubmenu && item.submenuItems ? (
-                          <div className="relative">
-                            <button
-                              className="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md transition-colors duration-200 flex items-center justify-between"
-                              onMouseEnter={() =>
-                                setHoveredMenu(
-                                  `${menuItem.label}-${item.label}`
-                                )
-                              }
-                            >
-                              <span>{item.label}</span>
-                              <ChevronIcon className="h-3 w-3 -rotate-90 group-hover/item:rotate-90 transition-transform duration-300" />
-                            </button>
-                            <div className="invisible opacity-0 translate-x-2 group-hover/item:visible group-hover/item:opacity-100 group-hover/item:translate-x-0 transition-all duration-200 absolute left-full top-0 ml-1 w-48 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-md shadow-lg z-10">
-                              <div className="p-2">
-                                {item.submenuItems.map((subItem, subIdx) => (
-                                  <React.Fragment key={subIdx}>
-                                    <NavLink
-                                      href={subItem.href}
-                                      external={subItem.isExternal}
-                                      className="block px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md transition-colors duration-200"
-                                    >
-                                      {subItem.label}
-                                    </NavLink>
-                                    {subIdx < item.submenuItems.length - 1 && (
-                                      <div className="border-t border-gray-200 dark:border-gray-700 my-1"></div>
-                                    )}
-                                  </React.Fragment>
-                                ))}
-                              </div>
-                            </div>
-                          </div>
-                        ) : (
-                          <NavLink
-                            href={item.href!}
-                            external={item.isExternal}
-                            className="block px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md transition-colors duration-200"
-                          >
-                            {item.label}
-                          </NavLink>
-                        )}
-                      </div>
-                      {itemIdx < menuItem.dropdownItems.length - 1 && (
-                        <div className="border-t border-gray-200 dark:border-gray-700 my-1"></div>
-                      )}
-                    </React.Fragment>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        ))}
       </nav>
     );
   }

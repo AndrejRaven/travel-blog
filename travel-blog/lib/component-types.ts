@@ -167,14 +167,6 @@ export type CategoriesSection = {
   container: BaseContainer;
   title: string;
   showBackground: boolean;
-  categories: Array<{
-    id: string;
-    name: string;
-    description: string;
-    href: string;
-    icon: string | { asset?: { url?: string } };
-    articleCount?: number;
-  }>;
 };
 
 export type SubcategoryList = {
