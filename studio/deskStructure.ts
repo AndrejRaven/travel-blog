@@ -1,4 +1,4 @@
-import { StructureBuilder } from 'sanity/desk'
+import { StructureBuilder } from 'sanity/structure'
 import { schemaTypes } from './schemaTypes'
 import { schemaTypesComponents } from './schemaTypes/schemaTypesComponents'
 

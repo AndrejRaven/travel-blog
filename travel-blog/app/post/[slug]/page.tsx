@@ -3,6 +3,7 @@ import { getPostBySlug, getAllPostSlugs } from "@/lib/queries/functions";
 import { getImageUrl } from "@/lib/sanity";
 import PostPageClient from "@/components/pages/PostPageClient";
 import { Metadata } from "next";
+import { SITE_CONFIG } from "@/lib/config";
 
 type Params = { params: Promise<{ slug: string }> };
 
@@ -19,8 +20,8 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   }
 
   // Podstawowe informacje
-  const siteName = "Nasz Blog";
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://nasz-blog.com";
+  const siteName = SITE_CONFIG.name;
+  const siteUrl = SITE_CONFIG.url;
   const postUrl = `${siteUrl}/post/${slug}`;
 
   // SEO Title - użyj seoTitle lub fallback do title
@@ -196,18 +197,20 @@ export default async function PostPage({ params }: Params) {
       ? getImageUrl(post.coverImage, { width: 1200, height: 630 })
       : undefined,
     author: {
-      "@type": "Organization",
-      name: "Nasz Blog",
+      "@type": SITE_CONFIG.author.type,
+      name: SITE_CONFIG.author.name,
+      ...(SITE_CONFIG.author.url && { url: SITE_CONFIG.author.url }),
     },
     publisher: {
-      "@type": "Organization",
-      name: "Nasz Blog",
+      "@type": SITE_CONFIG.author.type,
+      name: SITE_CONFIG.author.name,
+      ...(SITE_CONFIG.author.url && { url: SITE_CONFIG.author.url }),
     },
     datePublished: post.publishedAt,
     dateModified: post.publishedAt,
     mainEntityOfPage: {
       "@type": "WebPage",
-      "@id": `${process.env.NEXT_PUBLIC_SITE_URL || "https://nasz-blog.com"}/post/${slug}`,
+      "@id": `${SITE_CONFIG.url}/post/${slug}`,
     },
     ...(post.categories &&
       post.categories.length > 0 && {
