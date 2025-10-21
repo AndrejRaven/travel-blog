@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import Button from "@/components/ui/Button";
-import { Mail, Lock, Info, Download } from "lucide-react";
+import { Mail, Shield, UserX, Ban } from "lucide-react";
 import SectionContainer from "@/components/shared/SectionContainer";
 import { useAnimation } from "@/lib/useAnimation";
 import { getAnimationClass } from "@/lib/render-utils";
@@ -43,6 +43,21 @@ export default function Newsletter({ data }: Props) {
   const [error, setError] = useState("");
   const { isLoaded, isInView, containerRef } = useAnimation();
 
+  // Sprawdź czy użytkownik już się zapisał (z localStorage z cache 7 dni)
+  React.useEffect(() => {
+    const CACHE_DURATION = 7 * 24 * 60 * 60 * 1000; // 7 dni w ms
+    const cacheData = JSON.parse(
+      localStorage.getItem("newsletter-cache") || "{}"
+    );
+
+    if (
+      cacheData.subscribed &&
+      Date.now() - cacheData.timestamp < CACHE_DURATION
+    ) {
+      setIsSubscribed(true);
+    }
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) return;
@@ -57,6 +72,15 @@ export default function Newsletter({ data }: Props) {
       setIsSubscribed(true);
       setIsLoading(false);
       setEmail("");
+
+      // Zapisz w localStorage że użytkownik się zapisał (z timestamp)
+      localStorage.setItem(
+        "newsletter-cache",
+        JSON.stringify({
+          subscribed: true,
+          timestamp: Date.now(),
+        })
+      );
     } catch (err) {
       setError(errorMessage || "Wystąpił błąd. Spróbuj ponownie.");
       setIsLoading(false);
@@ -88,12 +112,18 @@ export default function Newsletter({ data }: Props) {
               Wkrótce otrzymasz od nas pierwszy newsletter z najnowszymi
               artykułami i podróżniczymi inspiracjami.
             </p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+              Dziękujemy za zaufanie! 🎉
+            </p>
             <Button
-              onClick={() => setIsSubscribed(false)}
-              variant="outline"
-              className="text-sm transition-all duration-300 hover:scale-105 hover:shadow-lg"
+              onClick={() => {
+                localStorage.removeItem("newsletter-cache");
+                setIsSubscribed(false);
+              }}
+              variant="danger"
+              className="text-xs px-4 py-2 h-auto transition-all duration-300 hover:scale-105"
             >
-              Zapisz się ponownie
+              Zrezygnuj z subskrypcji
             </Button>
           </div>
         </section>
@@ -187,11 +217,9 @@ export default function Newsletter({ data }: Props) {
                 key={index}
                 className="flex items-center space-x-2 transition-all duration-300 hover:scale-105"
               >
-                {feature.icon === "Lock" && <Lock className="w-4 h-4" />}
-                {feature.icon === "Info" && <Info className="w-4 h-4" />}
-                {feature.icon === "Download" && (
-                  <Download className="w-4 h-4" />
-                )}
+                {feature.icon === "Shield" && <Shield className="w-4 h-4" />}
+                {feature.icon === "UserX" && <UserX className="w-4 h-4" />}
+                {feature.icon === "Ban" && <Ban className="w-4 h-4" />}
                 <span>{feature.text}</span>
               </div>
             ))}

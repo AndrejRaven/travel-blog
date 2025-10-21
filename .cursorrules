@@ -195,6 +195,16 @@ const sizeClasses = {
 - Wszystkie linki zewnętrzne muszą używać `Button` z `external` prop
 - Kolorowe karty informacyjne używają `InfoCard` z odpowiednim wariantem
 
+## Minimalizacja kodu
+
+- **GENERUJ JAK NAJMNIEJ KODU** - używaj istniejących komponentów zamiast tworzenia nowych
+- **NIE duplikuj** - sprawdź czy nie ma już podobnego komponentu/funkcji
+- **Używaj kompozycji** - łącz istniejące komponenty zamiast tworzenia nowych
+- **Unikaj over-engineering** - implementuj tylko to co jest potrzebne
+- **Preferuj proste rozwiązania** - wybieraj najkrótszą implementację
+- **NIE dodawaj** niepotrzebnych wrapperów, divów, czy abstrakcji
+- **Używaj props** - konfiguruj istniejące komponenty zamiast tworzenia wariantów
+
 ## Struktura stron
 
 ### Strony informacyjne (Polityka, Regulamin, Kontakt, Wsparcie)

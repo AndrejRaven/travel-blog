@@ -6,7 +6,8 @@ type ButtonVariant =
   | "secondary"
   | "outline"
   | "outlinewhite"
-  | "youtube";
+  | "youtube"
+  | "danger";
 
 type ButtonProps = {
   children: React.ReactNode;
@@ -30,6 +31,8 @@ const variantStyles = {
     "border border-white text-white hover:text-white focus:ring-white transition-all duration-300 ease-out hover:shadow-md hover:scale-105 hover:backdrop-blur-sm transition-transform duration-150 ease-out uppercase",
   youtube:
     "bg-red-600 hover:bg-red-700 text-white focus:ring-red-500 relative overflow-hidden group before:absolute before:inset-0 before:bg-red-500 before:-translate-x-full before:transition-transform before:duration-300 before:ease-out hover:before:translate-x-0 before:-z-10 hover:shadow-lg hover:scale-105 transition-all duration-300 ease-out transition-transform duration-150 ease-out uppercase border border-red-600",
+  danger:
+    "bg-red-600 hover:bg-red-700 text-white focus:ring-red-500 transition-all duration-300 ease-out hover:shadow-lg hover:scale-105 transition-transform duration-150 ease-out uppercase border border-red-600",
 };
 
 export default function Button({

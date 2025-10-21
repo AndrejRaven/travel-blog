@@ -2,7 +2,8 @@
 
 import React from "react";
 import Button from "@/components/ui/Button";
-import { useCookieExamples } from "@/lib/cookie-examples";
+import { useCookies } from "@/lib/useCookies";
+import { useAnalytics } from "@/lib/cookie-analytics";
 
 interface TrackedButtonProps {
   children: React.ReactNode;
@@ -21,10 +22,17 @@ export function TrackedButton({
   className = "",
   ...props
 }: TrackedButtonProps) {
-  const { trackButtonClick } = useCookieExamples();
+  const { isAllowed } = useCookies();
+  const analytics = useAnalytics();
 
   const handleClick = () => {
-    trackButtonClick(trackingName);
+    // Sprawdź czy użytkownik wyraził zgodę na analityczne cookies
+    if (isAllowed("analytics")) {
+      analytics.trackEvent("button_click", {
+        button_name: trackingName,
+        page: window.location.pathname,
+      });
+    }
     onClick?.();
   };
 

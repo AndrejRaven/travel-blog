@@ -1,5 +1,5 @@
 import React, { useState, memo } from "react";
-import ToggleChevron from "@/components/ui/ToggleChevron";
+import { ChevronDown } from "lucide-react";
 import { Section } from "@/components/layout/header/header-data";
 import MobileSection from "@/components/layout/header/MobileSection";
 import { MenuItem } from "@/lib/sanity";
@@ -84,9 +84,12 @@ const MobileMenu = memo(function MobileMenu({
                           <span className="inline-flex items-center">
                             {menuItem.label}
                           </span>
-                          <ToggleChevron
-                            isOpen={openDropdowns[menuItem.label]}
-                            className="h-4 w-4 transition-transform duration-300"
+                          <ChevronDown
+                            className={`h-4 w-4 transition-transform duration-300 ${
+                              openDropdowns[menuItem.label]
+                                ? "rotate-180"
+                                : "rotate-0"
+                            }`}
                             aria-hidden
                           />
                         </button>
@@ -117,13 +120,14 @@ const MobileMenu = memo(function MobileMenu({
                                         className="w-full flex items-center justify-between rounded-md px-2 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                                       >
                                         <span>{item.label}</span>
-                                        <ToggleChevron
-                                          isOpen={
+                                        <ChevronDown
+                                          className={`h-3 w-3 transition-transform duration-300 ${
                                             openDropdowns[
                                               `${menuItem.label}-${item.label}`
                                             ]
-                                          }
-                                          className="h-3 w-3 transition-transform duration-300"
+                                              ? "rotate-180"
+                                              : "rotate-0"
+                                          }`}
                                           aria-hidden
                                         />
                                       </button>
@@ -210,9 +214,10 @@ const MobileMenu = memo(function MobileMenu({
                     <span className="inline-flex items-center gap-2">
                       <span>Kategorie</span>
                     </span>
-                    <ToggleChevron
-                      isOpen={mobileCategoriesOpen}
-                      className="h-4 w-4 transition-transform duration-300"
+                    <ChevronDown
+                      className={`h-4 w-4 transition-transform duration-300 ${
+                        mobileCategoriesOpen ? "rotate-180" : "rotate-0"
+                      }`}
                       aria-hidden
                     />
                   </button>

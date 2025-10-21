@@ -123,47 +123,6 @@ export const useResponsiveImage = (config: ImageConfig = {}) => {
 };
 
 /**
- * Hook do obsługi animacji z Intersection Observer
- */
-export const useAnimation = () => {
-  const [isLoaded, setIsLoaded] = useState(false);
-  const [isInView, setIsInView] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    setIsLoaded(true);
-  }, []);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setIsInView(true);
-          }
-        });
-      },
-      {
-        threshold: 0.1,
-        rootMargin: "0px 0px -50px 0px",
-      }
-    );
-
-    if (containerRef.current) {
-      observer.observe(containerRef.current);
-    }
-
-    return () => {
-      if (containerRef.current) {
-        observer.unobserve(containerRef.current);
-      }
-    };
-  }, []);
-
-  return { isLoaded, isInView, containerRef };
-};
-
-/**
  * Generuje klasy animacji na podstawie konfiguracji
  */
 export const getAnimationClass = (config: AnimationConfig): string => {

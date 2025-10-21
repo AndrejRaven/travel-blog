@@ -2,12 +2,12 @@ import React, { useState, memo } from "react";
 import NavLink from "@/components/layout/header/NavLink";
 import Divider from "@/components/layout/header/Divider";
 import DropdownSection from "@/components/layout/header/DropdownSection";
-import ChevronIcon from "@/components/ui/icons/ChevronIcon";
+import { ChevronDown } from "lucide-react";
 import {
   Section,
   HierarchicalSection,
 } from "@/components/layout/header/header-data";
-import { MenuItem, DropdownItem } from "@/lib/sanity";
+import { MenuItem } from "@/lib/sanity";
 
 type Props = {
   sections: Section[];
@@ -45,7 +45,7 @@ const DesktopNav = memo(function DesktopNav({
               >
                 <span>{menuItem.label}</span>
                 {menuItem.hasDropdown && (
-                  <ChevronIcon
+                  <ChevronDown
                     className="h-4 w-4 transition-transform duration-300 group-hover:rotate-180"
                     aria-hidden
                   />
@@ -59,7 +59,7 @@ const DesktopNav = memo(function DesktopNav({
               >
                 <span>{menuItem.label}</span>
                 {menuItem.hasDropdown && (
-                  <ChevronIcon
+                  <ChevronDown
                     className="h-4 w-4 transition-transform duration-300 group-hover:rotate-180"
                     aria-hidden
                   />
@@ -85,7 +85,7 @@ const DesktopNav = memo(function DesktopNav({
                               }
                             >
                               <span>{item.label}</span>
-                              <ChevronIcon className="h-3 w-3 -rotate-90 group-hover/item:rotate-90 transition-transform duration-300" />
+                              <ChevronDown className="h-3 w-3 -rotate-90 group-hover/item:rotate-90 transition-transform duration-300" />
                             </button>
                             <div className="invisible opacity-0 translate-x-2 group-hover/item:visible group-hover/item:opacity-100 group-hover/item:translate-x-0 transition-all duration-200 absolute left-full top-0 ml-1 w-48 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-md shadow-lg z-10">
                               <div className="p-2">
@@ -151,7 +151,7 @@ const DesktopNav = memo(function DesktopNav({
             className="inline-flex items-center gap-1 transition-colors duration-200 group-hover:text-gray-900 dark:group-hover:text-gray-100"
           >
             <span>Kategorie</span>
-            <ChevronIcon
+            <ChevronDown
               className="h-4 w-4 transition-transform duration-300 group-hover:rotate-180"
               aria-hidden
             />
@@ -182,7 +182,7 @@ const DesktopNav = memo(function DesktopNav({
                                 }
                               >
                                 <span>{item.label}</span>
-                                <ChevronIcon className="h-3 w-3 -rotate-90 group-hover/item:rotate-90 transition-transform duration-300" />
+                                <ChevronDown className="h-3 w-3 -rotate-90 group-hover/item:rotate-90 transition-transform duration-300" />
                               </button>
                               <div className="invisible opacity-0 translate-x-2 group-hover/item:visible group-hover/item:opacity-100 group-hover/item:translate-x-0 transition-all duration-200 absolute left-full top-0 ml-1 w-48 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-md shadow-lg z-10">
                                 <div className="p-2">
@@ -280,7 +280,7 @@ const DesktopNav = memo(function DesktopNav({
           className="inline-flex items-center gap-1 transition-colors duration-200 group-hover:text-gray-900 dark:group-hover:text-gray-100"
         >
           <span>Kategorie</span>
-          <ChevronIcon
+          <ChevronDown
             className="h-4 w-4 transition-transform duration-300 group-hover:rotate-180"
             aria-hidden
           />

@@ -1,6 +1,5 @@
 import React from "react";
-import ChevronIcon from "@/components/ui/icons/ChevronIcon";
-import CircleIcon from "@/components/ui/icons/CircleIcon";
+import { ChevronDown, Circle } from "lucide-react";
 import Link from "@/components/ui/Link";
 import { Section } from "@/components/layout/header/header-data";
 
@@ -23,7 +22,7 @@ export default function DropdownSection({ section, isOpen, onToggle }: Props) {
           <span className="text-base">{section.emoji}</span>
           <span>{section.title}</span>
         </span>
-        <ChevronIcon
+        <ChevronDown
           className={`h-4 w-4 transition-transform duration-300 text-gray-600 dark:text-gray-400 ${
             isOpen ? "rotate-180" : "rotate-0"
           }`}
@@ -41,7 +40,7 @@ export default function DropdownSection({ section, isOpen, onToggle }: Props) {
               href={item.href}
               className="flex items-center gap-2 rounded-md px-2 py-1.5 font-sans hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100 transition-colors min-w-0 group/item"
             >
-              <CircleIcon
+              <Circle
                 className="h-3.5 w-3.5 text-gray-400 dark:text-gray-500 group-hover/item:text-gray-600 dark:group-hover/item:text-gray-400 flex-shrink-0 transition-colors"
                 aria-hidden
               />

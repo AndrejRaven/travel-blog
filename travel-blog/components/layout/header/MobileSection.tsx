@@ -1,6 +1,5 @@
 import React from "react";
-import ToggleChevron from "@/components/ui/ToggleChevron";
-import CircleIcon from "@/components/ui/icons/CircleIcon";
+import { ChevronDown, Circle } from "lucide-react";
 import Link from "@/components/ui/Link";
 import { Section } from "@/components/layout/header/header-data";
 
@@ -23,9 +22,10 @@ export default function MobileSection({ section, isOpen, onToggle }: Props) {
           <span className="text-base">{section.emoji}</span>
           <span className="font-medium">{section.title}</span>
         </span>
-        <ToggleChevron
-          isOpen={isOpen}
-          className="h-4 w-4 transition-transform duration-300"
+        <ChevronDown
+          className={`h-4 w-4 transition-transform duration-300 ${
+            isOpen ? "rotate-180" : "rotate-0"
+          }`}
           aria-hidden
         />
       </button>
@@ -40,7 +40,7 @@ export default function MobileSection({ section, isOpen, onToggle }: Props) {
               href={item.href}
               className="flex items-center gap-2 rounded-md px-2 py-1.5 font-sans hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
             >
-              <CircleIcon
+              <Circle
                 className="h-3.5 w-3.5 text-gray-400 dark:text-gray-500"
                 aria-hidden
               />

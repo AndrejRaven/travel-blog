@@ -90,13 +90,13 @@ export default {
               type: 'string',
               options: {
                 list: [
-                  { title: 'Lock', value: 'Lock' },
-                  { title: 'Info', value: 'Info' },
-                  { title: 'Download', value: 'Download' },
+                  { title: 'Shield (Bezpieczne dane)', value: 'Shield' },
+                  { title: 'UserX (Zrezygnujesz kiedy chcesz)', value: 'UserX' },
+                  { title: 'Ban (Zero spamu)', value: 'Ban' },
                 ],
                 layout: 'radio',
               },
-              initialValue: 'Lock',
+              initialValue: 'Shield',
             },
             {
               name: 'text',
@@ -114,16 +114,16 @@ export default {
               const { title, subtitle } = selection;
               return {
                 title: title || 'Funkcja',
-                subtitle: `Ikona: ${subtitle || 'Lock'}`,
+                subtitle: `Ikona: ${subtitle || 'Shield'}`,
               };
             },
           },
         },
       ],
       initialValue: [
-        { icon: 'Lock', text: 'Bezpieczne dane' },
-        { icon: 'Info', text: 'Tylko wartościowe treści' },
-        { icon: 'Download', text: 'Materiały do pobrania' },
+        { icon: 'Shield', text: 'Bezpieczne dane' },
+        { icon: 'UserX', text: 'Zrezygnujesz kiedy chcesz' },
+        { icon: 'Ban', text: 'Zero spamu' },
       ],
       group: 'content',
     },
