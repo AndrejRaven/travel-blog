@@ -56,8 +56,65 @@ export default function CommentsSection({
     content: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [validationErrors, setValidationErrors] = useState({
+    authorName: "",
+    authorEmail: "",
+    content: "",
+  });
 
   const sectionAnimation = useAnimation();
+
+  // Funkcje walidacji
+  const validateEmail = (email: string): string => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email.trim()) {
+      return "Email jest wymagany";
+    }
+    if (!emailRegex.test(email)) {
+      return "Podaj prawidłowy adres email";
+    }
+    return "";
+  };
+
+  const validateName = (name: string): string => {
+    if (!name.trim()) {
+      return "Imię i nazwisko jest wymagane";
+    }
+    if (name.trim().length < 2) {
+      return "Imię i nazwisko musi mieć co najmniej 2 znaki";
+    }
+    if (name.trim().length > 50) {
+      return "Imię i nazwisko nie może mieć więcej niż 50 znaków";
+    }
+    if (!/^[a-zA-ZąćęłńóśźżĄĆĘŁŃÓŚŹŻ\s-]+$/.test(name.trim())) {
+      return "Imię i nazwisko może zawierać tylko litery, spacje i myślniki";
+    }
+    return "";
+  };
+
+  const validateContent = (content: string): string => {
+    if (!content.trim()) {
+      return "Treść komentarza jest wymagana";
+    }
+    if (content.trim().length < 10) {
+      return "Komentarz musi mieć co najmniej 10 znaków";
+    }
+    if (content.trim().length > maxLength) {
+      return `Komentarz nie może mieć więcej niż ${maxLength} znaków`;
+    }
+    return "";
+  };
+
+  const validateForm = (): boolean => {
+    const errors = {
+      authorName: validateName(formData.authorName),
+      authorEmail: validateEmail(formData.authorEmail),
+      content: validateContent(formData.content),
+    };
+
+    setValidationErrors(errors);
+    return !Object.values(errors).some((error) => error !== "");
+  };
 
   // Grupuj komentarze na główne i odpowiedzi
   const mainComments = comments.filter((comment) => !comment.parentComment);
@@ -82,18 +139,10 @@ export default function CommentsSection({
       {} as Record<string, Comment[]>
     );
 
-  // Debugowanie
-  console.log("Wszystkie komentarze:", comments);
-  console.log("Główne komentarze:", mainComments);
-  console.log("Mapa odpowiedzi:", repliesMap);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (
-      !formData.authorName.trim() ||
-      !formData.authorEmail.trim() ||
-      !formData.content.trim()
-    ) {
+
+    if (!validateForm()) {
       return;
     }
 
@@ -122,10 +171,15 @@ export default function CommentsSection({
         authorEmail: "",
         content: "",
       });
+      setValidationErrors({
+        authorName: "",
+        authorEmail: "",
+        content: "",
+      });
       setShowAddForm(false);
       setReplyingTo(null);
     } catch (error) {
-      console.error("Błąd podczas dodawania komentarza:", error);
+      // Error handling - could be improved with proper error state
     } finally {
       setIsSubmitting(false);
     }
@@ -134,6 +188,28 @@ export default function CommentsSection({
   const handleReply = (commentId: string) => {
     setReplyingTo(commentId);
     setShowAddForm(true);
+  };
+
+  const handleInputChange = (field: keyof typeof formData, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+
+    // Walidacja w czasie rzeczywistym
+    if (field === "authorName") {
+      setValidationErrors((prev) => ({
+        ...prev,
+        authorName: validateName(value),
+      }));
+    } else if (field === "authorEmail") {
+      setValidationErrors((prev) => ({
+        ...prev,
+        authorEmail: validateEmail(value),
+      }));
+    } else if (field === "content") {
+      setValidationErrors((prev) => ({
+        ...prev,
+        content: validateContent(value),
+      }));
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -249,14 +325,20 @@ export default function CommentsSection({
                     required
                     value={formData.authorName}
                     onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        authorName: e.target.value,
-                      }))
+                      handleInputChange("authorName", e.target.value)
                     }
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className={`w-full px-3 py-2 border rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                      validationErrors.authorName
+                        ? "border-red-500 dark:border-red-400"
+                        : "border-gray-300 dark:border-gray-600"
+                    }`}
                     placeholder="Twoje imię i nazwisko"
                   />
+                  {validationErrors.authorName && (
+                    <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                      {validationErrors.authorName}
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -268,14 +350,20 @@ export default function CommentsSection({
                     required
                     value={formData.authorEmail}
                     onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        authorEmail: e.target.value,
-                      }))
+                      handleInputChange("authorEmail", e.target.value)
                     }
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className={`w-full px-3 py-2 border rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                      validationErrors.authorEmail
+                        ? "border-red-500 dark:border-red-400"
+                        : "border-gray-300 dark:border-gray-600"
+                    }`}
                     placeholder="twoj@email.com"
                   />
+                  {validationErrors.authorEmail && (
+                    <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                      {validationErrors.authorEmail}
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -288,17 +376,31 @@ export default function CommentsSection({
                   rows={4}
                   maxLength={maxLength}
                   value={formData.content}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      content: e.target.value,
-                    }))
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                  onChange={(e) => handleInputChange("content", e.target.value)}
+                  className={`w-full px-3 py-2 border rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none ${
+                    validationErrors.content
+                      ? "border-red-500 dark:border-red-400"
+                      : "border-gray-300 dark:border-gray-600"
+                  }`}
                   placeholder="Napisz swój komentarz..."
                 />
-                <div className="text-right text-sm text-gray-500 dark:text-gray-400 mt-1">
-                  {formData.content.length}/{maxLength}
+                <div className="flex justify-between items-center mt-1">
+                  <div>
+                    {validationErrors.content && (
+                      <p className="text-sm text-red-600 dark:text-red-400">
+                        {validationErrors.content}
+                      </p>
+                    )}
+                  </div>
+                  <div
+                    className={`text-sm ${
+                      formData.content.length > maxLength * 0.9
+                        ? "text-red-500 dark:text-red-400"
+                        : "text-gray-500 dark:text-gray-400"
+                    }`}
+                  >
+                    {formData.content.length}/{maxLength}
+                  </div>
                 </div>
               </div>
 
@@ -309,7 +411,10 @@ export default function CommentsSection({
                     isSubmitting ||
                     !formData.authorName.trim() ||
                     !formData.authorEmail.trim() ||
-                    !formData.content.trim()
+                    !formData.content.trim() ||
+                    Object.values(validationErrors).some(
+                      (error) => error !== ""
+                    )
                   }
                   className="inline-flex items-center justify-center rounded-md px-8 py-2 text-sm font-sans font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 hover:text-gray-900 dark:hover:text-gray-100 focus:ring-gray-500 dark:focus:ring-gray-400 relative overflow-hidden group before:absolute before:inset-0 before:bg-white dark:before:bg-gray-900 before:-translate-x-full before:transition-transform before:duration-300 before:ease-out hover:before:translate-x-0 before:-z-10 hover:shadow-lg hover:scale-105 transition-all duration-300 ease-out uppercase border border-gray-900 dark:border-gray-100"
                 >
@@ -332,6 +437,11 @@ export default function CommentsSection({
                     setShowAddForm(false);
                     setReplyingTo(null);
                     setFormData({
+                      authorName: "",
+                      authorEmail: "",
+                      content: "",
+                    });
+                    setValidationErrors({
                       authorName: "",
                       authorEmail: "",
                       content: "",

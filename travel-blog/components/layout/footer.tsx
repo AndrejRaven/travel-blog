@@ -1,23 +1,7 @@
-"use client";
-
 import { Facebook, Youtube, Instagram } from "lucide-react";
-import { memo, useEffect, useState } from "react";
-import { initializeFooterCache } from "@/lib/footer-cache";
 
-const Footer = memo(function Footer() {
-  const [isInitialized, setIsInitialized] = useState(false);
+const Footer = function Footer() {
   const YEAR = new Date().getFullYear();
-
-  useEffect(() => {
-    // Inicjalizuj cache footer
-    initializeFooterCache();
-    setIsInitialized(true);
-  }, []);
-
-  // Nie renderuj footer dopóki nie jest zainicjalizowany
-  if (!isInitialized) {
-    return null;
-  }
 
   return (
     <footer className="border-t border-gray-100 dark:border-gray-800 mt-10 bg-white dark:bg-gray-900">
@@ -149,6 +133,6 @@ const Footer = memo(function Footer() {
       </div>
     </footer>
   );
-});
+};
 
 export default Footer;

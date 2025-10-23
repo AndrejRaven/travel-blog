@@ -19,6 +19,19 @@ export default function CategoriesSection({ data }: Props) {
   const [superCategories, setSuperCategories] = useState<SuperCategory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Mapowanie kolorów do klas Tailwind
+  const getCategoryColorClass = (color: string): string => {
+    const colorMap: Record<string, string> = {
+      blue: "bg-blue-500",
+      green: "bg-green-500",
+      yellow: "bg-yellow-500",
+      red: "bg-red-500",
+      purple: "bg-purple-500",
+      gray: "bg-gray-500",
+    };
+    return colorMap[color] || colorMap.gray;
+  };
+
   // Zabezpieczenie na wypadek gdyby data był undefined
   if (!data) {
     console.error("CategoriesSection: Missing data", { data });
@@ -124,11 +137,11 @@ export default function CategoriesSection({ data }: Props) {
                       alt={`Ikona ${category.name}`}
                       width={28}
                       height={28}
-                      className="opacity-70 group-hover:opacity-100 dark:invert transition-opacity duration-300"
+                      className={`opacity-70 group-hover:opacity-100 ${category.invertOnDark === true ? "dark:invert" : ""} transition-opacity duration-300`}
                     />
                   ) : (
                     <div
-                      className={`w-7 h-7 rounded-full bg-${category.color}-500`}
+                      className={`w-7 h-7 rounded-full ${getCategoryColorClass(category.color)}`}
                     />
                   )}
                 </div>

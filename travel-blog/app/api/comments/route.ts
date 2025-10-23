@@ -11,9 +11,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Brak ID posta' }, { status: 400 });
     }
 
-    // Test - sprawdź czy schemat komentarzy istnieje
-    const testQuery = await readOnlyClient.fetch(`*[_type == "comment"][0..5]`);
-    console.log('Test query - wszystkie komentarze:', testQuery);
 
     // Pobierz komentarze dla danego posta (wszystkie statusy)
     const comments = await readOnlyClient.fetch(`
@@ -30,11 +27,6 @@ export async function GET(request: NextRequest) {
 
     // Filtruj komentarze według statusu po pobraniu
     const filteredComments = comments.filter(comment => comment.status === status);
-
-    console.log('Fetched comments:', comments);
-    console.log('Filtered comments:', filteredComments);
-    console.log('PostId:', postId);
-    console.log('Status:', status);
 
     return NextResponse.json({ comments: filteredComments });
   } catch (error) {

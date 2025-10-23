@@ -1,5 +1,8 @@
+"use client";
+
 import React from "react";
 import NextLink from "next/link";
+import { useNavigationProgress } from "@/components/providers/NavigationProgressProvider";
 
 type LinkVariant = "default" | "arrow" | "underline";
 
@@ -27,8 +30,43 @@ export default function Link({
   className = "",
   external = false,
 }: LinkProps) {
+  const { setNavigating, setActiveElement, activeElement } =
+    useNavigationProgress();
   const variantStyle = variantStyles[variant];
-  const combinedClassName = `${variantStyle} ${className}`.trim();
+  const [isActive, setIsActive] = React.useState(false);
+  const linkRef = React.useRef<HTMLAnchorElement>(null);
+
+  const combinedClassName =
+    `${variantStyle} ${className} ${isActive ? "opacity-70" : ""}`.trim();
+
+  const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (!external && href && href.trim() !== "") {
+      setNavigating(true);
+      setActiveElement(e.currentTarget);
+      setIsActive(true);
+
+      // Safety timeout - reset after 3 seconds even if no route change
+      setTimeout(() => {
+        setNavigating(false);
+        setActiveElement(null);
+        setIsActive(false);
+      }, 3000);
+    }
+  };
+
+  // Reset active state when navigation completes
+  React.useEffect(() => {
+    if (!activeElement) {
+      setIsActive(false);
+    }
+  }, [activeElement]);
+
+  // Reset active state when component unmounts
+  React.useEffect(() => {
+    return () => {
+      setIsActive(false);
+    };
+  }, []);
 
   // Sprawdź czy href nie jest pusty
   if (!href || href.trim() === "") {
@@ -42,6 +80,7 @@ export default function Link({
         className={combinedClassName}
         target="_blank"
         rel="noopener noreferrer"
+        onClick={handleClick}
       >
         {children}
         {variant === "arrow" && (
@@ -57,7 +96,12 @@ export default function Link({
   }
 
   return (
-    <NextLink href={href} className={combinedClassName}>
+    <NextLink
+      href={href}
+      className={combinedClassName}
+      onClick={handleClick}
+      ref={linkRef}
+    >
       {children}
       {variant === "arrow" && (
         <span className="group-hover:translate-x-1 transition-transform duration-200 ease-out">

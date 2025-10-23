@@ -180,7 +180,13 @@ export type SubcategoryList = {
     description: string;
     href: string;
     color: string;
+    icon?: {
+      asset?: {
+        url?: string;
+      };
+    };
     articleCount?: number;
+    invertOnDark?: boolean;
   }>;
 };
 
@@ -201,6 +207,7 @@ export type MainCategoryList = {
       };
     };
     articleCount?: number;
+    invertOnDark?: boolean;
   }>;
 };
 
@@ -288,6 +295,7 @@ export type SupportSection = {
     icon?: string | { asset?: { url?: string } };
     iconSvg?: string;
     variant?: 'primary' | 'secondary' | 'outline' | 'youtube';
+    invertOnDark?: boolean;
   }>;
 };
 

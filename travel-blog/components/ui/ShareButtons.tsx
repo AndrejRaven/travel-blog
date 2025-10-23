@@ -1,8 +1,7 @@
 "use client";
 
-import React from "react";
-import { Facebook, Twitter, Share2 } from "lucide-react";
-import Button from "./Button";
+import React, { useState, useEffect } from "react";
+import { Facebook, Twitter, Share2, Copy } from "lucide-react";
 
 interface ShareButtonsProps {
   postTitle: string;
@@ -21,6 +20,22 @@ export default function ShareButtons({
   ogDescription,
   ogImageUrl,
 }: ShareButtonsProps) {
+  const [copySuccess, setCopySuccess] = useState(false);
+  const [isClient, setIsClient] = useState(false);
+
+  // Client-side hydration
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  // Auto-dismiss copy success message
+  useEffect(() => {
+    if (copySuccess) {
+      const timer = setTimeout(() => setCopySuccess(false), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [copySuccess]);
+
   // Walidacja URL
   if (!postUrl || !postTitle) {
     console.warn("ShareButtons: Brak wymaganych danych (postUrl, postTitle)");
@@ -49,7 +64,6 @@ export default function ShareButtons({
   const handleShare = (platform: keyof typeof shareLinks) => {
     try {
       const url = shareLinks[platform];
-      console.log(`Udostępnianie na ${platform}:`, url);
 
       // Sprawdź czy URL jest prawidłowy
       if (!url || url === "undefined" || url.includes("undefined")) {
@@ -64,10 +78,8 @@ export default function ShareButtons({
 
       if (!popup) {
         // Jeśli popup został zablokowany, otwórz w nowej karcie
-        console.log("Popup zablokowany, otwieram w nowej karcie");
         window.open(url, "_blank", "noopener,noreferrer");
       } else {
-        console.log("Okno udostępniania otwarte pomyślnie");
       }
     } catch (error) {
       console.error(`Błąd podczas udostępniania na ${platform}:`, error);
@@ -85,79 +97,117 @@ export default function ShareButtons({
           text: shareDescription || shareTitle,
           url: postUrl,
         });
-        console.log("Udostępnianie zakończone pomyślnie");
       } catch (error) {
-        if (error.name !== "AbortError") {
+        if (error instanceof Error && error.name !== "AbortError") {
           console.error("Błąd podczas udostępniania:", error);
           alert("Nie udało się udostępnić artykułu. Spróbuj ponownie.");
         }
       }
     } else {
       // Fallback - kopiuj URL do schowka
-      try {
-        await navigator.clipboard.writeText(postUrl);
-        alert("✅ Link skopiowany do schowka!");
-        console.log("URL skopiowany do schowka:", postUrl);
-      } catch (error) {
-        console.error("Błąd podczas kopiowania:", error);
-        // Ostateczny fallback - pokaż URL do skopiowania
-        const textArea = document.createElement("textarea");
-        textArea.value = postUrl;
-        document.body.appendChild(textArea);
-        textArea.select();
-        try {
-          document.execCommand("copy");
-          alert("✅ Link skopiowany do schowka!");
-        } catch (fallbackError) {
-          console.error("Fallback copy failed:", fallbackError);
-          alert(`Skopiuj ten link: ${postUrl}`);
-        }
-        document.body.removeChild(textArea);
-      }
+      handleCopyLink();
     }
   };
 
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(postUrl);
+      setCopySuccess(true);
+    } catch (error) {
+      console.error("Błąd podczas kopiowania:", error);
+      // Ostateczny fallback - pokaż URL do skopiowania
+      const textArea = document.createElement("textarea");
+      textArea.value = postUrl;
+      document.body.appendChild(textArea);
+      textArea.select();
+      try {
+        document.execCommand("copy");
+        setCopySuccess(true);
+      } catch (fallbackError) {
+        console.error("Fallback copy failed:", fallbackError);
+        alert(`Skopiuj ten link: ${postUrl}`);
+      }
+      document.body.removeChild(textArea);
+    }
+  };
+
+  // Don't render anything until client-side hydration is complete
+  if (!isClient) {
+    return null;
+  }
+
   return (
-    <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-      <div className="flex items-center gap-3 mb-4">
-        <Share2 className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-        <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">
-          Udostępnij ten artykuł
-        </h3>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-3">
-        <Button
-          variant="outline"
+    <div className="flex items-center justify-center gap-3 flex-wrap">
+      {/* Facebook */}
+      <div className="relative group">
+        <button
           onClick={() => handleShare("facebook")}
-          className="flex items-center gap-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 border-blue-200 dark:border-blue-700"
+          className="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-blue-600 hover:text-white text-gray-600 dark:text-gray-400 transition-all duration-200 ease-out flex items-center justify-center shadow-sm hover:shadow-md"
+          aria-label="Udostępnij na Facebook"
         >
-          <Facebook className="w-4 h-4" />
+          <Facebook className="w-5 h-5" />
+        </button>
+        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap">
           Facebook
-        </Button>
-
-        <Button
-          variant="outline"
-          onClick={() => handleShare("twitter")}
-          className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 border-gray-200 dark:border-gray-600"
-        >
-          <Twitter className="w-4 h-4" />X (Twitter)
-        </Button>
-
-        <Button
-          variant="outline"
-          onClick={handleNativeShare}
-          className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 border-gray-200 dark:border-gray-600"
-        >
-          <Share2 className="w-4 h-4" />
-          {navigator.share ? "Udostępnij" : "Kopiuj link"}
-        </Button>
+        </div>
       </div>
 
-      <p className="text-sm text-gray-500 dark:text-gray-400 mt-3">
-        Pomóż innym znaleźć ten artykuł, udostępniając go w mediach
-        społecznościowych.
-      </p>
+      {/* Twitter/X */}
+      <div className="relative group">
+        <button
+          onClick={() => handleShare("twitter")}
+          className="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-900 dark:hover:bg-white hover:text-white dark:hover:text-gray-900 text-gray-600 dark:text-gray-400 transition-all duration-200 ease-out flex items-center justify-center shadow-sm hover:shadow-md"
+          aria-label="Udostępnij na X (Twitter)"
+        >
+          <Twitter className="w-5 h-5" />
+        </button>
+        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap">
+          X (Twitter)
+        </div>
+      </div>
+
+      {/* Native Share */}
+      <div className="relative group">
+        <button
+          onClick={handleNativeShare}
+          className="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-600 hover:text-white text-gray-600 dark:text-gray-400 transition-all duration-200 ease-out flex items-center justify-center shadow-sm hover:shadow-md"
+          aria-label={
+            typeof navigator !== "undefined" &&
+            typeof navigator.share === "function"
+              ? "Udostępnij"
+              : "Kopiuj link"
+          }
+        >
+          <Share2 className="w-5 h-5" />
+        </button>
+        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap">
+          {typeof navigator !== "undefined" &&
+          typeof navigator.share === "function"
+            ? "Udostępnij"
+            : "Kopiuj link"}
+        </div>
+      </div>
+
+      {/* Copy Link */}
+      <div className="relative group">
+        <button
+          onClick={handleCopyLink}
+          className="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-500 hover:text-white text-gray-600 dark:text-gray-400 transition-all duration-200 ease-out flex items-center justify-center shadow-sm hover:shadow-md"
+          aria-label="Kopiuj link"
+        >
+          <Copy className="w-5 h-5" />
+        </button>
+        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap">
+          Kopiuj link
+        </div>
+      </div>
+
+      {/* Copy success toast */}
+      {copySuccess && (
+        <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg z-50 animate-pulse">
+          ✅ Link skopiowany!
+        </div>
+      )}
     </div>
   );
 }

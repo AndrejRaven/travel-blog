@@ -65,6 +65,13 @@ export default {
               description: 'Ikona jako kod SVG',
             },
             {
+              name: 'invertOnDark',
+              title: 'Odwróć kolory w dark theme',
+              type: 'boolean',
+              description: 'Czy ikona ma zmieniać kolory w ciemnym motywie',
+              initialValue: true,
+            },
+            {
               name: 'variant',
               title: 'Wariant przycisku',
               type: 'string',

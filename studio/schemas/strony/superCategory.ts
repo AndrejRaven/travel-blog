@@ -54,6 +54,13 @@ export default {
       description: 'Opcjonalna ikona dla kategorii nadrzędnej',
     },
     {
+      name: 'invertOnDark',
+      title: 'Odwróć kolory ikony w dark theme',
+      type: 'boolean',
+      description: 'Czy ikona ma zmieniać kolory w ciemnym motywie',
+      initialValue: true,
+    },
+    {
       name: 'isActive',
       title: 'Aktywna',
       type: 'boolean',

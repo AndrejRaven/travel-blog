@@ -6,6 +6,7 @@ import SectionContainer from "@/components/shared/SectionContainer";
 import { useAnimation } from "@/lib/useAnimation";
 import { getAnimationClass } from "@/lib/render-utils";
 import { SubcategoryListData } from "@/lib/component-types";
+import Image from "next/image";
 
 type Props = {
   data: SubcategoryListData;
@@ -75,9 +76,19 @@ export default function SubcategoryList({ data }: Props) {
                     </p>
                   )}
                 </div>
-                <div
-                  className={`w-4 h-4 rounded-full bg-${subcategory.color}-500`}
-                />
+                {subcategory.icon?.asset?.url ? (
+                  <Image
+                    src={subcategory.icon.asset.url}
+                    alt={`Ikona ${subcategory.name}`}
+                    width={28}
+                    height={28}
+                    className={`opacity-70 group-hover:opacity-100 ${subcategory.invertOnDark === true ? "dark:invert" : ""} transition-opacity duration-300`}
+                  />
+                ) : (
+                  <div
+                    className={`w-7 h-7 rounded-full bg-${subcategory.color}-500`}
+                  />
+                )}
               </div>
             </Link>
           ))}

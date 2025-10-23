@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { ANIMATION_PRESETS } from "@/lib/animations";
 
 interface AnimatedSectionProps {
@@ -40,19 +40,30 @@ export default function AnimatedSection({
 }: AnimatedSectionProps) {
   const internalRef = useRef<HTMLDivElement>(null);
   const ref = containerRef || internalRef;
+  const [hasBeenVisible, setHasBeenVisible] = useState(false);
+
+  // Zapamiętaj, że element był już widoczny
+  useEffect(() => {
+    if (isLoaded && isInView && !hasBeenVisible) {
+      setHasBeenVisible(true);
+    }
+  }, [isLoaded, isInView, hasBeenVisible]);
 
   const getAnimationClass = () => {
+    // Użyj hasBeenVisible zamiast isLoaded && isInView
+    const shouldAnimate = hasBeenVisible;
+
     switch (animationType) {
       case "text":
-        return ANIMATION_PRESETS.text(isLoaded && isInView, animationDelay);
+        return ANIMATION_PRESETS.text(shouldAnimate, animationDelay);
       case "image":
-        return ANIMATION_PRESETS.image(isLoaded && isInView, animationDelay);
+        return ANIMATION_PRESETS.image(shouldAnimate, animationDelay);
       case "sectionHeader":
-        return ANIMATION_PRESETS.sectionHeader(isLoaded && isInView);
+        return ANIMATION_PRESETS.sectionHeader(shouldAnimate);
       case "button":
-        return ANIMATION_PRESETS.button(isLoaded && isInView, animationDelay);
+        return ANIMATION_PRESETS.button(shouldAnimate, animationDelay);
       default:
-        return ANIMATION_PRESETS.text(isLoaded && isInView, animationDelay);
+        return ANIMATION_PRESETS.text(shouldAnimate, animationDelay);
     }
   };
 

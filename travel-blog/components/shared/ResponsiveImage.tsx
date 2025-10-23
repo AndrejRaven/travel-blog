@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import Image from "next/image";
 import { useResponsiveImage } from "@/lib/render-utils";
 import { ANIMATION_CLASSES, HOVER_EFFECTS } from "@/lib/animations";
@@ -47,6 +47,7 @@ export default function ResponsiveImage({
   onLoad,
 }: ResponsiveImageProps) {
   const [imageLoaded, setImageLoaded] = useState(false);
+  const hasLoadedRef = useRef(false);
   const { isMobile, getCurrentImage, getOptimizedImageProps } =
     useResponsiveImage({ quality });
 
@@ -54,7 +55,10 @@ export default function ResponsiveImage({
   const optimizedProps = getOptimizedImageProps(currentImage, fallback);
 
   const handleLoad = () => {
-    setImageLoaded(true);
+    if (!hasLoadedRef.current) {
+      setImageLoaded(true);
+      hasLoadedRef.current = true;
+    }
     onLoad?.();
   };
 
@@ -64,6 +68,9 @@ export default function ResponsiveImage({
       ? `${ANIMATION_CLASSES.hover} ${HOVER_EFFECTS.transform}`
       : "",
     className,
+    // Dodaj fade-in tylko przy pierwszym ładowaniu
+    !imageLoaded ? "opacity-0" : "opacity-100",
+    "transition-opacity duration-300",
   ]
     .filter(Boolean)
     .join(" ");

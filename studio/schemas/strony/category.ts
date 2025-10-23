@@ -54,6 +54,20 @@ export default {
       initialValue: 'blue',
     },
     {
+      name: 'icon',
+      title: 'Ikona kategorii',
+      type: 'image',
+      options: { hotspot: true },
+      description: 'Opcjonalna ikona dla podkategorii',
+    },
+    {
+      name: 'invertOnDark',
+      title: 'Odwróć kolory ikony w dark theme',
+      type: 'boolean',
+      description: 'Czy ikona ma zmieniać kolory w ciemnym motywie',
+      initialValue: true,
+    },
+    {
       name: 'isActive',
       title: 'Aktywna',
       type: 'boolean',
@@ -66,10 +80,11 @@ export default {
       title: 'name',
       subtitle: 'description',
       color: 'color',
+      icon: 'icon',
       mainCategory: 'mainCategory.name',
     },
     prepare(selection: any) {
-      const { title, subtitle, color, mainCategory } = selection;
+      const { title, subtitle, color, icon, mainCategory } = selection;
       const colorEmojis: Record<string, string> = {
         blue: '🔵',
         green: '🟢',
@@ -82,6 +97,7 @@ export default {
       return {
         title: `${colorEmojis[color] || '⚪'} ${title}`,
         subtitle: mainCategory ? `${mainCategory} • ${subtitle || 'Brak opisu'}` : subtitle || 'Brak opisu',
+        media: icon,
       };
     },
   },

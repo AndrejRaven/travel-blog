@@ -46,8 +46,8 @@ type GroqParams = Record<string, unknown>;
 export const CACHE_STRATEGIES = {
   POSTS: { revalidate: 300 },      // 5 min - często aktualizowane
   CATEGORIES: { revalidate: 3600 }, // 1h - rzadko zmieniane
-  HEADER: { revalidate: 1800 },     // 30 min - średnio często
-  COMPONENTS: { revalidate: 600 },  // 10 min - komponenty strony
+  HEADER: { revalidate: 3600 },     // 1h - rzadko zmieniane (zwiększone z 30 min)
+  COMPONENTS: { revalidate: 1800 },  // 30 min - komponenty strony (zwiększone z 10 min)
   STATIC: { revalidate: 86400 },    // 24h - dane statyczne
 } as const;
 
@@ -61,7 +61,10 @@ export async function fetchGroq<T>(
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ query, params }),
-    next: CACHE_STRATEGIES[cacheStrategy],
+    next: {
+      ...CACHE_STRATEGIES[cacheStrategy],
+      tags: [cacheStrategy.toLowerCase()], // Dodaj tagi dla lepszego cache invalidation
+    },
   });
   if (!res.ok) {
     const text = await res.text().catch(() => "");
@@ -213,6 +216,7 @@ export type SuperCategory = {
   color: string;
   description?: string;
   icon?: SanityImage | null;
+  invertOnDark?: boolean;
 };
 
 export type MainCategory = {
@@ -222,6 +226,7 @@ export type MainCategory = {
   color: string;
   description?: string;
   icon?: SanityImage | null;
+  invertOnDark?: boolean;
   superCategory?: {
     _id: string;
     name: string;
@@ -235,6 +240,8 @@ export type Category = {
   slug: { current: string };
   color: string;
   description?: string;
+  icon?: SanityImage | null;
+  invertOnDark?: boolean;
   mainCategory?: {
     _id: string;
     name: string;

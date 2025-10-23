@@ -1,4 +1,5 @@
 import Link from "@/components/ui/Link";
+import Image from "next/image";
 
 interface CategoryBadgeProps {
   category: {
@@ -6,6 +7,21 @@ interface CategoryBadgeProps {
     name: string;
     slug: { current: string };
     color: string;
+    icon?: {
+      asset: {
+        url: string;
+      };
+    };
+    mainCategory?: {
+      _id: string;
+      name: string;
+      slug: { current: string };
+      superCategory?: {
+        _id: string;
+        name: string;
+        slug: { current: string };
+      };
+    };
   };
   className?: string;
   showLink?: boolean;
@@ -31,17 +47,47 @@ export default function CategoryBadge({
     return colorMap[color] || colorMap.gray;
   };
 
-  const badgeClasses = `inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getCategoryColorClasses(
+  const buildCategoryUrl = (
+    category: CategoryBadgeProps["category"]
+  ): string => {
+    // Check if we have the full hierarchy
+    if (
+      category.mainCategory?.superCategory?.slug?.current &&
+      category.mainCategory?.slug?.current
+    ) {
+      return `/${category.mainCategory.superCategory.slug.current}/${category.mainCategory.slug.current}/${category.slug.current}`;
+    }
+
+    // Fallback to just the category slug if hierarchy data is missing
+    return `/${category.slug.current}`;
+  };
+
+  const badgeClasses = `inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium ${getCategoryColorClasses(
     category.color
   )} hover:opacity-80 transition-opacity duration-200 ${className}`;
 
+  const badgeContent = (
+    <>
+      {category.icon?.asset?.url && (
+        <Image
+          src={category.icon.asset.url}
+          alt={`Ikona ${category.name}`}
+          width={12}
+          height={12}
+          className={`opacity-70 ${category.invertOnDark === true ? "dark:invert" : ""}`}
+        />
+      )}
+      {category.name}
+    </>
+  );
+
   if (showLink) {
     return (
-      <Link href={`/${category.slug.current}`} className={badgeClasses}>
-        {category.name}
+      <Link href={buildCategoryUrl(category)} className={badgeClasses}>
+        {badgeContent}
       </Link>
     );
   }
 
-  return <span className={badgeClasses}>{category.name}</span>;
+  return <span className={badgeClasses}>{badgeContent}</span>;
 }

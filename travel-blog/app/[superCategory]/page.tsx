@@ -4,14 +4,15 @@ import { QUERIES } from "@/lib/queries";
 import PageLayout from "@/components/shared/PageLayout";
 import PageHeader from "@/components/shared/PageHeader";
 import BackToHome from "@/components/shared/BackToHome";
+import InfoCard from "@/components/shared/InfoCard";
 import CategoryArticles from "@/components/sections/CategoryArticles";
 import MainCategoryList from "@/components/sections/MainCategoryList";
 import { SuperCategory, ArticleForList, MainCategory } from "@/lib/sanity";
 
 type SuperCategoryPageProps = {
-  params: {
+  params: Promise<{
     superCategory: string;
-  };
+  }>;
 };
 
 export async function generateStaticParams() {
@@ -27,9 +28,10 @@ export async function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }: SuperCategoryPageProps) {
+  const { superCategory: superCategorySlug } = await params;
   const superCategory = await fetchGroq<SuperCategory | null>(
     QUERIES.SUPER_CATEGORY.BY_SLUG,
-    { slug: params.superCategory },
+    { slug: superCategorySlug },
     "CATEGORIES"
   );
 
@@ -50,20 +52,21 @@ export async function generateMetadata({ params }: SuperCategoryPageProps) {
 export default async function SuperCategoryPage({
   params,
 }: SuperCategoryPageProps) {
+  const { superCategory: superCategorySlug } = await params;
   const [superCategory, mainCategories, posts] = await Promise.all([
     fetchGroq<SuperCategory | null>(
       QUERIES.SUPER_CATEGORY.BY_SLUG,
-      { slug: params.superCategory },
+      { slug: superCategorySlug },
       "CATEGORIES"
     ),
     fetchGroq<MainCategory[]>(
       QUERIES.SUPER_CATEGORY.MAIN_CATEGORIES,
-      { superCategorySlug: params.superCategory },
+      { superCategorySlug },
       "CATEGORIES"
     ),
     fetchGroq<ArticleForList[]>(
       QUERIES.SUPER_CATEGORY.POSTS,
-      { superCategorySlug: params.superCategory },
+      { superCategorySlug },
       "POSTS"
     ),
   ]);
@@ -101,9 +104,16 @@ export default async function SuperCategoryPage({
                 id: mainCategory._id,
                 name: mainCategory.name,
                 description: mainCategory.description || "",
-                href: `/${params.superCategory}/${mainCategory.slug.current}`,
+                href: `/${superCategorySlug}/${mainCategory.slug.current}`,
                 color: mainCategory.color,
-                icon: mainCategory.icon,
+                icon: mainCategory.icon
+                  ? {
+                      asset: {
+                        url: mainCategory.icon.asset?.url,
+                      },
+                    }
+                  : undefined,
+                invertOnDark: mainCategory.invertOnDark,
               })),
             }}
           />
@@ -112,11 +122,39 @@ export default async function SuperCategoryPage({
 
       {/* Posty */}
       {posts.length === 0 ? (
-        <div className="text-center py-12">
-          <p className="text-gray-600 dark:text-gray-400 text-lg mb-6">
-            Brak postów w tej kategorii.
-          </p>
-          <BackToHome />
+        <div className="max-w-2xl mx-auto">
+          <InfoCard variant="blue">
+            <div className="text-center">
+              <div className="mb-6">
+                <div className="text-6xl mb-4">🚀</div>
+                <h3 className="text-2xl font-serif font-bold text-gray-900 dark:text-gray-100 mb-4">
+                  Artykuły w drodze!
+                </h3>
+                <p className="text-gray-600 dark:text-gray-300 text-lg leading-relaxed">
+                  Pracujemy nad przygotowaniem ciekawych artykułów w kategorii{" "}
+                  <span className="font-semibold text-blue-600 dark:text-blue-400">
+                    {superCategory.name}
+                  </span>
+                  . Wkrótce znajdziesz tu wartościowe treści!
+                </p>
+              </div>
+
+              <div className="flex items-center justify-center space-x-2 text-sm text-gray-500 dark:text-gray-400 mb-6">
+                <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                <div
+                  className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"
+                  style={{ animationDelay: "0.2s" }}
+                ></div>
+                <div
+                  className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"
+                  style={{ animationDelay: "0.4s" }}
+                ></div>
+                <span className="ml-2">Pracujemy nad treściami...</span>
+              </div>
+
+              <BackToHome />
+            </div>
+          </InfoCard>
         </div>
       ) : (
         <>

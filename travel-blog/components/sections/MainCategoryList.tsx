@@ -13,6 +13,19 @@ type Props = {
 };
 
 export default function MainCategoryList({ data }: Props) {
+  // Mapowanie kolorów do klas Tailwind
+  const getCategoryColorClass = (color: string): string => {
+    const colorMap: Record<string, string> = {
+      blue: "bg-blue-500",
+      green: "bg-green-500",
+      yellow: "bg-yellow-500",
+      red: "bg-red-500",
+      purple: "bg-purple-500",
+      gray: "bg-gray-500",
+    };
+    return colorMap[color] || colorMap.gray;
+  };
+
   // Zabezpieczenie na wypadek gdyby data był undefined
   if (!data) {
     console.error("MainCategoryList: Missing data", { data });
@@ -82,7 +95,7 @@ export default function MainCategoryList({ data }: Props) {
                     alt={`Ikona ${mainCategory.name}`}
                     width={28}
                     height={28}
-                    className="opacity-70 group-hover:opacity-100 dark:invert transition-opacity duration-300"
+                    className={`opacity-70 group-hover:opacity-100 ${mainCategory.invertOnDark === true ? "dark:invert" : ""} transition-opacity duration-300`}
                   />
                 ) : (
                   <div

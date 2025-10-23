@@ -18,12 +18,17 @@ export { ANIMATION_PRESETS };
 export const useAnimation = () => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [isInView, setIsInView] = useState(false);
+  const [hasAnimated, setHasAnimated] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
+  
 
   useEffect(() => {
     // Sprawdź czy element istnieje
     if (!containerRef.current) return;
+
+    // Jeśli już animowano, nie tworz nowego observera
+    if (hasAnimated) return;
 
     // Responsywne ustawienia dla różnych urządzeń
     const isMobile = window.innerWidth < 768;
@@ -34,13 +39,17 @@ export const useAnimation = () => {
     observerRef.current = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
-          if (entry.isIntersecting && !isInView) {
+          if (entry.isIntersecting && !hasAnimated) {
             setIsInView(true);
-            // Mniejsze opóźnienie dla mobilnych
-            const delay = isMobile ? 100 : 200;
-            setTimeout(() => {
-              setIsLoaded(true);
-            }, delay);
+            setHasAnimated(true);
+            // Ustaw isLoaded natychmiast, bez opóźnienia
+            setIsLoaded(true);
+            
+            // Odłącz observer po pierwszej animacji
+            if (observerRef.current && containerRef.current) {
+              observerRef.current.unobserve(containerRef.current);
+              observerRef.current.disconnect();
+            }
           }
         });
       },
@@ -59,7 +68,7 @@ export const useAnimation = () => {
         observerRef.current.disconnect();
       }
     };
-  }, [isInView]); // Dodaj isInView jako dependency
+  }, []); // Pusta dependency array - uruchom tylko raz
 
   return {
     isLoaded,

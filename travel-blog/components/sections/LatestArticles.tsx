@@ -21,9 +21,17 @@ type Article = ArticleForList;
 
 type Props = {
   data: ArticlesData;
+  isLoaded?: boolean;
+  isInView?: boolean;
+  containerRef?: React.RefObject<HTMLDivElement>;
 };
 
-export default function Articles({ data }: Props) {
+export default function Articles({
+  data,
+  isLoaded = true,
+  isInView = true,
+  containerRef,
+}: Props) {
   const {
     container,
     title,
@@ -44,6 +52,8 @@ export default function Articles({ data }: Props) {
     []
   );
   const [isLoading, setIsLoading] = React.useState(true);
+
+  // Użyj przekazane props zamiast useAnimation
 
   // Wyciągnij ID artykułów z referencji - używamy useMemo żeby uniknąć nieskończonej pętli
   const selectedArticleIds = React.useMemo(() => {
@@ -94,10 +104,12 @@ export default function Articles({ data }: Props) {
 
   return (
     <SectionContainer config={container} role="region" aria-labelledby={title}>
-      <div className={`${getHeightClass(container.height)}`}>
+      <div ref={containerRef} className={`${getHeightClass(container.height)}`}>
         <AnimatedSection
           animationType="sectionHeader"
           animationDelay="none"
+          isLoaded={isLoaded}
+          isInView={isInView}
           className="flex flex-col md:flex-row md:items-end justify-between mb-6"
         >
           <SectionHeader title={title} />
@@ -135,6 +147,8 @@ export default function Articles({ data }: Props) {
                   key={article._id}
                   animationType="text"
                   animationDelay={delay}
+                  isLoaded={isLoaded}
+                  isInView={isInView}
                   className="relative rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-hidden hover:shadow-lg transition-all duration-500 hover:scale-105"
                 >
                   <div className="relative aspect-[16/10] bg-gray-50 dark:bg-gray-700">
@@ -149,6 +163,7 @@ export default function Articles({ data }: Props) {
                       className="object-cover"
                       sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
                       quality={95}
+                      priority={index < 3}
                     />
 
                     {/* Badge kategorii na obrazie */}

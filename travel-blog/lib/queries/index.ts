@@ -17,6 +17,21 @@ export const QUERIES = {
           current
         },
         color,
+        icon {
+          asset-> {
+            _id,
+            url,
+            metadata {
+              dimensions {
+                width,
+                height
+              }
+            }
+          },
+          hotspot,
+          crop,
+          alt
+        },
         mainCategory-> {
           _id,
           name,
@@ -235,6 +250,21 @@ export const QUERIES = {
           current
         },
         color,
+        icon {
+          asset-> {
+            _id,
+            url,
+            metadata {
+              dimensions {
+                width,
+                height
+              }
+            }
+          },
+          hotspot,
+          crop,
+          alt
+        },
         mainCategory-> {
           _id,
           name,
@@ -297,6 +327,21 @@ export const QUERIES = {
           current
         },
         color,
+        icon {
+          asset-> {
+            _id,
+            url,
+            metadata {
+              dimensions {
+                width,
+                height
+              }
+            }
+          },
+          hotspot,
+          crop,
+          alt
+        },
         mainCategory-> {
           _id,
           name,
@@ -418,7 +463,8 @@ export const QUERIES = {
         },
         hotspot,
         crop
-      }
+      },
+      invertOnDark
     }`,
 
     // Pobierz kategorię nadrzędną po slug
@@ -443,7 +489,8 @@ export const QUERIES = {
         },
         hotspot,
         crop
-      }
+      },
+      invertOnDark
     }`,
 
     // Pobierz kategorie główne dla kategorii nadrzędnej
@@ -469,6 +516,7 @@ export const QUERIES = {
         hotspot,
         crop
       },
+      invertOnDark,
       superCategory-> {
         _id,
         name,
@@ -523,6 +571,21 @@ export const QUERIES = {
           current
         },
         color,
+        icon {
+          asset-> {
+            _id,
+            url,
+            metadata {
+              dimensions {
+                width,
+                height
+              }
+            }
+          },
+          hotspot,
+          crop,
+          alt
+        },
         mainCategory-> {
           _id,
           name,
@@ -566,6 +629,7 @@ export const QUERIES = {
         hotspot,
         crop
       },
+      invertOnDark,
       superCategory-> {
         _id,
         name,
@@ -598,6 +662,7 @@ export const QUERIES = {
         hotspot,
         crop
       },
+      invertOnDark,
       superCategory-> {
         _id,
         name,
@@ -616,6 +681,21 @@ export const QUERIES = {
       },
       color,
       description,
+      icon {
+        asset-> {
+          _id,
+          url,
+          metadata {
+            dimensions {
+              width,
+              height
+            }
+          }
+        },
+        hotspot,
+        crop,
+        alt
+      },
       mainCategory-> {
         _id,
         name,
@@ -670,6 +750,21 @@ export const QUERIES = {
           current
         },
         color,
+        icon {
+          asset-> {
+            _id,
+            url,
+            metadata {
+              dimensions {
+                width,
+                height
+              }
+            }
+          },
+          hotspot,
+          crop,
+          alt
+        },
         mainCategory-> {
           _id,
           name,
@@ -699,6 +794,21 @@ export const QUERIES = {
       },
       color,
       description,
+      icon {
+        asset-> {
+          _id,
+          url,
+          metadata {
+            dimensions {
+              width,
+              height
+            }
+          }
+        },
+        hotspot,
+        crop,
+        alt
+      },
       mainCategory-> {
         _id,
         name,
@@ -724,6 +834,21 @@ export const QUERIES = {
       },
       color,
       description,
+      icon {
+        asset-> {
+          _id,
+          url,
+          metadata {
+            dimensions {
+              width,
+              height
+            }
+          }
+        },
+        hotspot,
+        crop,
+        alt
+      },
       mainCategory-> {
         _id,
         name,
@@ -785,6 +910,21 @@ export const QUERIES = {
           current
         },
         color,
+        icon {
+          asset-> {
+            _id,
+            url,
+            metadata {
+              dimensions {
+                width,
+                height
+              }
+            }
+          },
+          hotspot,
+          crop,
+          alt
+        },
         mainCategory-> {
           _id,
           name,
@@ -827,7 +967,8 @@ export const QUERIES = {
         },
         hotspot,
         crop
-      }
+      },
+      invertOnDark
     }`,
     // Pobierz kategorie główne dla strony głównej
     MAIN_CATEGORIES: `*[_type == "mainCategory" && isActive == true] | order(name asc) {
@@ -851,7 +992,8 @@ export const QUERIES = {
         },
         hotspot,
         crop
-      }
+      },
+      invertOnDark
     }`,
     // Pobierz wszystkie komponenty strony głównej (z limitem dla wydajności)
     COMPONENTS: `*[_type in ["heroBanner", "backgroundHeroBanner", "textContent", "imageCollage", "articles", "embedYoutube", "instagramSection", "newsletter", "youtubeChannel"]] | order(_createdAt asc) [0...50] {
@@ -1238,7 +1380,8 @@ export const QUERIES = {
             }
           },
           iconSvg,
-          variant
+          variant,
+          invertOnDark
         },
         categories[] {
           id,

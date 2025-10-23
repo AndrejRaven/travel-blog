@@ -90,7 +90,14 @@ const componentMap = {
       }}
     />
   ),
-  articles: (comp: PostComponent) => (
+  articles: (
+    comp: PostComponent,
+    animationProps?: {
+      isLoaded: boolean;
+      isInView: boolean;
+      containerRef: React.RefObject<HTMLDivElement>;
+    }
+  ) => (
     <Articles
       data={{
         ...convertToComponentData(comp),
@@ -101,6 +108,7 @@ const componentMap = {
         selectedArticles: (comp as ArticlesType).selectedArticles || [],
         maxArticles: (comp as ArticlesType).maxArticles || 3,
       }}
+      {...animationProps}
     />
   ),
   embedYoutube: (comp: PostComponent) => (
@@ -118,9 +126,17 @@ const componentMap = {
 
 type Props = {
   component: PostComponent;
+  animationProps?: {
+    isLoaded: boolean;
+    isInView: boolean;
+    containerRef: React.RefObject<HTMLDivElement>;
+  };
 };
 
-export default function ComponentRenderer({ component }: Props) {
+export default function ComponentRenderer({
+  component,
+  animationProps,
+}: Props) {
   // Renderuj komponent używając mapy
   const renderComponent =
     componentMap[component._type as keyof typeof componentMap];
@@ -130,5 +146,5 @@ export default function ComponentRenderer({ component }: Props) {
     return null;
   }
 
-  return renderComponent(component);
+  return renderComponent(component, animationProps);
 }

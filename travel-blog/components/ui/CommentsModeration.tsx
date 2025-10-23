@@ -249,7 +249,11 @@ export default function CommentsModeration({
           </h2>
         </div>
 
-        <Button onClick={fetchComments} variant="outline" size="sm">
+        <Button
+          onClick={fetchComments}
+          variant="outline"
+          className="px-4 py-2 text-sm"
+        >
           <RefreshCw className="w-4 h-4 mr-2" />
           Odśwież
         </Button>
@@ -292,27 +296,24 @@ export default function CommentsModeration({
           </span>
           <div className="flex gap-2">
             <Button
-              size="sm"
               onClick={() => bulkUpdateStatus("approved")}
-              className="bg-green-600 hover:bg-green-700"
+              className="bg-green-600 hover:bg-green-700 px-4 py-2 text-sm"
             >
               <CheckCircle className="w-4 h-4 mr-1" />
               Zatwierdź
             </Button>
             <Button
-              size="sm"
               variant="outline"
               onClick={() => bulkUpdateStatus("rejected")}
-              className="border-red-300 text-red-600 hover:bg-red-50"
+              className="border-red-300 text-red-600 hover:bg-red-50 px-4 py-2 text-sm"
             >
               <XCircle className="w-4 h-4 mr-1" />
               Odrzuć
             </Button>
             <Button
-              size="sm"
               variant="outline"
               onClick={() => bulkUpdateStatus("spam")}
-              className="border-red-300 text-red-600 hover:bg-red-50"
+              className="border-red-300 text-red-600 hover:bg-red-50 px-4 py-2 text-sm"
             >
               <XCircle className="w-4 h-4 mr-1" />
               Oznacz jako spam
@@ -391,30 +392,27 @@ export default function CommentsModeration({
 
                 <div className="flex items-center gap-2">
                   <Button
-                    size="sm"
                     variant="outline"
                     onClick={() => updateCommentStatus(comment._id, "approved")}
                     disabled={comment.status === "approved"}
-                    className="text-green-600 border-green-300 hover:bg-green-50"
+                    className="text-green-600 border-green-300 hover:bg-green-50 px-3 py-2 text-sm"
                   >
                     <CheckCircle className="w-4 h-4" />
                   </Button>
 
                   <Button
-                    size="sm"
                     variant="outline"
                     onClick={() => updateCommentStatus(comment._id, "rejected")}
                     disabled={comment.status === "rejected"}
-                    className="text-red-600 border-red-300 hover:bg-red-50"
+                    className="text-red-600 border-red-300 hover:bg-red-50 px-3 py-2 text-sm"
                   >
                     <XCircle className="w-4 h-4" />
                   </Button>
 
                   <Button
-                    size="sm"
                     variant="outline"
                     onClick={() => deleteComment(comment._id)}
-                    className="text-red-600 border-red-300 hover:bg-red-50"
+                    className="text-red-600 border-red-300 hover:bg-red-50 px-3 py-2 text-sm"
                   >
                     <Trash2 className="w-4 h-4" />
                   </Button>
