@@ -31,16 +31,17 @@ export async function PATCH(request: NextRequest) {
     }
 
     // Aktualizuj status wszystkich komentarzy
-    const transaction = client.transaction();
-    
-    commentIds.forEach((id: string) => {
-      transaction.patch(id).set({ 
-        status,
-        updatedAt: new Date().toISOString()
-      });
-    });
-
-    await transaction.commit();
+    await Promise.all(
+      commentIds.map((id: string) =>
+        client
+          .patch(id)
+          .set({
+            status,
+            updatedAt: new Date().toISOString()
+          })
+          .commit()
+      )
+    );
 
     return NextResponse.json({ 
       message: `Status ${commentIds.length} komentarzy został zmieniony na: ${status}`,
