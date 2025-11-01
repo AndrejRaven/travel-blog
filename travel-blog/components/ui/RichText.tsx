@@ -189,7 +189,7 @@ export default function RichText({
       h1: "text-3xl md:text-5xl font-serif font-bold tracking-tight mb-4",
       h2: "text-3xl md:text-3xl font-serif font-semibold mb-4",
       h3: "text-2xl md:text-2xl font-serif font-semibold mb-3",
-      normal: "text-lg font-serif leading-relaxed",
+      normal: "text-xl font-sans leading-relaxed",
     };
 
     const Tag =

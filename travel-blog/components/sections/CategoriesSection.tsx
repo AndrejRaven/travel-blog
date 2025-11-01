@@ -68,6 +68,24 @@ export default function CategoriesSection({ data }: Props) {
     fetchSuperCategories();
   }, []);
 
+  // Dynamiczne kolumny dla załadowanych danych
+  const categoriesCount = superCategories.length;
+  const mdColsClass =
+    categoriesCount >= 3
+      ? "md:grid-cols-3"
+      : categoriesCount === 2
+        ? "md:grid-cols-2"
+        : "md:grid-cols-1";
+  const lgColsClass =
+    categoriesCount >= 4
+      ? "lg:grid-cols-4"
+      : categoriesCount === 3
+        ? "lg:grid-cols-3"
+        : categoriesCount === 2
+          ? "lg:grid-cols-2"
+          : "lg:grid-cols-1";
+  const gridColsClasses = `grid grid-cols-1 ${mdColsClass} ${lgColsClass} gap-4`;
+
   return (
     <SectionContainer config={container}>
       <section
@@ -77,6 +95,9 @@ export default function CategoriesSection({ data }: Props) {
           showBackground ? "bg-gray-50 dark:bg-gray-900" : ""
         }`}
       >
+        {/**
+         * Liczba kolumn zależna od liczby kategorii, by wypełniać szerokość.
+         */}
         <h2
           className={`text-2xl md:text-3xl font-serif font-semibold mb-6 text-gray-900 dark:text-gray-100 ${getAnimationClass(
             {
@@ -91,7 +112,7 @@ export default function CategoriesSection({ data }: Props) {
         </h2>
 
         {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {[...Array(4)].map((_, index) => (
               <div
                 key={index}
@@ -108,7 +129,7 @@ export default function CategoriesSection({ data }: Props) {
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className={gridColsClasses}>
             {superCategories.map((category, index) => (
               <Link
                 key={category._id}

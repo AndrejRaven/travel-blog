@@ -127,6 +127,130 @@ export default {
       ],
       group: 'content',
     },
+    // Stan: Sukces (świeżo zapisany)
+    {
+      name: 'successTitle',
+      title: 'Tytuł sukcesu',
+      type: 'string',
+      initialValue: 'Dzięki za zapis!',
+      group: 'success',
+    },
+    {
+      name: 'successSubtitle',
+      title: 'Podtytuł sukcesu',
+      type: 'string',
+      initialValue: 'Sprawdź skrzynkę — wysłaliśmy potwierdzenie. Kliknij link w emailu, aby dokończyć zapis.',
+      group: 'success',
+    },
+    {
+      name: 'successInfo',
+      title: 'Informacja dodatkowa (sukces)',
+      type: 'string',
+      initialValue: 'Nie widzisz emaila? Sprawdź folder SPAM lub zaczekaj kilka minut.',
+      group: 'success',
+    },
+    {
+      name: 'unsubscribeButtonText',
+      title: 'Tekst przycisku "Wypisz się"',
+      type: 'string',
+      initialValue: 'Wypisz się',
+      group: 'success',
+    },
+    // Stan: Już zapisany
+    {
+      name: 'alreadySubscribedTitle',
+      title: 'Tytuł (już zapisany)',
+      type: 'string',
+      initialValue: 'Cześć, wygląda na to, że jesteś już z nami!',
+      group: 'alreadySubscribed',
+    },
+    {
+      name: 'alreadySubscribedConfirmed',
+      title: 'Tekst (potwierdzone)',
+      type: 'string',
+      initialValue: 'Twój email {{email}} jest zapisany. Dziękujemy za zaufanie!',
+      group: 'alreadySubscribed',
+    },
+    {
+      name: 'alreadySubscribedPending',
+      title: 'Tekst (oczekuje potwierdzenia)',
+      type: 'string',
+      initialValue: 'Twój email {{email}} czeka na potwierdzenie. Sprawdź skrzynkę!',
+      group: 'alreadySubscribed',
+    },
+    // Stan: Po wypisaniu
+    {
+      name: 'unsubscribedTitle',
+      title: 'Tytuł (wypisany)',
+      type: 'string',
+      initialValue: 'Szkoda, że odchodzisz',
+      group: 'unsubscribed',
+    },
+    {
+      name: 'unsubscribedSubtitle',
+      title: 'Podtytuł (wypisany)',
+      type: 'string',
+      initialValue: 'Wypisaliśmy Cię z newslettera. Możesz wrócić w każdej chwili — zawsze będziesz mile widziana/y!',
+      group: 'unsubscribed',
+    },
+    {
+      name: 'unsubscribedInfo',
+      title: 'Informacja dodatkowa (wypisany)',
+      type: 'string',
+      initialValue: 'Jeśli chcesz nam pomóc być lepszymi, napisz co możemy poprawić.',
+      group: 'unsubscribed',
+    },
+    {
+      name: 'resubscribeButtonText',
+      title: 'Tekst przycisku "Zapisz się ponownie"',
+      type: 'string',
+      initialValue: 'Zmień zdanie? Zapisz się ponownie',
+      group: 'unsubscribed',
+    },
+    // Błędy walidacji
+    {
+      name: 'errorInvalidEmail',
+      title: 'Błąd: nieprawidłowy email',
+      type: 'string',
+      initialValue: 'To nie wygląda jak prawidłowy email. Sprawdź pisownię.',
+      group: 'errors',
+    },
+    {
+      name: 'errorEmailExists',
+      title: 'Błąd: email już zapisany',
+      type: 'string',
+      initialValue: 'Ten email jest już zapisany. Sprawdź swoją skrzynkę!',
+      group: 'errors',
+    },
+    {
+      name: 'errorNetworkIssue',
+      title: 'Błąd: problem z połączeniem',
+      type: 'string',
+      initialValue: 'Ups, problem z połączeniem. Spróbuj ponownie.',
+      group: 'errors',
+    },
+    {
+      name: 'errorUnknown',
+      title: 'Błąd: nieznany',
+      type: 'string',
+      initialValue: 'Coś poszło nie tak. Spróbuj za chwilę.',
+      group: 'errors',
+    },
+    // Rate limiting
+    {
+      name: 'rateLimitMessage',
+      title: 'Komunikat rate limit',
+      type: 'string',
+      initialValue: 'Poczekaj chwilkę... Za dużo akcji.',
+      group: 'rateLimit',
+    },
+    {
+      name: 'rateLimitWait',
+      title: 'Komunikat oczekiwania',
+      type: 'string',
+      initialValue: 'Odczekaj {{seconds}} sekund',
+      group: 'rateLimit',
+    },
   ],
   groups: [
     {
@@ -137,6 +261,26 @@ export default {
     {
       name: 'properties',
       title: 'Właściwości',
+    },
+    {
+      name: 'success',
+      title: 'Sukces',
+    },
+    {
+      name: 'alreadySubscribed',
+      title: 'Już zapisany',
+    },
+    {
+      name: 'unsubscribed',
+      title: 'Wypisany',
+    },
+    {
+      name: 'errors',
+      title: 'Błędy',
+    },
+    {
+      name: 'rateLimit',
+      title: 'Rate limit',
     },
   ],
   preview: {

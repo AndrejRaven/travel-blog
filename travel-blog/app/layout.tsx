@@ -8,6 +8,7 @@ import CookieBanner from "@/components/ui/CookieBanner";
 import ScrollToTop from "@/components/ui/ScrollToTop";
 import TopLoadingBar from "@/components/ui/TopLoadingBar";
 import NotificationProvider from "@/components/providers/NotificationProvider";
+import { ToastContainer } from "@/components/ui/Toast";
 import "./globals.css";
 
 // Font główny - Inter - doskonały do czytania
@@ -80,6 +81,7 @@ export default function RootLayout({
               <Footer />
               <CookieBanner />
               <ScrollToTop />
+              <ToastContainer />
             </NotificationProvider>
           </NavigationProgressProvider>
         </ThemeProvider>

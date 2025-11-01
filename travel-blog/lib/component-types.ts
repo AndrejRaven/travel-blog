@@ -262,9 +262,38 @@ export type Newsletter = {
     icon: string;
     text: string;
   }>;
+  // Stan: Sukces (świeżo zapisany)
+  successTitle?: string;
+  successSubtitle?: string;
+  successInfo?: string;
+  unsubscribeButtonText?: string;
+  // Stan: Już zapisany
+  alreadySubscribedTitle?: string;
+  alreadySubscribedConfirmed?: string;
+  alreadySubscribedPending?: string;
+  // Stan: Po wypisaniu
+  unsubscribedTitle?: string;
+  unsubscribedSubtitle?: string;
+  unsubscribedInfo?: string;
+  resubscribeButtonText?: string;
+  // Błędy walidacji
+  errorInvalidEmail?: string;
+  errorEmailExists?: string;
+  errorNetworkIssue?: string;
+  errorUnknown?: string;
+  // Rate limiting
+  rateLimitMessage?: string;
+  rateLimitWait?: string;
 };
 
 export type NewsletterData = ComponentData<Newsletter>;
+
+export type NewsletterCacheData = {
+  email: string;
+  subscribed: boolean;
+  confirmed: boolean; // false = pending, true = confirmed
+  timestamp: number;
+};
 
 export type Slider = {
   _type: 'slider';

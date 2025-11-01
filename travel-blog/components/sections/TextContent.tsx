@@ -15,11 +15,7 @@ export default function TextContent({ data }: Props) {
 
   return (
     <SectionContainer config={container}>
-      <div
-        className={`prose max-w-none ${getTextSizeClass(
-          layout.textSize
-        )} prose-serif`}
-      >
+      <div className={`prose max-w-none ${getTextSizeClass(layout.textSize)}`}>
         <RichText blocks={content} />
       </div>
     </SectionContainer>

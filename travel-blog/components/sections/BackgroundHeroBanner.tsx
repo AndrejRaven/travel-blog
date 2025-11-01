@@ -15,7 +15,6 @@ import {
 } from "@/lib/section-utils";
 import {
   useResponsiveImage,
-  useAnimation,
   useScrollIndicator,
   getAnimationClass,
   getTextAlignmentClasses,
@@ -24,6 +23,7 @@ import {
   getImagePlaceholderClasses,
   getVerticalAlignmentClasses,
 } from "@/lib/render-utils";
+import { useAnimation } from "@/lib/useAnimation";
 import SectionContainer from "@/components/shared/SectionContainer";
 
 type Props = {

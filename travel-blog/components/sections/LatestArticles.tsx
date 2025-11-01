@@ -142,14 +142,13 @@ export default function Articles({
             displayedArticles.map((article, index) => {
               const delay = index < 3 ? "short" : index < 6 ? "medium" : "long";
 
-              return (
+              const card = (
                 <AnimatedSection
-                  key={article._id}
                   animationType="text"
                   animationDelay={delay}
                   isLoaded={isLoaded}
                   isInView={isInView}
-                  className="relative rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-hidden hover:shadow-lg transition-all duration-500 hover:scale-105"
+                  className="relative h-full flex flex-col rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-hidden hover:shadow-lg transition-all duration-500 hover:scale-105 cursor-pointer"
                 >
                   <div className="relative aspect-[16/10] bg-gray-50 dark:bg-gray-700">
                     <ResponsiveImage
@@ -185,7 +184,7 @@ export default function Articles({
                       ) : null}
                     </div>
                   </div>
-                  <div className="p-4 pb-16">
+                  <div className="p-4 flex-1">
                     <div className="space-y-2">
                       <div className="flex items-center gap-2 text-xs font-sans text-gray-500 dark:text-gray-400">
                         <span>{formatDate(article.publishedAt)}</span>
@@ -194,23 +193,25 @@ export default function Articles({
                         {article.title}
                       </h3>
                       {article.description && (
-                        <p className="text-sm font-sans text-gray-600 dark:text-gray-300 line-clamp-4">
+                        <p className="text-sm font-sans text-gray-600 dark:text-gray-300">
                           {article.description}
                         </p>
                       )}
                     </div>
                   </div>
-                  {article.slug?.current && (
-                    <div className="absolute bottom-4 left-4 right-4">
-                      <Link
-                        href={`/post/${article.slug.current}`}
-                        variant="arrow"
-                      >
-                        Czytaj dalej
-                      </Link>
-                    </div>
-                  )}
                 </AnimatedSection>
+              );
+
+              return article.slug?.current ? (
+                <Link
+                  key={article._id}
+                  href={`/post/${article.slug.current}`}
+                  className="block h-full focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-xl"
+                >
+                  {card}
+                </Link>
+              ) : (
+                <React.Fragment key={article._id}>{card}</React.Fragment>
               );
             })
           ) : (
