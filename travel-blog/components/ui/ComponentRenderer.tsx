@@ -5,91 +5,129 @@ import TextContent from "@/components/sections/TextContent";
 import ImageCollage from "@/components/sections/ImageCollage";
 import EmbedYoutube from "@/components/sections/EmbedYoutube";
 import Articles from "@/components/sections/LatestArticles";
-import { PostComponent, Articles as ArticlesType } from "@/lib/component-types";
+import {
+  PostComponent,
+  Articles as ArticlesType,
+  EmbedYoutube as EmbedYoutubeType,
+  HeroBanner as HeroBannerType,
+  BackgroundHeroBanner as BackgroundHeroBannerType,
+  TextContent as TextContentType,
+  ImageCollage as ImageCollageType,
+  BaseContainer,
+  RichTextBlock,
+  Button,
+} from "@/lib/component-types";
 import { SanityImage } from "@/lib/sanity";
 
 // Helper do konwersji obrazu Sanity na format komponentu
 const convertImage = (
-  image: any
+  image: unknown
 ): SanityImage | { src: string; alt: string } => {
-  return image?.asset?.url
-    ? (image as SanityImage)
-    : { src: "", alt: "Brak obrazu" };
+  const img = image as SanityImage;
+  return img?.asset?.url ? img : { src: "", alt: "Brak obrazu" };
+};
+
+// Type for component data that can be passed to components
+type ComponentDataBase = {
+  container: BaseContainer;
+  content?: RichTextBlock[];
+  mobileContent?: RichTextBlock[];
+  buttons?: Button[];
+  image?: SanityImage | { src: string; alt: string };
+  mobileImage?: SanityImage | { src: string; alt: string };
 };
 
 // Konwersja danych z Sanity na format oczekiwany przez komponenty
-const convertToComponentData = (comp: PostComponent) => {
-  const baseData: any = {};
+const convertToComponentData = (comp: PostComponent): ComponentDataBase => {
+  const baseData: Partial<ComponentDataBase> = {};
 
   // Mapowanie pól z komponentu do baseData
-  const fieldMap = {
-    container: comp.container || {
-      maxWidth: "6xl",
-      padding: "lg",
-      margin: { top: "lg", bottom: "lg" },
-      backgroundColor: "transparent",
-      borderRadius: "none",
-      shadow: "none",
-      height: "auto",
-      contentTitle: (comp as any).title || "Najnowsze artykuły",
-    },
-    content: "content" in comp ? comp.content || [] : undefined,
-    mobileContent:
-      "mobileContent" in comp ? (comp as any).mobileContent : undefined,
-    buttons: "buttons" in comp ? comp.buttons : undefined,
-    image: "image" in comp ? convertImage(comp.image) : undefined,
-    mobileImage:
-      "mobileImage" in comp && comp.mobileImage?.asset?.url
-        ? convertImage(comp.mobileImage)
-        : undefined,
+  const title =
+    "_type" in comp && comp._type === "articles"
+      ? (comp as ArticlesType).title
+      : undefined;
+
+  baseData.container = comp.container || {
+    maxWidth: "6xl",
+    padding: "lg",
+    margin: { top: "lg", bottom: "lg" },
+    backgroundColor: "transparent",
+    borderRadius: "none",
+    shadow: "none",
+    height: "auto",
+    contentTitle: title || "Najnowsze artykuły",
   };
 
-  // Dodaj tylko te pola, które istnieją w komponencie
-  Object.entries(fieldMap).forEach(([key, value]) => {
-    if (value !== undefined) {
-      baseData[key] = value;
-    }
-  });
+  if ("content" in comp && comp.content) {
+    baseData.content = comp.content;
+  }
 
-  return baseData;
+  if ("mobileContent" in comp && comp.mobileContent) {
+    baseData.mobileContent = comp.mobileContent;
+  }
+
+  if ("buttons" in comp && comp.buttons) {
+    baseData.buttons = comp.buttons;
+  }
+
+  if ("image" in comp && comp.image) {
+    baseData.image = convertImage(comp.image);
+  }
+
+  if ("mobileImage" in comp && comp.mobileImage?.asset?.url) {
+    baseData.mobileImage = convertImage(comp.mobileImage);
+  }
+
+  return baseData as ComponentDataBase;
 };
 
 // Mapa komponentów - znacznie czytelniejsza niż switch
 const componentMap = {
-  heroBanner: (comp: PostComponent) => (
-    <HeroBanner
-      data={{
-        ...convertToComponentData(comp),
-        layout: (comp as any).layout,
-      }}
-    />
-  ),
-  backgroundHeroBanner: (comp: PostComponent) => (
-    <BackgroundHeroBanner
-      data={{
-        ...convertToComponentData(comp),
-        layout: (comp as any).layout,
-      }}
-    />
-  ),
-  textContent: (comp: PostComponent) => (
-    <TextContent
-      data={{
-        ...convertToComponentData(comp),
-        layout: (comp as any).layout,
-      }}
-    />
-  ),
-  imageCollage: (comp: PostComponent) => (
-    <ImageCollage
-      data={{
-        ...convertToComponentData(comp),
-        images:
-          (comp as any).images?.map((img: any) => img as SanityImage) || [],
-        layout: (comp as any).layout,
-      }}
-    />
-  ),
+  heroBanner: (comp: PostComponent) => {
+    const heroBanner = comp as HeroBannerType;
+    return (
+      <HeroBanner
+        data={{
+          ...convertToComponentData(comp),
+          layout: heroBanner.layout,
+        }}
+      />
+    );
+  },
+  backgroundHeroBanner: (comp: PostComponent) => {
+    const bgHeroBanner = comp as BackgroundHeroBannerType;
+    return (
+      <BackgroundHeroBanner
+        data={{
+          ...convertToComponentData(comp),
+          layout: bgHeroBanner.layout,
+        }}
+      />
+    );
+  },
+  textContent: (comp: PostComponent) => {
+    const textContent = comp as TextContentType;
+    return (
+      <TextContent
+        data={{
+          ...convertToComponentData(comp),
+          layout: textContent.layout,
+        }}
+      />
+    );
+  },
+  imageCollage: (comp: PostComponent) => {
+    const imageCollage = comp as ImageCollageType;
+    return (
+      <ImageCollage
+        data={{
+          ...convertToComponentData(comp),
+          images: imageCollage.images || [],
+          layout: imageCollage.layout,
+        }}
+      />
+    );
+  },
   articles: (
     comp: PostComponent,
     animationProps?: {
@@ -97,31 +135,37 @@ const componentMap = {
       isInView: boolean;
       containerRef: React.RefObject<HTMLDivElement>;
     }
-  ) => (
-    <Articles
-      data={{
-        ...convertToComponentData(comp),
-        title: (comp as ArticlesType).title || "Najnowsze artykuły",
-        showViewAll: (comp as ArticlesType).showViewAll || false,
-        viewAllHref: (comp as ArticlesType).viewAllHref,
-        articlesType: (comp as ArticlesType).articlesType || "latest",
-        selectedArticles: (comp as ArticlesType).selectedArticles || [],
-        maxArticles: (comp as ArticlesType).maxArticles || 3,
-      }}
-      {...animationProps}
-    />
-  ),
-  embedYoutube: (comp: PostComponent) => (
-    <EmbedYoutube
-      {...{
-        ...convertToComponentData(comp),
-        title: (comp as any).title,
-        description: (comp as any).description,
-        videoId: (comp as any).videoId,
-        useLatestVideo: (comp as any).useLatestVideo,
-      }}
-    />
-  ),
+  ) => {
+    const articles = comp as ArticlesType;
+    return (
+      <Articles
+        data={{
+          ...convertToComponentData(comp),
+          title: articles.title || "Najnowsze artykuły",
+          showViewAll: articles.showViewAll || false,
+          viewAllHref: articles.viewAllHref,
+          articlesType: articles.articlesType || "latest",
+          selectedArticles: articles.selectedArticles || [],
+          maxArticles: articles.maxArticles || 3,
+        }}
+        {...animationProps}
+      />
+    );
+  },
+  embedYoutube: (comp: PostComponent) => {
+    const embedYoutube = comp as EmbedYoutubeType;
+    return (
+      <EmbedYoutube
+        {...{
+          ...convertToComponentData(comp),
+          title: embedYoutube.title,
+          description: embedYoutube.description,
+          videoId: embedYoutube.videoId,
+          useLatestVideo: embedYoutube.useLatestVideo,
+        }}
+      />
+    );
+  },
 };
 
 type Props = {

@@ -11,8 +11,6 @@ import SectionContainer from "@/components/shared/SectionContainer";
 
 import { EmbedYoutubeData } from "@/lib/component-types";
 
-interface EmbedYoutubeProps extends EmbedYoutubeData {}
-
 export default function EmbedYoutube({
   title = "Zobacz nasz najnowszy film",
   description = "Odkryj najpiękniejsze miejsca z naszych podróży w najnowszym filmie na YouTube.",

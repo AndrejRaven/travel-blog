@@ -45,9 +45,9 @@ export async function findSubscriberByEmail(
 
   try {
     // Try filter[email] approach first
-    let url = `https://connect.mailerlite.com/api/subscribers?filter[email]=${encodeURIComponent(email)}`;
+    const url = `https://connect.mailerlite.com/api/subscribers?filter[email]=${encodeURIComponent(email)}`;
     
-    let response = await fetch(url, {
+    const response = await fetch(url, {
       headers: {
         Authorization: `Bearer ${mlConfig.token}`,
         Accept: 'application/json',

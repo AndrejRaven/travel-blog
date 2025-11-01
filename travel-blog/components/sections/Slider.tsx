@@ -1,6 +1,7 @@
 import React, { useState, useRef } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Pagination, Autoplay, Navigation } from "swiper/modules";
+import type { Swiper as SwiperType } from "swiper";
 import Image from "next/image";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import "swiper/css";
@@ -18,7 +19,7 @@ type Props = {
 export default function Slider({ data }: Props) {
   // Wszystkie hooki muszą być przed wczesnymi returnami
   const [activeSlide, setActiveSlide] = useState(0);
-  const swiperRef = useRef<any>(null);
+  const swiperRef = useRef<SwiperType | null>(null);
   const { isLoaded, isInView, containerRef } = useAnimation();
 
   // Zabezpieczenie na wypadek gdyby data był undefined

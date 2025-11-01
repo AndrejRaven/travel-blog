@@ -172,10 +172,10 @@ export function isEmailSubscribed(email: string): boolean {
  * API functions (currently simulated, ready for real API integration)
  */
 
-export interface ApiResponse {
+export interface ApiResponse<T = unknown> {
   success: boolean;
   message: string;
-  data?: any;
+  data?: T;
 }
 
 /**

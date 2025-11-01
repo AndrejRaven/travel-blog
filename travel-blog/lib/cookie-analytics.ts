@@ -16,7 +16,7 @@ export function useAnalytics() {
     
   };
 
-  const trackEvent = (eventName: string, parameters?: Record<string, any>) => {
+  const trackEvent = (eventName: string, parameters?: Record<string, unknown>) => {
     if (!isAllowed("analytics")) return;
 
     // Tutaj możesz dodać kod Google Analytics
@@ -65,7 +65,7 @@ export function useFacebookPixel() {
     
   };
 
-  const trackCustomEvent = (eventName: string, parameters?: Record<string, any>) => {
+  const trackCustomEvent = (eventName: string, parameters?: Record<string, unknown>) => {
     if (!isAllowed("marketing")) return;
 
     // Tutaj możesz dodać kod Facebook Pixel
@@ -84,7 +84,7 @@ export function useFacebookPixel() {
 export function useGoogleTagManager() {
   const { isAllowed } = useCookies();
 
-  const pushDataLayer = (data: Record<string, any>) => {
+  const pushDataLayer = (data: Record<string, unknown>) => {
     if (!isAllowed("analytics") && !isAllowed("marketing")) return;
 
     // Tutaj możesz dodać kod Google Tag Manager
@@ -93,7 +93,7 @@ export function useGoogleTagManager() {
     
   };
 
-  const trackEvent = (eventName: string, parameters?: Record<string, any>) => {
+  const trackEvent = (eventName: string, parameters?: Record<string, unknown>) => {
     pushDataLayer({
       event: eventName,
       ...parameters,

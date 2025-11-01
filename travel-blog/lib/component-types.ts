@@ -237,8 +237,18 @@ export type InstagramSection = {
           };
         };
       };
-      hotspot?: any;
-      crop?: any;
+      hotspot?: {
+        x: number;
+        y: number;
+        height: number;
+        width: number;
+      };
+      crop?: {
+        top: number;
+        bottom: number;
+        left: number;
+        right: number;
+      };
     };
     caption?: string;
     likes?: string;

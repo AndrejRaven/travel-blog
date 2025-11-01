@@ -31,10 +31,19 @@ export default function RichText({
     return style === "normal" ? colors.text : colors.heading;
   };
 
+  // Type for list group
+  type ListGroup = {
+    type: "list";
+    listType: "bullet" | "number";
+    items: RichTextBlock[];
+  };
+
   // Funkcja do grupowania bloków w listy
-  const groupBlocksIntoLists = (blocks: RichTextBlock[]) => {
-    const result: any[] = [];
-    let currentList: any = null;
+  const groupBlocksIntoLists = (
+    blocks: RichTextBlock[]
+  ): (RichTextBlock | ListGroup)[] => {
+    const result: (RichTextBlock | ListGroup)[] = [];
+    let currentList: ListGroup | null = null;
 
     for (const block of blocks) {
       if (block.listItem) {
@@ -72,7 +81,7 @@ export default function RichText({
   };
 
   // Funkcja do pobierania klasy wyrównania tekstu
-  const getTextAlignClass = (children: any[]) => {
+  const getTextAlignClass = (children: RichTextBlock["children"]) => {
     if (!children?.length) return "";
 
     const alignMarks = ["left", "center", "right", "justify"];
@@ -99,13 +108,13 @@ export default function RichText({
     const { _key, style, listItem, children = [], markDefs = [] } = block;
 
     // Renderuj pojedynczy child z markami
-    const renderChild = (child: any) => {
+    const renderChild = (child: RichTextBlock["children"][number]) => {
       if (!child.text?.trim()) return null;
 
       // Sprawdź czy ma marki (oprócz wyrównania)
       const alignMarks = ["left", "center", "right", "justify"];
       const hasNonAlignMarks = child.marks?.some(
-        (mark: any) => !alignMarks.includes(mark)
+        (mark: string) => !alignMarks.includes(mark)
       );
 
       if (!hasNonAlignMarks) {
@@ -115,7 +124,7 @@ export default function RichText({
       let element = <span key={child._key}>{child.text}</span>;
 
       // Aplikuj marki
-      child.marks?.forEach((mark: any) => {
+      child.marks?.forEach((mark: string) => {
         if (mark === "strong") {
           element = <strong key={child._key}>{element}</strong>;
         } else if (mark === "em") {
@@ -212,7 +221,7 @@ export default function RichText({
   };
 
   // Funkcja do renderowania listy
-  const renderList = (list: any, index: number) => {
+  const renderList = (list: ListGroup, index: number) => {
     const { listType, items } = list;
     const ListTag = listType === "bullet" ? "ul" : "ol";
 
@@ -244,13 +253,13 @@ export default function RichText({
             const markDefs = item.markDefs || [];
 
             return item.children
-              .map((child: any) => {
+              .map((child: RichTextBlock["children"][number]) => {
                 if (!child.text?.trim()) return null;
 
                 // Sprawdź czy ma marki (oprócz wyrównania)
                 const alignMarks = ["left", "center", "right", "justify"];
                 const hasNonAlignMarks = child.marks?.some(
-                  (mark: any) => !alignMarks.includes(mark)
+                  (mark: string) => !alignMarks.includes(mark)
                 );
 
                 if (!hasNonAlignMarks) {
@@ -260,7 +269,7 @@ export default function RichText({
                 let element = <span key={child._key}>{child.text}</span>;
 
                 // Aplikuj marki (pełna wersja dla elementów listy z obsługą linków)
-                child.marks?.forEach((mark: any) => {
+                child.marks?.forEach((mark: string) => {
                   if (mark === "strong") {
                     element = <strong key={child._key}>{element}</strong>;
                   } else if (mark === "em") {

@@ -48,8 +48,8 @@ export function useCookieUtils() {
     // Inicjalizuj gtag
     if (typeof window !== "undefined") {
       (window as any).dataLayer = (window as any).dataLayer || [];
-      (window as any).gtag = function() {
-        (window as any).dataLayer.push(arguments);
+      (window as any).gtag = function(...args: unknown[]) {
+        (window as any).dataLayer.push(args);
       };
       (window as any).gtag('js', new Date());
       (window as any).gtag('config', measurementId);
@@ -65,8 +65,8 @@ export function useCookieUtils() {
     
     // Inicjalizuj fbq
     if (typeof window !== "undefined") {
-      (window as any).fbq = (window as any).fbq || function() {
-        (window as any).fbq.callMethod ? (window as any).fbq.callMethod.apply((window as any).fbq, arguments) : (window as any).fbq.queue.push(arguments);
+      (window as any).fbq = (window as any).fbq || function(...args: unknown[]) {
+        (window as any).fbq.callMethod ? (window as any).fbq.callMethod(...args) : (window as any).fbq.queue.push(args);
       };
       (window as any).fbq.push = (window as any).fbq;
       (window as any).fbq.loaded = true;

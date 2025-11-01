@@ -5,13 +5,13 @@ import Button from "@/components/ui/Button";
 import { useCookies } from "@/lib/useCookies";
 import { useAnalytics } from "@/lib/cookie-analytics";
 
-interface TrackedButtonProps {
+interface TrackedButtonProps
+  extends React.ComponentPropsWithoutRef<typeof Button> {
   children: React.ReactNode;
   onClick?: () => void;
   trackingName: string;
   variant?: "primary" | "secondary" | "outline" | "youtube";
   className?: string;
-  [key: string]: any;
 }
 
 export function TrackedButton({

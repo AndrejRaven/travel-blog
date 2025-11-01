@@ -3,6 +3,16 @@
 import React from "react";
 import ComponentRenderer from "@/components/ui/ComponentRenderer";
 import Popup from "@/components/ui/Popup";
+import {
+  PostComponent,
+  AboutUs as AboutUsType,
+  YouTubeChannel as YouTubeChannelType,
+  SupportSection as SupportSectionType,
+  CategoriesSection as CategoriesSectionType,
+  InstagramSection as InstagramSectionType,
+  Newsletter as NewsletterType,
+} from "@/lib/component-types";
+import { SanityImage } from "@/lib/sanity";
 
 // Import komponentów dla nowych typów
 import AboutUs from "@/components/sections/AboutUs";
@@ -23,25 +33,12 @@ interface HomepageData {
     noFollow?: boolean;
     ogTitle?: string;
     ogDescription?: string;
-    ogImage?: {
-      asset: {
-        _id: string;
-        url: string;
-        metadata: {
-          dimensions: {
-            width: number;
-            height: number;
-          };
-        };
-      };
-      hotspot?: any;
-      crop?: any;
-    };
+    ogImage?: SanityImage;
   };
-  heroComponents?: any[];
-  mainComponents?: any[];
-  asideComponents?: any[];
-  additionalComponents?: any[];
+  heroComponents?: PostComponent[];
+  mainComponents?: PostComponent[];
+  asideComponents?: PostComponent[];
+  additionalComponents?: PostComponent[];
   pageSettings?: {
     showBreadcrumbs?: boolean;
     showLastUpdated?: boolean;
@@ -67,39 +64,71 @@ export default function HomePageClient({ homepageData }: HomePageClientProps) {
   }, []);
 
   // Funkcja do renderowania komponentów aside
-  const renderAsideComponent = (component: any, index: number) => {
-    const { _type, ...props } = component;
+  const renderAsideComponent = (component: PostComponent, index: number) => {
+    const { _type } = component;
 
     switch (_type) {
-      case "aboutUs":
-        return <AboutUs key={`aside-${index}`} data={props} />;
-      case "youtubeChannel":
-        return <YouTubeChannel key={`aside-${index}`} data={props} />;
-      case "supportSection":
-        return <SupportSection key={`aside-${index}`} data={props} />;
+      case "aboutUs": {
+        const { _type: _t, _key: _k, ...data } = component as AboutUsType;
+        return <AboutUs key={`aside-${index}`} data={data} />;
+      }
+      case "youtubeChannel": {
+        const {
+          _type: _t,
+          _key: _k,
+          ...data
+        } = component as YouTubeChannelType;
+        return <YouTubeChannel key={`aside-${index}`} data={data} />;
+      }
+      case "supportSection": {
+        const {
+          _type: _t,
+          _key: _k,
+          ...data
+        } = component as SupportSectionType;
+        return <SupportSection key={`aside-${index}`} data={data} />;
+      }
       default:
         return null;
     }
   };
 
   // Funkcja do renderowania komponentów main
-  const renderMainComponent = (component: any, index: number) => {
-    const { _type, ...props } = component;
+  const renderMainComponent = (component: PostComponent, index: number) => {
+    const { _type } = component;
 
     switch (_type) {
-      case "categoriesSection":
-        return <CategoriesSection key={`main-${index}`} data={props} />;
-      case "instagramSection":
-        return <InstagramSection key={`main-${index}`} data={props} />;
-      case "newsletter":
-        return <Newsletter key={`main-${index}`} data={props} />;
+      case "categoriesSection": {
+        const {
+          _type: _t,
+          _key: _k,
+          ...data
+        } = component as CategoriesSectionType;
+        return <CategoriesSection key={`main-${index}`} data={data} />;
+      }
+      case "instagramSection": {
+        const {
+          _type: _t,
+          _key: _k,
+          ...data
+        } = component as InstagramSectionType;
+        return <InstagramSection key={`main-${index}`} data={data} />;
+      }
+      case "newsletter": {
+        const { _type: _t, _key: _k, ...data } = component as NewsletterType;
+        return <Newsletter key={`main-${index}`} data={data} />;
+      }
       default:
         // Dla pozostałych komponentów używaj ComponentRenderer
         return (
           <ComponentRenderer
             key={`main-${index}`}
             component={component}
-            animationProps={{ isLoaded, isInView, containerRef }}
+            animationProps={{
+              isLoaded,
+              isInView,
+              containerRef: containerRef as React.RefObject<HTMLDivElement>,
+            }}
           />
         );
     }

@@ -198,8 +198,8 @@ export default function Regulamin() {
             </ul>
             <p>
               3. Użytkownik może zrezygnować z newslettera w każdej chwili,
-              klikając link "Wypisz się" znajdujący się w stopce każdego
-              e-maila.
+              klikając link &quot;Wypisz się&quot; znajdujący się w stopce
+              każdego e-maila.
             </p>
             <p>4. Newsletter wysyłany jest maksymalnie raz w tygodniu.</p>
           </div>

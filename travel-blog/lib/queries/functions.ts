@@ -7,23 +7,25 @@ import type {
   ArticlesData,
   Category
 } from '@/lib/sanity';
+import { PostComponent } from './component-types';
 
 // Typy błędów dla lepszej obsługi
 type SanityError = {
   status: number;
   message: string;
-  details?: any;
+  details?: unknown;
 };
 
 // Funkcja pomocnicza do obsługi błędów
-function handleSanityError(error: any, context: string): never {
-  const status = error.status || 500;
-  const message = error.message || 'Unknown error';
+function handleSanityError(error: unknown, context: string): never {
+  const err = error as { status?: number; message?: string; details?: unknown };
+  const status = err.status || 500;
+  const message = err.message || 'Unknown error';
   
   console.error(`❌ ${context}:`, {
     status,
     message,
-    details: error.details || error
+    details: err.details || error
   });
   
   // Różne strategie dla różnych błędów
@@ -206,9 +208,9 @@ export async function getCategoryPosts(slug: string): Promise<ArticleForList[]> 
 /**
  * Pobierz komponenty strony głównej
  */
-export async function getHomePageComponents(): Promise<any[]> {
+export async function getHomePageComponents(): Promise<PostComponent[]> {
   try {
-    return await fetchGroq<any[]>(
+    return await fetchGroq<PostComponent[]>(
       QUERIES.HOME.COMPONENTS, 
       {}, 
       'COMPONENTS'
@@ -221,9 +223,9 @@ export async function getHomePageComponents(): Promise<any[]> {
 /**
  * Pobierz dane strony głównej z Sanity
  */
-export async function getHomepageData(): Promise<any | null> {
+export async function getHomepageData(): Promise<unknown | null> {
   try {
-    return await fetchGroq<any>(
+    return await fetchGroq<unknown>(
       QUERIES.HOME.HOMEPAGE_DATA, 
       {}, 
       'COMPONENTS'

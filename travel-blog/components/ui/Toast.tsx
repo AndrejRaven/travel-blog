@@ -156,9 +156,9 @@ export function ToastContainer() {
 
   // Expose addToast globally for easy access
   useEffect(() => {
-    (window as any).addToast = addToast;
+    (window as Window & { addToast?: typeof addToast }).addToast = addToast;
     return () => {
-      delete (window as any).addToast;
+      delete (window as Window & { addToast?: typeof addToast }).addToast;
     };
   }, []);
 
@@ -178,8 +178,13 @@ export function ToastContainer() {
 // Hook for easy toast usage
 export function useToast() {
   const addToast = (toast: Omit<ToastProps, "id">) => {
-    if (typeof window !== "undefined" && (window as any).addToast) {
-      return (window as any).addToast(toast);
+    if (
+      typeof window !== "undefined" &&
+      (window as Window & { addToast?: typeof addToast }).addToast
+    ) {
+      return (window as Window & { addToast?: typeof addToast }).addToast?.(
+        toast
+      );
     }
   };
 
