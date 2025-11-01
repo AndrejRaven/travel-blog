@@ -28,7 +28,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   // Podstawowe informacje
   const siteName = "Nasz Blog";
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://nasz-blog.com";
-  const postUrl = `${siteUrl}/${params.mainCategory}/${params.category}/${slug}`;
+  const postUrl = `${siteUrl}/${mainCategory}/${category}/${slug}`;
 
   // SEO Title - użyj seoTitle lub fallback do title
   const seoTitle = post.seo?.seoTitle || post.title;
