@@ -4,10 +4,10 @@ import HomePageClient from "@/components/pages/HomePageClient";
 
 export default async function Home() {
   // Pobierz dane homepage z Sanity na serwerze
-  const homepageData = await getHomepageData();
+  const homepageDataRaw = await getHomepageData();
 
   // Obsługa błędów
-  if (!homepageData) {
+  if (!homepageDataRaw || typeof homepageDataRaw !== "object") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-900">
         <div className="text-center">
@@ -23,5 +23,17 @@ export default async function Home() {
     );
   }
 
-  return <HomePageClient homepageData={homepageData} />;
+  // Upewnij się, że homepageData ma _id
+  const homepageData = {
+    _id: (homepageDataRaw as { _id?: string })._id || "homepage",
+    ...homepageDataRaw,
+  };
+
+  return (
+    <HomePageClient
+      homepageData={
+        homepageData as Parameters<typeof HomePageClient>[0]["homepageData"]
+      }
+    />
+  );
 }

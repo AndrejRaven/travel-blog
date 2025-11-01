@@ -491,8 +491,7 @@ export default function Newsletter({ data }: Props) {
         className="mx-auto max-w-4xl px-6 py-16 bg-gray-50 dark:bg-gray-900"
       >
         {newsletterState === "new" && renderNewUserForm()}
-        {(newsletterState === "success" || newsletterState === "subscribed") &&
-          renderSubscribedState()}
+        {newsletterState === "subscribed" && renderSubscribedState()}
         {newsletterState === "unsubscribed" && renderUnsubscribedState()}
 
         {showUnsubscribeConfirm && (

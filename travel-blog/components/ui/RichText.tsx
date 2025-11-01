@@ -361,11 +361,12 @@ export default function RichText({
     const groupedBlocks = groupBlocksIntoLists(blocks);
 
     return groupedBlocks.map((item, index) => {
-      if (item.type === "list") {
+      if ("type" in item && item.type === "list") {
         return renderList(item, index);
-      } else {
+      } else if ("_type" in item && item._type === "block") {
         return renderBlock(item);
       }
+      return null;
     });
   };
 

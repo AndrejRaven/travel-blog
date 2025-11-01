@@ -7,7 +7,7 @@ import type {
   ArticlesData,
   Category
 } from '@/lib/sanity';
-import { PostComponent } from './component-types';
+import { PostComponent } from '@/lib/component-types';
 
 // Typy błędów dla lepszej obsługi
 type SanityError = {
@@ -55,7 +55,8 @@ export async function getPostBySlug(slug: string): Promise<Post | null> {
       'POSTS'
     );
   } catch (error) {
-    if (error.message?.includes('Not found')) {
+    const err = error as { message?: string };
+    if (err.message?.includes('Not found')) {
       return null; // Post nie istnieje
     }
     handleSanityError(error, 'Error fetching post by slug');
@@ -181,7 +182,8 @@ export async function getCategoryBySlug(slug: string): Promise<Category | null> 
       'CATEGORIES'
     );
   } catch (error) {
-    if (error.message?.includes('Not found')) {
+    const err = error as { message?: string };
+    if (err.message?.includes('Not found')) {
       return null; // Kategoria nie istnieje
     }
     handleSanityError(error, 'Error fetching category by slug');

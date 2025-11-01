@@ -74,7 +74,7 @@ export default function CategoryBadge({
           alt={`Ikona ${category.name}`}
           width={12}
           height={12}
-          className={`opacity-70 ${category.invertOnDark === true ? "dark:invert" : ""}`}
+          className={`opacity-70 ${(category as { invertOnDark?: boolean }).invertOnDark === true ? "dark:invert" : ""}`}
         />
       )}
       {category.name}

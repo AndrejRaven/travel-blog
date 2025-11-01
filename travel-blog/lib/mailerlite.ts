@@ -107,7 +107,7 @@ async function findSubscriberInGroupByEmail(
   const emailLower = email.toLowerCase();
 
   while (nextUrl) {
-    const response = await fetch(nextUrl, {
+    const response: Response = await fetch(nextUrl, {
       headers: {
         Authorization: `Bearer ${config.token}`,
         Accept: 'application/json',

@@ -17,7 +17,7 @@ export default function EmbedYoutube({
   videoId,
   useLatestVideo = false,
   container,
-}: EmbedYoutubeProps) {
+}: EmbedYoutubeData) {
   // Wszystkie hooki muszą być przed wczesnymi returnami
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

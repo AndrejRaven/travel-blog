@@ -87,10 +87,12 @@ const componentMap = {
     const heroBanner = comp as HeroBannerType;
     return (
       <HeroBanner
-        data={{
-          ...convertToComponentData(comp),
-          layout: heroBanner.layout,
-        }}
+        data={
+          {
+            ...convertToComponentData(comp),
+            layout: heroBanner.layout,
+          } as Parameters<typeof HeroBanner>[0]["data"]
+        }
       />
     );
   },
@@ -98,10 +100,12 @@ const componentMap = {
     const bgHeroBanner = comp as BackgroundHeroBannerType;
     return (
       <BackgroundHeroBanner
-        data={{
-          ...convertToComponentData(comp),
-          layout: bgHeroBanner.layout,
-        }}
+        data={
+          {
+            ...convertToComponentData(comp),
+            layout: bgHeroBanner.layout,
+          } as Parameters<typeof BackgroundHeroBanner>[0]["data"]
+        }
       />
     );
   },
@@ -109,10 +113,12 @@ const componentMap = {
     const textContent = comp as TextContentType;
     return (
       <TextContent
-        data={{
-          ...convertToComponentData(comp),
-          layout: textContent.layout,
-        }}
+        data={
+          {
+            ...convertToComponentData(comp),
+            layout: textContent.layout,
+          } as Parameters<typeof TextContent>[0]["data"]
+        }
       />
     );
   },
@@ -120,11 +126,13 @@ const componentMap = {
     const imageCollage = comp as ImageCollageType;
     return (
       <ImageCollage
-        data={{
-          ...convertToComponentData(comp),
-          images: imageCollage.images || [],
-          layout: imageCollage.layout,
-        }}
+        data={
+          {
+            ...convertToComponentData(comp),
+            images: imageCollage.images || [],
+            layout: imageCollage.layout,
+          } as Parameters<typeof ImageCollage>[0]["data"]
+        }
       />
     );
   },
@@ -156,13 +164,13 @@ const componentMap = {
     const embedYoutube = comp as EmbedYoutubeType;
     return (
       <EmbedYoutube
-        {...{
+        {...({
           ...convertToComponentData(comp),
           title: embedYoutube.title,
           description: embedYoutube.description,
           videoId: embedYoutube.videoId,
           useLatestVideo: embedYoutube.useLatestVideo,
-        }}
+        } as Parameters<typeof EmbedYoutube>[0])}
       />
     );
   },

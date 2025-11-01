@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, Playfair_Display, Source_Code_Pro } from "next/font/google";
+import { Suspense } from "react";
 import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
@@ -72,18 +73,20 @@ export default function RootLayout({
         className={`${inter.variable} ${playfairDisplay.variable} ${sourceCodePro.variable} antialiased bg-white dark:bg-gray-900`}
       >
         <ThemeProvider>
-          <NavigationProgressProvider>
-            <NotificationProvider>
-              <TopLoadingBar />
-              <Header />
-              {/* Main content */}
-              {children}
-              <Footer />
-              <CookieBanner />
-              <ScrollToTop />
-              <ToastContainer />
-            </NotificationProvider>
-          </NavigationProgressProvider>
+          <Suspense fallback={null}>
+            <NavigationProgressProvider>
+              <NotificationProvider>
+                <TopLoadingBar />
+                <Header />
+                {/* Main content */}
+                {children}
+                <Footer />
+                <CookieBanner />
+                <ScrollToTop />
+                <ToastContainer />
+              </NotificationProvider>
+            </NavigationProgressProvider>
+          </Suspense>
         </ThemeProvider>
       </body>
     </html>

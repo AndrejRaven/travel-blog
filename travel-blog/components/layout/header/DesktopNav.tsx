@@ -98,9 +98,10 @@ const DesktopNav = memo(function DesktopNav({
                                     >
                                       {subItem.label}
                                     </NavLink>
-                                    {subIdx < item.submenuItems.length - 1 && (
-                                      <div className="border-t border-gray-200 dark:border-gray-700 my-1"></div>
-                                    )}
+                                    {item.submenuItems &&
+                                      subIdx < item.submenuItems.length - 1 && (
+                                        <div className="border-t border-gray-200 dark:border-gray-700 my-1"></div>
+                                      )}
                                   </React.Fragment>
                                 ))}
                               </div>
@@ -116,9 +117,10 @@ const DesktopNav = memo(function DesktopNav({
                           </NavLink>
                         )}
                       </div>
-                      {itemIdx < menuItem.dropdownItems.length - 1 && (
-                        <div className="border-t border-gray-200 dark:border-gray-700 my-1"></div>
-                      )}
+                      {menuItem.dropdownItems &&
+                        itemIdx < menuItem.dropdownItems.length - 1 && (
+                          <div className="border-t border-gray-200 dark:border-gray-700 my-1"></div>
+                        )}
                     </React.Fragment>
                   ))}
                 </div>
@@ -195,10 +197,11 @@ const DesktopNav = memo(function DesktopNav({
                                       >
                                         {subItem.label}
                                       </NavLink>
-                                      {subIdx <
-                                        item.subcategories.length - 1 && (
-                                        <div className="border-t border-gray-200 dark:border-gray-700 my-1"></div>
-                                      )}
+                                      {item.subcategories &&
+                                        subIdx <
+                                          item.subcategories.length - 1 && (
+                                          <div className="border-t border-gray-200 dark:border-gray-700 my-1"></div>
+                                        )}
                                     </React.Fragment>
                                   ))}
                                 </div>
