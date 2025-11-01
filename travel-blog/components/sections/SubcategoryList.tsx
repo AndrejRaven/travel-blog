@@ -13,6 +13,9 @@ type Props = {
 };
 
 export default function SubcategoryList({ data }: Props) {
+  // Wszystkie hooki muszą być przed wczesnymi returnami
+  const { isLoaded, isInView, containerRef } = useAnimation();
+
   // Zabezpieczenie na wypadek gdyby data był undefined
   if (!data) {
     console.error("SubcategoryList: Missing data", { data });
@@ -26,8 +29,6 @@ export default function SubcategoryList({ data }: Props) {
     console.error("SubcategoryList: Missing container data", { container });
     return null;
   }
-
-  const { isLoaded, isInView, containerRef } = useAnimation();
 
   return (
     <SectionContainer config={container}>

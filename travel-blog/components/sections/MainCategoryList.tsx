@@ -13,6 +13,9 @@ type Props = {
 };
 
 export default function MainCategoryList({ data }: Props) {
+  // Wszystkie hooki muszą być przed wczesnymi returnami
+  const { isLoaded, isInView, containerRef } = useAnimation();
+
   // Mapowanie kolorów do klas Tailwind
   const getCategoryColorClass = (color: string): string => {
     const colorMap: Record<string, string> = {
@@ -39,8 +42,6 @@ export default function MainCategoryList({ data }: Props) {
     console.error("MainCategoryList: Missing container data", { container });
     return null;
   }
-
-  const { isLoaded, isInView, containerRef } = useAnimation();
 
   return (
     <SectionContainer config={container}>

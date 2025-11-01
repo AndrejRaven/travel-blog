@@ -80,6 +80,7 @@ export default function CategoryArticles({
                           <CategoryBadge
                             key={category._id}
                             category={category}
+                            showLink={false}
                           />
                         ))}
                         {(article.categories?.length || 0) > 2 && (

@@ -20,11 +20,7 @@ export default function EmbedYoutube({
   useLatestVideo = false,
   container,
 }: EmbedYoutubeProps) {
-  // Zabezpieczenie na wypadek gdyby container był undefined
-  if (!container) {
-    console.error("EmbedYoutube: Missing container data", { container });
-    return null;
-  }
+  // Wszystkie hooki muszą być przed wczesnymi returnami
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // Rozwiąż videoId - jeśli to "latest" lub useLatestVideo jest true, pobierz najnowszy film
@@ -57,8 +53,17 @@ export default function EmbedYoutube({
       }
     };
 
-    fetchLatestVideo();
-  }, [videoId, useLatestVideo]);
+    if (container) {
+      fetchLatestVideo();
+    }
+  }, [videoId, useLatestVideo, container]);
+
+  // Zabezpieczenie na wypadek gdyby container był undefined
+  if (!container) {
+    console.error("EmbedYoutube: Missing container data", { container });
+    return null;
+  }
+
   // Loading state
   if (isLoading) {
     return (

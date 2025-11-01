@@ -2,6 +2,7 @@
 
 import { getImageUrl } from "@/lib/sanity";
 import { HeaderData } from "@/lib/sanity";
+import Link from "@/components/ui/Link";
 
 interface LogoProps {
   headerData: HeaderData | null;
@@ -10,17 +11,17 @@ interface LogoProps {
 const Logo = ({ headerData }: LogoProps) => {
   if (!headerData) {
     return (
-      <a href="/" className="flex items-center gap-2 group">
+      <Link href="/" className="flex items-center gap-2 group">
         <div className="h-8 w-8 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse" />
         <div className="h-6 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
-      </a>
+      </Link>
     );
   }
 
   const logoUrl = getImageUrl(headerData.logo);
 
   return (
-    <a href="/" className="flex items-center gap-2 group">
+    <Link href="/" className="flex items-center gap-2 group">
       {logoUrl && (
         <img
           src={logoUrl}
@@ -31,7 +32,7 @@ const Logo = ({ headerData }: LogoProps) => {
       <span className="text-lg font-serif font-semibold tracking-tight transition-colors duration-200 group-hover:text-gray-900 dark:group-hover:text-gray-100">
         {headerData.title}
       </span>
-    </a>
+    </Link>
   );
 };
 

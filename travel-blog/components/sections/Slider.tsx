@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import React, { useState, useRef } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Pagination, Autoplay, Navigation } from "swiper/modules";
 import Image from "next/image";
@@ -16,6 +16,11 @@ type Props = {
 };
 
 export default function Slider({ data }: Props) {
+  // Wszystkie hooki muszą być przed wczesnymi returnami
+  const [activeSlide, setActiveSlide] = useState(0);
+  const swiperRef = useRef<any>(null);
+  const { isLoaded, isInView, containerRef } = useAnimation();
+
   // Zabezpieczenie na wypadek gdyby data był undefined
   if (!data) {
     console.error("Slider: Missing data", { data });
@@ -29,10 +34,6 @@ export default function Slider({ data }: Props) {
     console.error("Slider: Missing container data", { container });
     return null;
   }
-
-  const [activeSlide, setActiveSlide] = useState(0);
-  const swiperRef = useRef<any>(null);
-  const { isLoaded, isInView, containerRef } = useAnimation();
 
   return (
     <SectionContainer config={container}>

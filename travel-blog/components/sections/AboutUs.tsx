@@ -20,27 +20,7 @@ const defaultDescription = [
 ];
 
 export default function AboutUs({ data }: Props) {
-  // Zabezpieczenie na wypadek gdyby data był undefined
-  if (!data) {
-    console.error("AboutUs: Missing data", { data });
-    return null;
-  }
-
-  const {
-    container,
-    title,
-    image,
-    imageAlt,
-    description,
-    contactHref,
-    contactText,
-  } = data;
-
-  // Zabezpieczenie na wypadek gdyby container był undefined
-  if (!container) {
-    console.error("AboutUs: Missing container data", { container });
-    return null;
-  }
+  // Wszystkie hooki muszą być przed wczesnymi returnami
   // Animacje z opóźnieniem po załadowaniu strony
   const [isLoaded, setIsLoaded] = React.useState(false);
   const [isInView, setIsInView] = React.useState(false);
@@ -66,6 +46,28 @@ export default function AboutUs({ data }: Props) {
 
     return () => clearTimeout(timer);
   }, []);
+
+  // Zabezpieczenie na wypadek gdyby data był undefined
+  if (!data) {
+    console.error("AboutUs: Missing data", { data });
+    return null;
+  }
+
+  const {
+    container,
+    title,
+    image,
+    imageAlt,
+    description,
+    contactHref,
+    contactText,
+  } = data;
+
+  // Zabezpieczenie na wypadek gdyby container był undefined
+  if (!container) {
+    console.error("AboutUs: Missing container data", { container });
+    return null;
+  }
 
   return (
     <SectionContainer config={container}>

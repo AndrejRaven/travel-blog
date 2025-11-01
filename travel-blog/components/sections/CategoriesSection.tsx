@@ -16,8 +16,32 @@ type Props = {
 };
 
 export default function CategoriesSection({ data }: Props) {
+  // Wszystkie hooki muszą być przed wczesnymi returnami
   const [superCategories, setSuperCategories] = useState<SuperCategory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { isLoaded, isInView, containerRef } = useAnimation();
+
+  // Pobierz kategorie nadrzędne
+  useEffect(() => {
+    const fetchSuperCategories = async () => {
+      try {
+        const categories = await fetchGroq<SuperCategory[]>(
+          QUERIES.HOME.SUPER_CATEGORIES,
+          {},
+          "CATEGORIES"
+        );
+        setSuperCategories(categories);
+      } catch (error) {
+        console.error("Error fetching super categories:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (data && data.container) {
+      fetchSuperCategories();
+    }
+  }, [data]);
 
   // Mapowanie kolorów do klas Tailwind
   const getCategoryColorClass = (color: string): string => {
@@ -45,28 +69,6 @@ export default function CategoriesSection({ data }: Props) {
     console.error("CategoriesSection: Missing container data", { container });
     return null;
   }
-
-  const { isLoaded, isInView, containerRef } = useAnimation();
-
-  // Pobierz kategorie nadrzędne
-  useEffect(() => {
-    const fetchSuperCategories = async () => {
-      try {
-        const categories = await fetchGroq<SuperCategory[]>(
-          QUERIES.HOME.SUPER_CATEGORIES,
-          {},
-          "CATEGORIES"
-        );
-        setSuperCategories(categories);
-      } catch (error) {
-        console.error("Error fetching super categories:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchSuperCategories();
-  }, []);
 
   // Dynamiczne kolumny dla załadowanych danych
   const categoriesCount = superCategories.length;

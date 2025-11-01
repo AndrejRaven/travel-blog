@@ -18,9 +18,9 @@ export default function Regulamin() {
           </h2>
           <p>
             Niniejszy regulamin określa zasady korzystania z bloga podróżniczego
-            "Nasz Blog" dostępnego pod adresem [Wpisz swój adres domeny].
-            Korzystanie z bloga oznacza akceptację postanowień niniejszego
-            regulaminu.
+            &quot;Nasz Blog&quot; dostępnego pod adresem [Wpisz swój adres
+            domeny]. Korzystanie z bloga oznacza akceptację postanowień
+            niniejszego regulaminu.
           </p>
         </InfoCard>
 
@@ -61,8 +61,9 @@ export default function Regulamin() {
           </h2>
           <div className="space-y-4 text-gray-700 dark:text-gray-300">
             <p>
-              1. Blog "Nasz Blog" jest blogiem podróżniczym prowadzonym przez
-              [Wpisz swoje imię i nazwisko] z siedzibą w [Wpisz swój adres].
+              1. Blog &quot;Nasz Blog&quot; jest blogiem podróżniczym
+              prowadzonym przez [Wpisz swoje imię i nazwisko] z siedzibą w
+              [Wpisz swój adres].
             </p>
             <p>
               2. Celem Blogu jest dzielenie się doświadczeniami podróżniczymi,
@@ -215,7 +216,7 @@ export default function Regulamin() {
             </p>
             <p>
               2. Wszystkie treści sponsorowane są wyraźnie oznaczone jako
-              "materiał sponsorowany" lub "współpraca".
+              &quot;materiał sponsorowany&quot; lub &quot;współpraca&quot;.
             </p>
             <p>
               3. Linki afiliacyjne to linki do produktów lub usług, za które

@@ -27,6 +27,28 @@ type Props = {
 };
 
 export default function Newsletter({ data }: Props) {
+  // Wszystkie hooki muszą być przed wczesnymi returnami
+  const [email, setEmail] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [showUnsubscribeConfirm, setShowUnsubscribeConfirm] = useState(false);
+  const [newsletterState, setNewsletterState] =
+    useState<NewsletterState>("new");
+  const [cache, setCache] = useState<NewsletterCacheData | null>(null);
+  const { isLoaded, isInView, containerRef } = useAnimation();
+  const { addToast } = useToast();
+
+  // Inicjalizacja stanu na podstawie cache
+  useEffect(() => {
+    const cachedData = getNewsletterCache();
+    setCache(cachedData);
+
+    if (cachedData) {
+      setEmail(cachedData.email);
+      setNewsletterState(getNewsletterState(cachedData.email));
+    }
+  }, []);
+
   // Zabezpieczenie na wypadek gdyby data był undefined
   if (!data) {
     console.error("Newsletter: Missing data", { data });
@@ -68,27 +90,6 @@ export default function Newsletter({ data }: Props) {
     console.error("Newsletter: Missing container data", { container });
     return null;
   }
-
-  const [email, setEmail] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [showUnsubscribeConfirm, setShowUnsubscribeConfirm] = useState(false);
-  const [newsletterState, setNewsletterState] =
-    useState<NewsletterState>("new");
-  const [cache, setCache] = useState<NewsletterCacheData | null>(null);
-  const { isLoaded, isInView, containerRef } = useAnimation();
-  const { addToast } = useToast();
-
-  // Inicjalizacja stanu na podstawie cache
-  useEffect(() => {
-    const cachedData = getNewsletterCache();
-    setCache(cachedData);
-
-    if (cachedData) {
-      setEmail(cachedData.email);
-      setNewsletterState(getNewsletterState(cachedData.email));
-    }
-  }, []);
 
   // Manual status refresh handler
   const handleRefreshStatus = async () => {

@@ -1,4 +1,5 @@
 import { Facebook, Youtube, Instagram } from "lucide-react";
+import Link from "@/components/ui/Link";
 
 const Footer = function Footer() {
   const YEAR = new Date().getFullYear();
@@ -67,52 +68,52 @@ const Footer = function Footer() {
             </h4>
             <ul className="space-y-2">
               <li>
-                <a
+                <Link
                   href="/polityka-prywatnosci"
                   className="text-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors font-sans"
                 >
                   Polityka prywatności
-                </a>
+                </Link>
               </li>
               <li>
-                <a
+                <Link
                   href="/regulamin"
                   className="text-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors font-sans"
                 >
                   Regulamin
-                </a>
+                </Link>
               </li>
               <li>
-                <a
+                <Link
                   href="/kontakt"
                   className="text-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors font-sans"
                 >
                   Kontakt
-                </a>
+                </Link>
               </li>
               <li>
-                <a
+                <Link
                   href="/wsparcie"
                   className="text-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors font-sans"
                 >
                   Wsparcie
-                </a>
+                </Link>
               </li>
               <li>
-                <a
+                <Link
                   href="/polityka-cookies"
                   className="text-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors font-sans"
                 >
                   Polityka cookies
-                </a>
+                </Link>
               </li>
               <li>
-                <a
+                <Link
                   href="/ustawienia-cookies"
                   className="text-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors font-sans"
                 >
                   Ustawienia cookies
-                </a>
+                </Link>
               </li>
             </ul>
           </div>

@@ -31,17 +31,7 @@ type Props = {
 };
 
 export default function BackgroundHeroBanner({ data }: Props) {
-  const { container, layout } = data;
-
-  // Zabezpieczenie na wypadek gdyby container był undefined
-  if (!container || !layout) {
-    console.error("BackgroundHeroBanner: Missing container or layout data", {
-      container,
-      layout,
-    });
-    return null;
-  }
-
+  // Wszystkie hooki muszą być przed wczesnymi returnami
   const [imageLoaded, setImageLoaded] = useState(false);
   const { showScrollButton, hideScrollButton } = useScrollIndicator();
   const { isMobile, getCurrentImage, getOptimizedImageProps } =
@@ -52,6 +42,17 @@ export default function BackgroundHeroBanner({ data }: Props) {
       format: "webp", // Zachowaj WebP dla optymalizacji
       fit: "fillmax",
     });
+
+  const { container, layout } = data;
+
+  // Zabezpieczenie na wypadek gdyby container był undefined
+  if (!container || !layout) {
+    console.error("BackgroundHeroBanner: Missing container or layout data", {
+      container,
+      layout,
+    });
+    return null;
+  }
 
   const selectedImage = getCurrentImage(data.image, data.mobileImage, {
     src: "/demo-images/demo-asset.png",

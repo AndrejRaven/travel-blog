@@ -21,7 +21,7 @@ export default function PolitykaPrywatnosci() {
             Rady (UE) 2016/679 z dnia 27.04.2016r. w sprawie ochrony osób
             fizycznych w związku z przetwarzaniem danych osobowych i w sprawie
             swobodnego przepływu takich danych oraz uchylenia dyrektywy 95/46/WE
-            (dalej „RODO") oraz by zapewnić Wam pełną wiedzę na temat
+            (dalej &quot;RODO&quot;) oraz by zapewnić Wam pełną wiedzę na temat
             przetwarzanych przez nas danych, chcielibyśmy poinformować, że Wasze
             dane osobowe znajdują się w naszej bazie.
           </p>
@@ -141,8 +141,8 @@ export default function PolitykaPrywatnosci() {
             Przeglądanie Serwisu nie wymaga podawania danych osobowych, lecz
             może się wiązać z korzystaniem z plików Cookies, w zależności od
             ustawień, jakich dokonał Użytkownik. Użytkownik może nie wyrazić
-            zgody na umieszczanie na jego komputerze „Ciasteczek" m.in. za
-            pomocą ustawień przeglądarki.
+            zgody na umieszczanie na jego komputerze &quot;Ciasteczek&quot;
+            m.in. za pomocą ustawień przeglądarki.
           </p>
           <p className="text-gray-700 dark:text-gray-300">
             Używamy plików cookies do: analizy ruchu na stronie (Google

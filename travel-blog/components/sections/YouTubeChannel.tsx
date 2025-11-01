@@ -14,6 +14,19 @@ type Props = {
 };
 
 export default function YouTubeChannel({ data }: Props) {
+  // Wszystkie hooki muszą być przed wczesnymi returnami
+  // Użyj ujednoliconego hook useAnimation
+  const { isLoaded, isInView, containerRef } = useAnimation();
+
+  // Użyj useResponsiveImage dla optymalizacji obrazka kanału
+  const { getOptimizedImageProps } = useResponsiveImage({
+    width: 80,
+    height: 80,
+    quality: 98,
+    format: "webp",
+    fit: "fillmax",
+  });
+
   // Zabezpieczenie na wypadek gdyby data był undefined
   if (!data) {
     console.error("YouTubeChannel: Missing data", { data });
@@ -36,18 +49,6 @@ export default function YouTubeChannel({ data }: Props) {
     console.error("YouTubeChannel: Missing container data", { container });
     return null;
   }
-
-  // Użyj ujednoliconego hook useAnimation
-  const { isLoaded, isInView, containerRef } = useAnimation();
-
-  // Użyj useResponsiveImage dla optymalizacji obrazka kanału
-  const { getOptimizedImageProps } = useResponsiveImage({
-    width: 80,
-    height: 80,
-    quality: 98,
-    format: "webp",
-    fit: "fillmax",
-  });
 
   return (
     <SectionContainer config={container}>

@@ -32,48 +32,33 @@ export default function Articles({
   isInView = true,
   containerRef,
 }: Props) {
-  const {
-    container,
-    title,
-    showViewAll,
-    viewAllHref,
-    articlesType,
-    selectedArticles,
-    maxArticles,
-  } = data;
-
-  // Zabezpieczenie na wypadek gdyby container był undefined
-  if (!container) {
-    console.error("Articles: Missing container data", { container });
-    return null;
-  }
-
+  // Wszystkie hooki muszą być przed wczesnymi returnami
   const [displayedArticles, setDisplayedArticles] = React.useState<Article[]>(
     []
   );
   const [isLoading, setIsLoading] = React.useState(true);
 
-  // Użyj przekazane props zamiast useAnimation
-
   // Wyciągnij ID artykułów z referencji - używamy useMemo żeby uniknąć nieskończonej pętli
   const selectedArticleIds = React.useMemo(() => {
-    return selectedArticles?.map((ref) => ref._ref) || [];
-  }, [selectedArticles]);
+    return data?.selectedArticles?.map((ref) => ref._ref) || [];
+  }, [data?.selectedArticles]);
 
   // Pobieranie artykułów z Sanity
   React.useEffect(() => {
+    if (!data) return;
+
     const fetchArticles = async () => {
       setIsLoading(true);
       try {
         let articles: Article[] = [];
 
-        if (articlesType === "selected" && selectedArticleIds.length > 0) {
+        if (data.articlesType === "selected" && selectedArticleIds.length > 0) {
           articles = await getSelectedPosts(selectedArticleIds);
-        } else if (articlesType === "latest") {
-          articles = await getLatestPosts(maxArticles);
+        } else if (data.articlesType === "latest") {
+          articles = await getLatestPosts(data.maxArticles);
         }
 
-        setDisplayedArticles(articles.slice(0, maxArticles));
+        setDisplayedArticles(articles.slice(0, data.maxArticles));
       } catch (error) {
         console.error("❌ Error fetching articles:", error);
         setDisplayedArticles([]);
@@ -83,7 +68,23 @@ export default function Articles({
     };
 
     fetchArticles();
-  }, [articlesType, selectedArticleIds, maxArticles]);
+  }, [data, selectedArticleIds]);
+
+  const {
+    container,
+    title,
+    showViewAll,
+    viewAllHref,
+    articlesType,
+    selectedArticles,
+    maxArticles,
+  } = data || {};
+
+  // Zabezpieczenie na wypadek gdyby container był undefined
+  if (!data || !container) {
+    console.error("Articles: Missing container data", { container });
+    return null;
+  }
 
   // Mapowanie kolorów kategorii do klas Tailwind
 
@@ -173,6 +174,7 @@ export default function Articles({
                             <CategoryBadge
                               key={category._id}
                               category={category}
+                              showLink={false}
                             />
                           ))}
                           {(article.categories?.length || 0) > 2 && (

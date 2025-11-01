@@ -22,13 +22,7 @@ type Props = {
 };
 
 export default function HeroBanner({ data }: Props) {
-  const { container, layout } = data;
-
-  if (!container || !layout) {
-    console.error("HeroBanner: Missing container or layout data");
-    return null;
-  }
-
+  // Wszystkie hooki muszą być przed wczesnymi returnami
   const { getCurrentImage, getOptimizedImageProps } = useResponsiveImage({
     width: 1600,
     mobileWidth: 800,
@@ -36,6 +30,13 @@ export default function HeroBanner({ data }: Props) {
     format: "webp",
     fit: "fillmax",
   });
+
+  const { container, layout } = data;
+
+  if (!container || !layout) {
+    console.error("HeroBanner: Missing container or layout data");
+    return null;
+  }
 
   const selectedImage = getCurrentImage(data.image, data.mobileImage);
   const imageProps = getOptimizedImageProps(selectedImage);

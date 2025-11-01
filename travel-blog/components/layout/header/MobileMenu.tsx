@@ -4,6 +4,7 @@ import { Section } from "@/components/layout/header/header-data";
 import MobileSection from "@/components/layout/header/MobileSection";
 import { MenuItem } from "@/lib/sanity";
 import NavLink from "@/components/layout/header/NavLink";
+import Link from "@/components/ui/Link";
 import { Menu, X } from "lucide-react";
 
 type Props = {
@@ -191,12 +192,12 @@ const MobileMenu = memo(function MobileMenu({
             ) : (
               // Fallback do starego menu
               <>
-                <a
+                <Link
                   href="/"
                   className="block rounded-md px-2 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
                 >
                   Główna
-                </a>
+                </Link>
                 <a
                   href="#o-nas"
                   className="block rounded-md px-2 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"

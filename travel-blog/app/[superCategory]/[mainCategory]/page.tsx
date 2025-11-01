@@ -7,6 +7,7 @@ import BackToHome from "@/components/shared/BackToHome";
 import InfoCard from "@/components/shared/InfoCard";
 import CategoryArticles from "@/components/sections/CategoryArticles";
 import SubcategoryList from "@/components/sections/SubcategoryList";
+import Link from "@/components/ui/Link";
 import { MainCategory, ArticleForList, Category } from "@/lib/sanity";
 
 type MainCategoryPageProps = {
@@ -91,21 +92,21 @@ export default async function MainCategoryPage({
       <nav className="mb-8">
         <ol className="flex items-center space-x-2">
           <li>
-            <a
+            <Link
               href="/"
               className="hover:text-gray-900 dark:hover:text-gray-100"
             >
               Strona główna
-            </a>
+            </Link>
           </li>
           <li>/</li>
           <li>
-            <a
+            <Link
               href={`/${superCategory}`}
               className="hover:text-gray-900 dark:hover:text-gray-100"
             >
               {mainCategory.superCategory?.name || "Kategoria"}
-            </a>
+            </Link>
           </li>
           <li>/</li>
           <li className="text-gray-900 dark:text-gray-100">

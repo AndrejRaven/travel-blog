@@ -13,6 +13,9 @@ type Props = {
 };
 
 export default function SupportSection({ data }: Props) {
+  // Wszystkie hooki muszą być przed wczesnymi returnami
+  const { isLoaded, isInView, containerRef } = useAnimation();
+
   // Zabezpieczenie na wypadek gdyby data był undefined
   if (!data) {
     console.error("SupportSection: Missing data", { data });
@@ -27,9 +30,6 @@ export default function SupportSection({ data }: Props) {
     console.error("SupportSection: Missing container data", { container });
     return null;
   }
-
-  // Użyj ujednoliconego hook useAnimation
-  const { isLoaded, isInView, containerRef } = useAnimation();
 
   return (
     <SectionContainer config={container}>

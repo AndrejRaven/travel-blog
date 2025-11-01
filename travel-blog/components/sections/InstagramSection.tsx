@@ -20,6 +20,21 @@ type Props = {
 };
 
 export default function InstagramSection({ data }: Props) {
+  // Wszystkie hooki muszą być przed wczesnymi returnami
+  const [activeSlide, setActiveSlide] = useState(0);
+  const [realIndex, setRealIndex] = useState(0);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const { isLoaded, isInView, containerRef } = useAnimation();
+
+  // Użyj useResponsiveImage dla optymalizacji obrazków Instagram
+  const { getOptimizedImageProps } = useResponsiveImage({
+    width: 600,
+    height: 600,
+    quality: 95,
+    format: "webp",
+    fit: "fillmax",
+  });
+
   // Zabezpieczenie na wypadek gdyby data był undefined
   if (!data) {
     console.error("InstagramSection: Missing data", { data });
@@ -41,19 +56,6 @@ export default function InstagramSection({ data }: Props) {
     console.error("InstagramSection: Missing container data", { container });
     return null;
   }
-  const [activeSlide, setActiveSlide] = useState(0);
-  const [realIndex, setRealIndex] = useState(0);
-  const [isTransitioning, setIsTransitioning] = useState(false);
-  const { isLoaded, isInView, containerRef } = useAnimation();
-
-  // Użyj useResponsiveImage dla optymalizacji obrazków Instagram
-  const { getOptimizedImageProps } = useResponsiveImage({
-    width: 600,
-    height: 600,
-    quality: 95,
-    format: "webp",
-    fit: "fillmax",
-  });
 
   return (
     <SectionContainer config={container}>
