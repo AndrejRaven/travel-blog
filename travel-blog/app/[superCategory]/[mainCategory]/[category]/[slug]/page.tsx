@@ -199,16 +199,20 @@ export default async function PostPage({ params }: Params) {
     };
 
     return post.components
-      .filter(
-        (component) =>
-          component.container?.contentTitle &&
-          component.container.contentTitle.trim() !== ""
-      )
-      .map((component, index) => ({
-        id: generateId(component.container.contentTitle),
-        title: component.container.contentTitle,
-        level: 1, // Wszystkie sekcje na tym samym poziomie
-      }));
+      .filter((component) => {
+        const container = component.container as
+          | { contentTitle?: string }
+          | undefined;
+        return container?.contentTitle && container.contentTitle.trim() !== "";
+      })
+      .map((component, index) => {
+        const container = component.container as { contentTitle: string };
+        return {
+          id: generateId(container.contentTitle),
+          title: container.contentTitle,
+          level: 1, // Wszystkie sekcje na tym samym poziomie
+        };
+      });
   };
 
   const tableOfContentsItems = generateTableOfContents();
