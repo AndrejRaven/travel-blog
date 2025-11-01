@@ -212,7 +212,7 @@ export default function RichText({
   };
 
   // Funkcja do renderowania listy
-  const renderList = (list: any) => {
+  const renderList = (list: any, index: number) => {
     const { listType, items } = list;
     const ListTag = listType === "bullet" ? "ul" : "ol";
 
@@ -225,11 +225,11 @@ export default function RichText({
     const itemClasses =
       listType === "bullet"
         ? "text-gray-700 dark:text-gray-300 font-sans leading-relaxed flex items-start gap-3 sm:gap-4 relative"
-        : "text-gray-700 dark:text-gray-300 font-sans leading-relaxed flex items-start gap-3 sm:gap-4 relative";
+        : "text-gray-700 dark:text-gray-300 font-sans leading-relaxed flex items-baseline gap-3 sm:gap-4 relative";
 
     return (
-      <ListTag key={`list-${listType}`} className={listClasses}>
-        {items.map((item: RichTextBlock, index: number) => {
+      <ListTag key={`list-${listType}-${index}`} className={listClasses}>
+        {items.map((item: RichTextBlock, itemIndex: number) => {
           // Renderuj children elementu listy bezpośrednio
           const renderListItemChildren = () => {
             if (!item.children?.length)
@@ -240,6 +240,8 @@ export default function RichText({
             );
             if (!hasContent)
               return <span key={`empty-${item._key}`}>&nbsp;</span>;
+
+            const markDefs = item.markDefs || [];
 
             return item.children
               .map((child: any) => {
@@ -257,7 +259,7 @@ export default function RichText({
 
                 let element = <span key={child._key}>{child.text}</span>;
 
-                // Aplikuj marki (uproszczona wersja dla elementów listy)
+                // Aplikuj marki (pełna wersja dla elementów listy z obsługą linków)
                 child.marks?.forEach((mark: any) => {
                   if (mark === "strong") {
                     element = <strong key={child._key}>{element}</strong>;
@@ -265,6 +267,50 @@ export default function RichText({
                     element = <em key={child._key}>{element}</em>;
                   } else if (mark === "underline") {
                     element = <u key={child._key}>{element}</u>;
+                  } else if (alignMarks.includes(mark)) {
+                    // Marki wyrównania obsługiwane na poziomie bloku
+                    return;
+                  } else if (
+                    mark.startsWith("link-") ||
+                    markDefs.some(
+                      (def) => def._key === mark && def._type === "link"
+                    )
+                  ) {
+                    const linkDef = markDefs.find((def) => def._key === mark);
+                    if (linkDef) {
+                      const href =
+                        linkDef.linkType === "external"
+                          ? linkDef.externalHref || "#"
+                          : linkDef.internalHref || "#";
+
+                      // Sprawdź czy href nie jest pusty
+                      if (!href || href.trim() === "") {
+                        return element; // Zwróć element bez linku jeśli href jest pusty
+                      }
+
+                      const linkProps = {
+                        href,
+                        className:
+                          " text-blue-600 text-bold dark:text-blue-900 hover:text-blue-800 dark:hover:text-blue-300 transition-colors duration-200 relative group",
+                        ...(linkDef.blank && {
+                          target: "_blank",
+                          rel: "noopener noreferrer",
+                        }),
+                      };
+
+                      element =
+                        linkDef.linkType === "external" ? (
+                          <a key={child._key} {...linkProps}>
+                            {element}
+                            <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-current group-hover:w-full transition-all duration-300 ease-out"></span>
+                          </a>
+                        ) : (
+                          <Link key={child._key} {...linkProps}>
+                            {element}
+                            <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-current group-hover:w-full transition-all duration-300 ease-out"></span>
+                          </Link>
+                        );
+                    }
                   }
                 });
 
@@ -274,7 +320,10 @@ export default function RichText({
           };
 
           return (
-            <li key={item._key || `list-item-${index}`} className={itemClasses}>
+            <li
+              key={item._key || `list-item-${index}-${itemIndex}`}
+              className={itemClasses}
+            >
               {/* Marker dla listy punktowanej */}
               {listType === "bullet" && (
                 <div className="flex-shrink-0 w-1.5 h-1.5 sm:w-2 sm:h-2 bg-gray-400 dark:bg-gray-500 rounded-full mt-3 sm:mt-2.5"></div>
@@ -282,8 +331,8 @@ export default function RichText({
 
               {/* Marker dla listy numerowanej */}
               {listType === "number" && (
-                <div className="flex-shrink-0 w-6 h-6 sm:w-7 sm:h-7 bg-gradient-to-br from-blue-500 to-blue-600 dark:from-blue-400 dark:to-blue-500 text-white text-xs sm:text-sm font-bold rounded-full flex items-center justify-center mt-0.5 shadow-sm ring-1 sm:ring-2 ring-blue-100 dark:ring-blue-900/30">
-                  {index + 1}
+                <div className="flex-shrink-0 text-base sm:text-lg font-serif font-semibold text-gray-700 dark:text-gray-300 leading-none">
+                  {itemIndex + 1}.
                 </div>
               )}
 
@@ -304,7 +353,7 @@ export default function RichText({
 
     return groupedBlocks.map((item, index) => {
       if (item.type === "list") {
-        return renderList(item);
+        return renderList(item, index);
       } else {
         return renderBlock(item);
       }
