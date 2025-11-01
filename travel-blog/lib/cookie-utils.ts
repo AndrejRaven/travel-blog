@@ -2,6 +2,22 @@
 
 import { useCookies } from "./useCookies";
 
+// Rozszerzenie interfejsu Window dla Google Analytics i Facebook Pixel
+declare global {
+  interface Window {
+    dataLayer?: unknown[];
+    gtag?: (...args: unknown[]) => void;
+    fbq?: {
+      (...args: unknown[]): void;
+      callMethod?: (...args: unknown[]) => void;
+      queue?: unknown[];
+      push?: unknown;
+      loaded?: boolean;
+      version?: string;
+    };
+  }
+}
+
 // Utility functions dla cookies
 export function useCookieUtils() {
   const { isAllowed, hasConsent } = useCookies();
@@ -47,12 +63,14 @@ export function useCookieUtils() {
     
     // Inicjalizuj gtag
     if (typeof window !== "undefined") {
-      (window as any).dataLayer = (window as any).dataLayer || [];
-      (window as any).gtag = function(...args: unknown[]) {
-        (window as any).dataLayer.push(args);
+      window.dataLayer = window.dataLayer || [];
+      window.gtag = function(...args: unknown[]) {
+        if (window.dataLayer) {
+          window.dataLayer.push(args);
+        }
       };
-      (window as any).gtag('js', new Date());
-      (window as any).gtag('config', measurementId);
+      window.gtag('js', new Date());
+      window.gtag('config', measurementId);
     }
   };
 
@@ -65,15 +83,28 @@ export function useCookieUtils() {
     
     // Inicjalizuj fbq
     if (typeof window !== "undefined") {
-      (window as any).fbq = (window as any).fbq || function(...args: unknown[]) {
-        (window as any).fbq.callMethod ? (window as any).fbq.callMethod(...args) : (window as any).fbq.queue.push(args);
+      const fbqFunction = function(...args: unknown[]) {
+        if (window.fbq) {
+          if (window.fbq.callMethod) {
+            window.fbq.callMethod(...args);
+          } else if (window.fbq.queue) {
+            window.fbq.queue.push(args);
+          }
+        }
       };
-      (window as any).fbq.push = (window as any).fbq;
-      (window as any).fbq.loaded = true;
-      (window as any).fbq.version = '2.0';
-      (window as any).fbq.queue = [];
-      (window as any).fbq('init', pixelId);
-      (window as any).fbq('track', 'PageView');
+      
+      window.fbq = window.fbq || fbqFunction;
+      if (!window.fbq.callMethod) {
+        window.fbq.callMethod = fbqFunction;
+      }
+      if (window.fbq.queue === undefined) {
+        window.fbq.queue = [];
+      }
+      window.fbq.push = window.fbq;
+      window.fbq.loaded = true;
+      window.fbq.version = '2.0';
+      window.fbq('init', pixelId);
+      window.fbq('track', 'PageView');
     }
   };
 
@@ -86,8 +117,8 @@ export function useCookieUtils() {
     
     // Inicjalizuj dataLayer
     if (typeof window !== "undefined") {
-      (window as any).dataLayer = (window as any).dataLayer || [];
-      (window as any).dataLayer.push({
+      window.dataLayer = window.dataLayer || [];
+      window.dataLayer.push({
         'gtm.start': new Date().getTime(),
         event: 'gtm.js'
       });

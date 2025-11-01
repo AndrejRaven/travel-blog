@@ -69,23 +69,18 @@ export default function HomePageClient({ homepageData }: HomePageClientProps) {
 
     switch (_type) {
       case "aboutUs": {
-        const { _type: _t, _key: _k, ...data } = component as AboutUsType;
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { _type, _key, ...data } = component as AboutUsType;
         return <AboutUs key={`aside-${index}`} data={data} />;
       }
       case "youtubeChannel": {
-        const {
-          _type: _t,
-          _key: _k,
-          ...data
-        } = component as YouTubeChannelType;
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { _type, _key, ...data } = component as YouTubeChannelType;
         return <YouTubeChannel key={`aside-${index}`} data={data} />;
       }
       case "supportSection": {
-        const {
-          _type: _t,
-          _key: _k,
-          ...data
-        } = component as SupportSectionType;
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { _type, _key, ...data } = component as SupportSectionType;
         return <SupportSection key={`aside-${index}`} data={data} />;
       }
       default:
@@ -99,23 +94,18 @@ export default function HomePageClient({ homepageData }: HomePageClientProps) {
 
     switch (_type) {
       case "categoriesSection": {
-        const {
-          _type: _t,
-          _key: _k,
-          ...data
-        } = component as CategoriesSectionType;
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { _type, _key, ...data } = component as CategoriesSectionType;
         return <CategoriesSection key={`main-${index}`} data={data} />;
       }
       case "instagramSection": {
-        const {
-          _type: _t,
-          _key: _k,
-          ...data
-        } = component as InstagramSectionType;
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { _type, _key, ...data } = component as InstagramSectionType;
         return <InstagramSection key={`main-${index}`} data={data} />;
       }
       case "newsletter": {
-        const { _type: _t, _key: _k, ...data } = component as NewsletterType;
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { _type, _key, ...data } = component as NewsletterType;
         return <Newsletter key={`main-${index}`} data={data} />;
       }
       default:

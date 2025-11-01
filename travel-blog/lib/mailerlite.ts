@@ -8,7 +8,7 @@ export interface MailerLiteSubscriber {
   email: string;
   status: 'active' | 'unconfirmed' | 'unsubscribed' | 'bounced' | 'junk';
   groups?: string[];
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface MailerLiteConfig {
