@@ -1,6 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { client, readOnlyClient } from '@/lib/sanity';
 
+type CommentFromQuery = {
+  _id: string;
+  author: {
+    name: string;
+    email: string;
+  };
+  content: string;
+  createdAt: string;
+  status: 'pending' | 'approved' | 'rejected' | 'spam';
+  parentComment?: string;
+  post?: {
+    _id: string;
+    title: string;
+  };
+};
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -26,7 +42,9 @@ export async function GET(request: NextRequest) {
     `, { postId });
 
     // Filtruj komentarze według statusu po pobraniu
-    const filteredComments = comments.filter(comment => comment.status === status);
+    const filteredComments = (comments as CommentFromQuery[]).filter(
+      (comment: CommentFromQuery) => comment.status === status
+    );
 
     return NextResponse.json({ comments: filteredComments });
   } catch (error) {
