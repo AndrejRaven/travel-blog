@@ -8,6 +8,7 @@ import AdminHeader from "@/components/shared/AdminHeader";
 
 // Force dynamic rendering because we use cookies() for authentication
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 export default async function CommentsAdminPage() {
   noStore(); // Explicitly prevent static generation and caching
@@ -27,6 +28,7 @@ export default async function CommentsAdminPage() {
       </PageLayout>
     );
   } catch {
+    // User not authenticated, redirect to login
     redirect("/admin/login");
   }
 }
