@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { client } from '@/lib/sanity';
 
+export const dynamic = 'force-dynamic';
+
 export async function PATCH(request: NextRequest) {
   try {
     const body = await request.json();

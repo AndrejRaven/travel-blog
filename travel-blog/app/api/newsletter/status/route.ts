@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { findSubscriberInGroup } from "@/lib/mailerlite";
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const email = searchParams.get("email");

@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { client } from '@/lib/sanity';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
     // Pobierz wszystkie komentarze z informacjami o postach

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { SignJWT } from "jose";
 
+export const dynamic = 'force-dynamic';
+
 const ADMIN_USERNAME = process.env.ADMIN_USERNAME;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 const JWT_SECRET = process.env.JWT_SECRET;

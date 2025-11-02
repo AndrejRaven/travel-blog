@@ -1,4 +1,5 @@
-import React, { useState, memo } from "react";
+import React, { useState, memo, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import NavLink from "@/components/layout/header/NavLink";
 import Divider from "@/components/layout/header/Divider";
 import DropdownSection from "@/components/layout/header/DropdownSection";
@@ -25,6 +26,12 @@ const DesktopNav = memo(function DesktopNav({
   onToggle,
 }: Props) {
   const [hoveredMenu, setHoveredMenu] = useState<string | null>(null);
+  const pathname = usePathname();
+
+  // Reset hovered menu when pathname changes
+  useEffect(() => {
+    setHoveredMenu(null);
+  }, [pathname]);
 
   // Jeśli mamy nowe menu z Sanity, używamy go
   if (mainMenu && mainMenu.length > 0) {
@@ -69,7 +76,11 @@ const DesktopNav = memo(function DesktopNav({
             <span className="pointer-events-none absolute -bottom-1 left-0 h-[2px] w-0 bg-gray-900 dark:bg-gray-100 transition-all duration-300 group-hover:w-full" />
 
             {menuItem.hasDropdown && menuItem.dropdownItems && (
-              <div className="invisible opacity-0 translate-y-2 group-hover:visible group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-200 absolute right-0 top-full mt-3 w-64 rounded-lg border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg">
+              <div
+                className={`${hoveredMenu === menuItem.label || (hoveredMenu && hoveredMenu.startsWith(menuItem.label + "-")) ? "visible opacity-100 translate-y-0" : "invisible opacity-0 translate-y-2"} transition-all duration-200 absolute right-0 top-full mt-3 w-64 rounded-lg border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg`}
+                onMouseEnter={() => setHoveredMenu(menuItem.label)}
+                onMouseLeave={() => setHoveredMenu(null)}
+              >
                 <div className="p-2">
                   {menuItem.dropdownItems.map((item, itemIdx) => (
                     <React.Fragment key={itemIdx}>
@@ -85,9 +96,21 @@ const DesktopNav = memo(function DesktopNav({
                               }
                             >
                               <span>{item.label}</span>
-                              <ChevronDown className="h-3 w-3 -rotate-90 group-hover/item:rotate-90 transition-transform duration-300" />
+                              <ChevronDown
+                                className={`h-3 w-3 transition-transform duration-300 ${hoveredMenu === `${menuItem.label}-${item.label}` ? "rotate-90" : "-rotate-90"}`}
+                              />
                             </button>
-                            <div className="invisible opacity-0 translate-x-2 group-hover/item:visible group-hover/item:opacity-100 group-hover/item:translate-x-0 transition-all duration-200 absolute left-full top-0 ml-1 w-48 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-md shadow-lg z-10">
+                            <div
+                              className={`${hoveredMenu === `${menuItem.label}-${item.label}` ? "visible opacity-100 translate-x-0" : "invisible opacity-0 translate-x-2"} transition-all duration-200 absolute left-full top-0 ml-1 w-48 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-md shadow-lg z-10`}
+                              onMouseEnter={() =>
+                                setHoveredMenu(
+                                  `${menuItem.label}-${item.label}`
+                                )
+                              }
+                              onMouseLeave={() =>
+                                setHoveredMenu(menuItem.label)
+                              }
+                            >
                               <div className="p-2">
                                 {item.submenuItems.map((subItem, subIdx) => (
                                   <React.Fragment key={subIdx}>
@@ -146,21 +169,27 @@ const DesktopNav = memo(function DesktopNav({
           <span className="pointer-events-none absolute -bottom-1 left-0 h-[2px] w-0 bg-gray-900 dark:bg-gray-100 transition-all duration-300 group-hover:w-full" />
         </div>
 
-        <div className="group relative">
+        <div
+          className="group relative"
+          onMouseEnter={() => setHoveredMenu("kategorie")}
+          onMouseLeave={() => setHoveredMenu(null)}
+        >
           <button
             aria-haspopup="true"
-            aria-expanded="false"
+            aria-expanded={hoveredMenu === "kategorie"}
             className="inline-flex items-center gap-1 transition-colors duration-200 group-hover:text-gray-900 dark:group-hover:text-gray-100"
           >
             <span>Kategorie</span>
             <ChevronDown
-              className="h-4 w-4 transition-transform duration-300 group-hover:rotate-180"
+              className={`h-4 w-4 transition-transform duration-300 ${hoveredMenu === "kategorie" ? "rotate-180" : ""}`}
               aria-hidden
             />
           </button>
           <span className="pointer-events-none absolute -bottom-1 left-0 h-[2px] w-0 bg-gray-900 dark:bg-gray-100 transition-all duration-300 group-hover:w-full" />
 
-          <div className="invisible opacity-0 translate-y-2 group-hover:visible group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-200 absolute right-0 top-full mt-3 w-[480px] max-w-[calc(100vw-2rem)] rounded-lg border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg">
+          <div
+            className={`${hoveredMenu === "kategorie" ? "visible opacity-100 translate-y-0" : "invisible opacity-0 translate-y-2"} transition-all duration-200 absolute right-0 top-full mt-3 w-[480px] max-w-[calc(100vw-2rem)] rounded-lg border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg`}
+          >
             <div className="p-3">
               {hierarchicalCategories.map((category, idx) => (
                 <React.Fragment key={category.key}>
@@ -184,9 +213,19 @@ const DesktopNav = memo(function DesktopNav({
                                 }
                               >
                                 <span>{item.label}</span>
-                                <ChevronDown className="h-3 w-3 -rotate-90 group-hover/item:rotate-90 transition-transform duration-300" />
+                                <ChevronDown
+                                  className={`h-3 w-3 transition-transform duration-300 ${hoveredMenu === `${category.key}-${item.label}` ? "rotate-90" : "-rotate-90"}`}
+                                />
                               </button>
-                              <div className="invisible opacity-0 translate-x-2 group-hover/item:visible group-hover/item:opacity-100 group-hover/item:translate-x-0 transition-all duration-200 absolute left-full top-0 ml-1 w-48 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-md shadow-lg z-10">
+                              <div
+                                className={`${hoveredMenu === `${category.key}-${item.label}` ? "visible opacity-100 translate-x-0" : "invisible opacity-0 translate-x-2"} transition-all duration-200 absolute left-full top-0 ml-1 w-48 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-md shadow-lg z-10`}
+                                onMouseEnter={() =>
+                                  setHoveredMenu(
+                                    `${category.key}-${item.label}`
+                                  )
+                                }
+                                onMouseLeave={() => setHoveredMenu("kategorie")}
+                              >
                                 <div className="p-2">
                                   {item.subcategories.map((subItem, subIdx) => (
                                     <React.Fragment key={subIdx}>
@@ -276,21 +315,27 @@ const DesktopNav = memo(function DesktopNav({
         <span className="pointer-events-none absolute -bottom-1 left-0 h-[2px] w-0 bg-gray-900 dark:bg-gray-100 transition-all duration-300 group-hover:w-full" />
       </div>
 
-      <div className="group relative">
+      <div
+        className="group relative"
+        onMouseEnter={() => setHoveredMenu("kategorie")}
+        onMouseLeave={() => setHoveredMenu(null)}
+      >
         <button
           aria-haspopup="true"
-          aria-expanded="false"
+          aria-expanded={hoveredMenu === "kategorie"}
           className="inline-flex items-center gap-1 transition-colors duration-200 group-hover:text-gray-900 dark:group-hover:text-gray-100"
         >
           <span>Kategorie</span>
           <ChevronDown
-            className="h-4 w-4 transition-transform duration-300 group-hover:rotate-180"
+            className={`h-4 w-4 transition-transform duration-300 ${hoveredMenu === "kategorie" ? "rotate-180" : ""}`}
             aria-hidden
           />
         </button>
         <span className="pointer-events-none absolute -bottom-1 left-0 h-[2px] w-0 bg-gray-900 dark:bg-gray-100 transition-all duration-300 group-hover:w-full" />
 
-        <div className="invisible opacity-0 translate-y-2 group-hover:visible group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-200 absolute right-0 top-full mt-3 w-[480px] max-w-[calc(100vw-2rem)] rounded-lg border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg">
+        <div
+          className={`${hoveredMenu === "kategorie" ? "visible opacity-100 translate-y-0" : "invisible opacity-0 translate-y-2"} transition-all duration-200 absolute right-0 top-full mt-3 w-[480px] max-w-[calc(100vw-2rem)] rounded-lg border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg`}
+        >
           <div className="p-3">
             {sections.map((s, idx) => (
               <React.Fragment key={s.key}>

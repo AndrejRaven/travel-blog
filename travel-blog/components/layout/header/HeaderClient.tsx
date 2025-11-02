@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import DesktopNav from "@/components/layout/header/DesktopNav";
 import MobileMenu from "@/components/layout/header/MobileMenu";
 import {
@@ -28,10 +29,22 @@ export default function HeaderClient({
   });
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mobileCategoriesOpen, setMobileCategoriesOpen] = useState(false);
+  const pathname = usePathname();
 
   const toggleSection = useCallback((key: keyof typeof openSections) => {
     setOpenSections((prev) => ({ ...prev, [key]: !prev[key] }));
   }, []);
+
+  // Reset menu state when pathname changes
+  useEffect(() => {
+    setMobileOpen(false);
+    setMobileCategoriesOpen(false);
+    setOpenSections({
+      places: false,
+      guides: false,
+      culture: false,
+    });
+  }, [pathname]);
 
   // Użyj danych z Sanity lub placeholder - memoized
   const currentSections = useMemo(
