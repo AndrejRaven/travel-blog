@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { unstable_noStore as noStore } from "next/cache";
 import CommentsModeration from "@/components/ui/CommentsModeration";
 import PageLayout from "@/components/shared/PageLayout";
 import PageHeader from "@/components/shared/PageHeader";
@@ -9,6 +10,7 @@ import AdminHeader from "@/components/shared/AdminHeader";
 export const dynamic = "force-dynamic";
 
 export default async function CommentsAdminPage() {
+  noStore(); // Explicitly prevent static generation and caching
   try {
     const user = await requireAdmin();
 
