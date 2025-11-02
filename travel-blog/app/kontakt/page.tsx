@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect } from "react";
 import Button from "@/components/ui/Button";
 import Link from "@/components/ui/Link";
-import Image from "next/image";
 import PageLayout from "@/components/shared/PageLayout";
 import PageHeader from "@/components/shared/PageHeader";
 import InfoCard from "@/components/shared/InfoCard";

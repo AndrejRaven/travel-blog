@@ -50,7 +50,7 @@ export async function POST(req: Request) {
             { status: 409 }
           );
         }
-      } catch (_) {}
+      } catch {}
 
       return NextResponse.json(
         { success: false, message },
