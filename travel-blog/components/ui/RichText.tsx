@@ -198,7 +198,7 @@ export default function RichText({
       h1: "text-3xl md:text-5xl font-serif font-bold tracking-tight mb-4",
       h2: "text-3xl md:text-3xl font-serif font-semibold mb-4",
       h3: "text-2xl md:text-2xl font-serif font-semibold mb-3",
-      normal: "text-xl font-sans leading-relaxed",
+      normal: "text-base font-sans leading-relaxed",
     };
 
     const Tag =
@@ -233,8 +233,8 @@ export default function RichText({
 
     const itemClasses =
       listType === "bullet"
-        ? "text-gray-700 dark:text-gray-300 font-sans leading-relaxed flex items-start gap-3 sm:gap-4 relative"
-        : "text-gray-700 dark:text-gray-300 font-sans leading-relaxed flex items-baseline gap-3 sm:gap-4 relative";
+        ? "text-base text-gray-700 dark:text-gray-300 font-sans leading-relaxed flex items-start gap-3 sm:gap-4 relative"
+        : "text-base text-gray-700 dark:text-gray-300 font-sans leading-relaxed flex items-baseline gap-3 sm:gap-4 relative";
 
     return (
       <ListTag key={`list-${listType}-${index}`} className={listClasses}>

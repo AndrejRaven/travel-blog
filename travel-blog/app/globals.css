@@ -46,6 +46,7 @@
 
 :root {
   --radius: 0.625rem;
+  --content-font-size: 1rem; /* text-base equivalent - bazowy rozmiar czcionki dla treści */
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -121,11 +122,25 @@
   }
   html {
     @apply font-sans;
-    font-size: 14px;
+    font-size: 16px;
     line-height: 1.5;
   }
   body {
     @apply bg-background text-foreground font-sans;
+    font-size: 12px;
+    @media (min-width: 768px) {
+      font-size: 12px;
+    }
+  }
+  
+  /* Bazowy rozmiar czcionki dla treści tekstowych */
+  .prose {
+    font-size: var(--content-font-size);
+  }
+  
+  .prose p,
+  .prose li {
+    font-size: var(--content-font-size);
   }
 }
 
