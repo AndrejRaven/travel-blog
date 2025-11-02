@@ -5,6 +5,9 @@ import PageHeader from "@/components/shared/PageHeader";
 import { requireAdmin } from "@/lib/auth";
 import AdminHeader from "@/components/shared/AdminHeader";
 
+// Force dynamic rendering because we use cookies() for authentication
+export const dynamic = "force-dynamic";
+
 export default async function CommentsAdminPage() {
   try {
     const user = await requireAdmin();
@@ -21,7 +24,7 @@ export default async function CommentsAdminPage() {
         <CommentsModeration />
       </PageLayout>
     );
-  } catch (error) {
+  } catch {
     redirect("/admin/login");
   }
 }

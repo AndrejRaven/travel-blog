@@ -9,7 +9,6 @@ import "swiper/css/pagination";
 import "swiper/css/navigation";
 import SectionContainer from "@/components/shared/SectionContainer";
 import { useAnimation } from "@/lib/useAnimation";
-import { getAnimationClass } from "@/lib/render-utils";
 import { SliderData } from "@/lib/component-types";
 
 type Props = {
@@ -96,7 +95,7 @@ export default function Slider({ data }: Props) {
               swiperRef.current = swiper;
             }}
             onSlideChange={(swiper) => {
-              setActiveSlide(swiper.realIndex);
+              setActiveSlide(swiper.activeIndex);
             }}
             className="mySwiper"
           >

@@ -5,19 +5,12 @@ import Image from "next/image";
 import Button from "@/components/ui/Button";
 import AnimatedSection from "@/components/shared/AnimatedSection";
 import SectionContainer from "@/components/shared/SectionContainer";
-import { useAnimation } from "@/lib/useAnimation";
 import { useResponsiveImage } from "@/lib/render-utils";
 import { AboutUsData } from "@/lib/component-types";
 
 type Props = {
   data: AboutUsData;
 };
-
-const defaultDescription = [
-  "Jesteśmy Aga i Andrej - para, która od kilku lat przemierza świat w poszukiwaniu najpiękniejszych miejsc i najsmaczniejszych potraw. Nasze podróże to nie tylko zwiedzanie, ale przede wszystkim poznawanie lokalnych kultur i tradycji.",
-  "Na tym blogu dzielimy się naszymi doświadczeniami, praktycznymi poradami podróżniczymi oraz przepisami kulinarnymi z różnych zakątków świata. Każda podróż to nowa historia do opowiedzenia.",
-  "Dołącz do nas w tej podróży pełnej przygód, smaków i niezapomnianych wspomnień!",
-];
 
 export default function AboutUs({ data }: Props) {
   // Wszystkie hooki muszą być przed wczesnymi returnami

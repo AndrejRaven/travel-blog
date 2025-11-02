@@ -1,4 +1,3 @@
-import { Post } from "@/lib/sanity";
 import { getPostBySlug, getAllPostSlugs } from "@/lib/queries/functions";
 import { getImageUrl } from "@/lib/sanity";
 import PostPageClient from "@/components/pages/PostPageClient";
@@ -144,14 +143,6 @@ export default async function PostPage({ params }: Params) {
     ? getImageUrl(ogImage, { width: 1200, height: 630, format: "webp" }) ||
       undefined
     : undefined;
-
-  const formattedDate = post.publishedAt
-    ? new Intl.DateTimeFormat("pl-PL", {
-        year: "numeric",
-        month: "long",
-        day: "2-digit",
-      }).format(new Date(post.publishedAt))
-    : null;
 
   // Generuj spis treści na podstawie komponentów z tytułami treści
   const generateTableOfContents = () => {

@@ -37,7 +37,7 @@ export default function AdminLoginPage() {
         const data = await response.json();
         setError(data.message || "Błąd logowania");
       }
-    } catch (error) {
+    } catch {
       setError("Wystąpił błąd podczas logowania");
     } finally {
       setIsLoading(false);

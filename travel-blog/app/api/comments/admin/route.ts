@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { client } from '@/lib/sanity';
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     // Pobierz wszystkie komentarze z informacjami o postach
     const comments = await client.fetch(`

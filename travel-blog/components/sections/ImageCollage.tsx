@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
@@ -111,6 +111,7 @@ export default function ImageCollage({ data }: Props) {
       document.body.style.width = "unset";
       document.body.style.height = "unset";
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedImageIndex, images.length]);
 
   const openModal = (index: number) => {

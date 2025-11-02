@@ -1,4 +1,3 @@
-import { Post } from "@/lib/sanity";
 import { getPostBySlug, getAllPostSlugs } from "@/lib/queries/functions";
 import { getImageUrl } from "@/lib/sanity";
 import PostPageClient from "@/components/pages/PostPageClient";
@@ -15,7 +14,7 @@ type Params = {
 
 // Generuj metadata dla SEO
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
-  const { slug, superCategory, mainCategory, category } = await params;
+  const { slug, mainCategory, category } = await params;
   const post = await getPostBySlug(slug);
 
   if (!post) {
@@ -174,14 +173,6 @@ export default async function PostPage({ params }: Params) {
       undefined
     : undefined;
 
-  const formattedDate = post.publishedAt
-    ? new Intl.DateTimeFormat("pl-PL", {
-        year: "numeric",
-        month: "long",
-        day: "2-digit",
-      }).format(new Date(post.publishedAt))
-    : null;
-
   // Generuj spis treści na podstawie komponentów z tytułami treści
   const generateTableOfContents = () => {
     if (!post.components) return [];
@@ -205,7 +196,7 @@ export default async function PostPage({ params }: Params) {
           | undefined;
         return container?.contentTitle && container.contentTitle.trim() !== "";
       })
-      .map((component, index) => {
+      .map((component) => {
         const container = component.container as { contentTitle: string };
         return {
           id: generateId(container.contentTitle),

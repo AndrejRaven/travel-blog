@@ -1,12 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import SectionHeader from "@/components/shared/SectionHeader";
-import {
-  resolveVideoId,
-  getLatestYouTubeVideoClient,
-  type YouTubeVideo,
-} from "@/lib/youtube";
+import { getLatestYouTubeVideoClient } from "@/lib/youtube";
 import SectionContainer from "@/components/shared/SectionContainer";
 
 import { EmbedYoutubeData } from "@/lib/component-types";
@@ -23,7 +18,6 @@ export default function EmbedYoutube({
   const [error, setError] = useState<string | null>(null);
   // Rozwiąż videoId - jeśli to "latest" lub useLatestVideo jest true, pobierz najnowszy film
   const [resolvedVideoId, setResolvedVideoId] = useState(videoId);
-  const [videoData, setVideoData] = useState<YouTubeVideo | null>(null);
 
   useEffect(() => {
     const fetchLatestVideo = async () => {
@@ -33,7 +27,6 @@ export default function EmbedYoutube({
         try {
           const latestVideo = await getLatestYouTubeVideoClient();
           if (latestVideo) {
-            setVideoData(latestVideo);
             setResolvedVideoId(latestVideo.id);
           } else {
             setError("Nie udało się pobrać najnowszego filmu");

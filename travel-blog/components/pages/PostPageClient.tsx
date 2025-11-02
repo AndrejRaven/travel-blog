@@ -42,13 +42,7 @@ export default function PostPageClient({
   const metaAnimation = useAnimation();
 
   // Hook do zarządzania komentarzami
-  const {
-    comments,
-    loading: commentsLoading,
-    error: commentsError,
-    addComment,
-    replyToComment,
-  } = useComments(post._id);
+  const { comments, addComment, replyToComment } = useComments(post._id);
 
   useEffect(() => {
     const checkIsMobile = () => {

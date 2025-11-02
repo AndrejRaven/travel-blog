@@ -31,8 +31,8 @@ export default function CategoriesSection({ data }: Props) {
           "CATEGORIES"
         );
         setSuperCategories(categories);
-      } catch (error) {
-        console.error("Error fetching super categories:", error);
+      } catch {
+        // Ignore errors
       } finally {
         setIsLoading(false);
       }

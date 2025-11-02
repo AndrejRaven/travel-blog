@@ -5,11 +5,7 @@ import Link from "@/components/ui/Link";
 import CategoryBadge from "@/components/ui/CategoryBadge";
 import SectionHeader from "@/components/shared/SectionHeader";
 import ResponsiveImage from "@/components/shared/ResponsiveImage";
-import {
-  getBackgroundColorClass,
-  getBorderRadiusClass,
-  getHeightClass,
-} from "@/lib/section-utils";
+import { getHeightClass } from "@/lib/section-utils";
 import AnimatedSection from "@/components/shared/AnimatedSection";
 import SectionContainer from "@/components/shared/SectionContainer";
 import { ArticlesData } from "@/lib/component-types";

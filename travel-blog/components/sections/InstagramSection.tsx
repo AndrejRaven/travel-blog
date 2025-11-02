@@ -22,7 +22,6 @@ type Props = {
 export default function InstagramSection({ data }: Props) {
   // Wszystkie hooki muszą być przed wczesnymi returnami
   const [activeSlide, setActiveSlide] = useState(0);
-  const [realIndex, setRealIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const { isLoaded, isInView, containerRef } = useAnimation();
 
@@ -41,15 +40,7 @@ export default function InstagramSection({ data }: Props) {
     return null;
   }
 
-  const {
-    container,
-    title,
-    subtitle,
-    instagramHandle,
-    instagramUrl,
-    buttonText,
-    posts,
-  } = data;
+  const { container, title, subtitle, instagramUrl, buttonText, posts } = data;
 
   // Zabezpieczenie na wypadek gdyby container był undefined
   if (!container) {
@@ -132,21 +123,17 @@ export default function InstagramSection({ data }: Props) {
                 setIsTransitioning(true);
               }}
               onTouchEnd={(swiper) => {
-                setActiveSlide(swiper.realIndex);
-                setRealIndex(swiper.realIndex);
+                setActiveSlide(swiper.activeIndex);
                 setTimeout(() => setIsTransitioning(false), 300);
               }}
               onSlideChange={(swiper) => {
-                setActiveSlide(swiper.realIndex);
-                setRealIndex(swiper.realIndex);
+                setActiveSlide(swiper.activeIndex);
               }}
               className="mySwiper"
             >
-              {posts.map((post, index) => {
-                const isActive = index === activeSlide;
-                const isTransitioningOut = isTransitioning && !isActive;
+              {posts.map((post, idx) => {
+                const isActive = idx === activeSlide;
                 const caption = post.caption || "";
-                const likes = post.likes || "0";
 
                 // Przygotuj dane obrazka dla useResponsiveImage
                 const imageData = post.imageUrl?.asset
@@ -174,6 +161,7 @@ export default function InstagramSection({ data }: Props) {
                             return (
                               <img
                                 {...imageProps}
+                                alt={imageProps.alt || "Instagram post"}
                                 className={`object-cover transition-all duration-500 group-hover:scale-105 transform-gpu will-change-transform w-full h-full`}
                                 itemProp="contentUrl"
                               />

@@ -178,7 +178,7 @@ export default function CommentsSection({
       });
       setShowAddForm(false);
       setReplyingTo(null);
-    } catch (error) {
+    } catch {
       // Error handling - could be improved with proper error state
     } finally {
       setIsSubmitting(false);
