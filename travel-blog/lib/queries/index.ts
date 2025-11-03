@@ -205,6 +205,17 @@ export const QUERIES = {
     // Pobierz wszystkie slugi postów
     ALL_SLUGS: `*[_type == "post" && defined(slug.current)][].slug.current`,
 
+    // Pobierz wszystkie slugi postów z kategoriami (dla generateStaticParams)
+    // Zwraca kategorie z pełną hierarchią (3 poziomy: superCategory -> mainCategory -> category)
+    SLUGS_WITH_CATEGORIES: `*[_type == "post" && defined(slug.current)] {
+      "slug": slug.current,
+      "categories": categories[]-> {
+        "category": slug.current,
+        "mainCategory": mainCategory->slug.current,
+        "superCategory": mainCategory->superCategory->slug.current
+      }
+    }`,
+
     // Pobierz najnowsze posty (zoptymalizowane z indeksem)
     LATEST: `*[_type == "post" && defined(publishedAt)] | order(publishedAt desc, _createdAt desc) [0...$limit] {
       _id,

@@ -79,6 +79,34 @@ export async function getAllPostSlugs(): Promise<string[]> {
 }
 
 /**
+ * Typ dla postów z kategoriami (dla generateStaticParams)
+ * Zwraca tylko kategorie z pełną hierarchią (3 poziomy: superCategory -> mainCategory -> category)
+ */
+type PostWithCategories = {
+  slug: string;
+  categories: Array<{
+    category: string;
+    mainCategory: string;
+    superCategory: string;
+  }>;
+};
+
+/**
+ * Pobierz wszystkie slugi postów wraz z informacjami o kategoriach
+ */
+export async function getAllPostSlugsWithCategories(): Promise<PostWithCategories[]> {
+  try {
+    return await fetchGroq<PostWithCategories[]>(
+      QUERIES.POST.SLUGS_WITH_CATEGORIES, 
+      {}, 
+      'STATIC'
+    );
+  } catch (error) {
+    handleSanityError(error, 'Error fetching post slugs with categories');
+  }
+}
+
+/**
  * Pobierz najnowsze posty
  */
 export async function getLatestPosts(limit: number = 3): Promise<ArticleForList[]> {

@@ -1,4 +1,7 @@
-import { getPostBySlug, getAllPostSlugs } from "@/lib/queries/functions";
+import {
+  getPostBySlug,
+  getAllPostSlugsWithCategories,
+} from "@/lib/queries/functions";
 import { getImageUrl } from "@/lib/sanity";
 import PostPageClient from "@/components/pages/PostPageClient";
 import { Metadata } from "next";
@@ -259,11 +262,26 @@ export default async function PostPage({ params }: Params) {
 }
 
 export async function generateStaticParams() {
-  const slugs = await getAllPostSlugs();
-  return slugs.map((slug) => ({
-    superCategory: "unknown", // To będzie zaktualizowane w przyszłości
-    mainCategory: "unknown",
-    category: "unknown",
-    slug,
-  }));
+  const postsWithCategories = await getAllPostSlugsWithCategories();
+  const params: Array<{
+    superCategory: string;
+    mainCategory: string;
+    category: string;
+    slug: string;
+  }> = [];
+
+  for (const post of postsWithCategories) {
+    // Dla każdego posta generuj ścieżkę dla każdej jego kategorii
+    // Zapytanie GROQ już filtruje tylko kategorie z pełną hierarchią (3 poziomy)
+    for (const category of post.categories) {
+      params.push({
+        superCategory: category.superCategory,
+        mainCategory: category.mainCategory,
+        category: category.category,
+        slug: post.slug,
+      });
+    }
+  }
+
+  return params;
 }
