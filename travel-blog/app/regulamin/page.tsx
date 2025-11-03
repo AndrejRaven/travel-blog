@@ -316,12 +316,6 @@ export default function Regulamin() {
             <p className="text-gray-700 dark:text-gray-300 mb-2">
               <strong>E-mail:</strong> kontakt@naszblog.pl
             </p>
-            <p className="text-gray-700 dark:text-gray-300 mb-2">
-              <strong>Telefon:</strong> [Wpisz swój numer telefonu]
-            </p>
-            <p className="text-gray-700 dark:text-gray-300">
-              <strong>Adres:</strong> [Wpisz swój adres]
-            </p>
           </div>
         </section>
 

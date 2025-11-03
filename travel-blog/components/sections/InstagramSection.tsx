@@ -119,10 +119,10 @@ export default function InstagramSection({ data }: Props) {
                 el: ".swiper-pagination",
               }}
               onTouchEnd={(swiper) => {
-                setActiveSlide(swiper.activeIndex);
+                setActiveSlide(swiper.realIndex);
               }}
               onSlideChange={(swiper) => {
-                setActiveSlide(swiper.activeIndex);
+                setActiveSlide(swiper.realIndex);
               }}
               className="mySwiper"
             >

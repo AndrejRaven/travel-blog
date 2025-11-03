@@ -32,16 +32,16 @@ export default function PolitykaPrywatnosci() {
           </h2>
           <InfoCard variant="gray">
             <p className="mb-2">
-              <strong>Nazwa:</strong> Nasz Blog - Blog Podróżniczy
+              <strong>Nazwa:</strong> Nasz Blog – Blog Podróżniczy
             </p>
             <p className="mb-2">
-              <strong>Adres:</strong> [Wpisz swój adres]
+              <strong>Właściciele:</strong> Andrej i Agnieszka
             </p>
             <p className="mb-2">
-              <strong>NIP:</strong> [Wpisz swój NIP]
+              <strong>E-mail:</strong> kontakt@naszblog.pl
             </p>
             <p>
-              <strong>E-mail:</strong> kontakt@naszblog.pl
+              <strong>Charakter:</strong> Strona prywatna, niekomercyjna
             </p>
           </InfoCard>
         </section>
@@ -262,9 +262,6 @@ export default function PolitykaPrywatnosci() {
             </p>
             <p className="text-gray-700 dark:text-gray-300 mb-2">
               <strong>E-mail:</strong> kontakt@naszblog.pl
-            </p>
-            <p className="text-gray-700 dark:text-gray-300">
-              <strong>Telefon:</strong> [Wpisz swój numer telefonu]
             </p>
           </div>
         </section>

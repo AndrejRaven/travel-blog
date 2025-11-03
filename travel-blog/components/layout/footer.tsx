@@ -12,7 +12,7 @@ const Footer = function Footer() {
           {/* O NAS */}
           <div>
             <h3 className="text-lg font-serif font-semibold text-gray-900 dark:text-gray-100 mb-4">
-              Nasz Blog
+              Vlogi Z Drogi
             </h3>
             <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
               Dzielimy się naszymi podróżami, przepisami kulinarnymi i
@@ -27,7 +27,7 @@ const Footer = function Footer() {
               <div className="flex items-center space-x-3">
                 {/* FACEBOOK */}
                 <a
-                  href="https://facebook.com/naszblog"
+                  href="https://www.facebook.com/vlogizdrogi"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center hover:bg-blue-700 transition-colors"
@@ -38,7 +38,7 @@ const Footer = function Footer() {
 
                 {/* YOUTUBE */}
                 <a
-                  href="https://youtube.com/@naszblog"
+                  href="https://youtube.com/@vlogizdrogiaa"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-8 h-8 bg-red-600 rounded-full flex items-center justify-center hover:bg-red-700 transition-colors"
@@ -49,7 +49,7 @@ const Footer = function Footer() {
 
                 {/* INSTAGRAM */}
                 <a
-                  href="https://instagram.com/naszblog"
+                  href="https://instagram.com/vlogizdrogiaa"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center hover:from-purple-600 hover:to-pink-600 transition-all"
@@ -123,7 +123,7 @@ const Footer = function Footer() {
         <div className="border-t border-gray-200 dark:border-gray-700 pt-8">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <p className="text-sm font-sans text-gray-600 dark:text-gray-400">
-              © <span suppressHydrationWarning>{YEAR}</span> Nasz Blog.
+              © <span suppressHydrationWarning>{YEAR}</span> Vlogi Z Drogi.
               Wszelkie prawa zastrzeżone.
             </p>
             <p className="text-xs font-sans text-gray-500 dark:text-gray-500">

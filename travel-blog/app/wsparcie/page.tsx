@@ -47,14 +47,14 @@ export default function Wsparcie() {
             </svg>
           </div>
           <h3 className="text-xl font-serif font-semibold text-gray-900 dark:text-gray-100 mb-3">
-            Buy Me a Coffee
+            Buy Coffee
           </h3>
           <p className="text-gray-600 dark:text-gray-300 mb-6">
             Postaw nam kawę! To szybki i prosty sposób na wsparcie naszych
             działań.
           </p>
           <Button
-            href="https://buymeacoffee.com/naszblog"
+            href="https://buycoffee.to/vlogizdrogi"
             variant="outline"
             external
             className="w-full"
@@ -77,7 +77,7 @@ export default function Wsparcie() {
             podziękowania.
           </p>
           <Button
-            href="https://patronite.pl/naszblog"
+            href="https://patronite.pl/vlogizdrogi"
             variant="outline"
             external
             className="w-full"
@@ -99,7 +99,7 @@ export default function Wsparcie() {
             Prześlij nam darowiznę przez Revolut - szybko i bezpiecznie.
           </p>
           <Button
-            href="https://revolut.com"
+            href="https://revolut.me/vlogizdrogi"
             variant="outline"
             external
             className="w-full"
@@ -234,24 +234,6 @@ export default function Wsparcie() {
             <Button href="/kontakt" variant="outline">
               Skontaktuj się z nami
             </Button>
-          </div>
-        </div>
-      </div>
-
-      {/* SUPPORTERS LIST */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-8">
-        <h2 className="text-2xl font-serif font-semibold text-gray-900 dark:text-gray-100 mb-6 text-center">
-          Nasi wspierający
-        </h2>
-        <div className="text-center">
-          <p className="text-gray-600 dark:text-gray-300 mb-4">
-            Dziękujemy wszystkim, którzy nas wspierają! Wasze imiona pojawią się
-            tutaj (jeśli wyrażicie zgodę).
-          </p>
-          <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-6">
-            <p className="text-gray-500 dark:text-gray-400 italic">
-              Lista wspierających będzie aktualizowana regularnie
-            </p>
           </div>
         </div>
       </div>
