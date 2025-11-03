@@ -103,7 +103,7 @@ export async function getNewsletterStats(): Promise<NewsletterStats> {
 
     // Iteruj przez wszystkich subskrybentów z paginacją
     while (nextUrl) {
-      const response = await fetch(nextUrl, {
+      const response: Response = await fetch(nextUrl, {
         headers: {
           Authorization: `Bearer ${config.token}`,
           Accept: "application/json",
