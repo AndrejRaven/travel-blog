@@ -368,6 +368,17 @@ export const QUERIES = {
           }
         }
       }
+    }`,
+
+    // Pobierz liczbę wszystkich postów
+    ALL_COUNT: `count(*[_type == "post"])`,
+
+    // Pobierz ostatnie 5 postów (uproszczone dla dashboardu)
+    RECENT: `*[_type == "post" && defined(publishedAt)] | order(publishedAt desc, _createdAt desc) [0...5] {
+      _id,
+      title,
+      slug,
+      publishedAt
     }`
   },
 

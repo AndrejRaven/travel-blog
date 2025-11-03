@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Zwróć szczegółowy komunikat o błędzie
-      let message = "Nieprawidłowe dane logowania";
+      const message = "Nieprawidłowe dane logowania";
       let details = "";
 
       if (!usernameMatch && !passwordMatch) {

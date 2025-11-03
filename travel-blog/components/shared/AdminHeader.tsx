@@ -1,8 +1,9 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import Button from "@/components/ui/Button";
-import { LogOut, User } from "lucide-react";
+import Link from "@/components/ui/Link";
+import { LogOut, User, LayoutDashboard, MessageSquare } from "lucide-react";
 import { AdminUser } from "@/lib/auth";
 
 interface AdminHeaderProps {
@@ -11,6 +12,7 @@ interface AdminHeaderProps {
 
 export default function AdminHeader({ user }: AdminHeaderProps) {
   const router = useRouter();
+  const pathname = usePathname();
 
   const handleLogout = async () => {
     try {
@@ -24,6 +26,8 @@ export default function AdminHeader({ user }: AdminHeaderProps) {
       console.error("Logout error:", error);
     }
   };
+
+  const isActive = (path: string) => pathname === path;
 
   return (
     <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-6">
@@ -43,6 +47,32 @@ export default function AdminHeader({ user }: AdminHeaderProps) {
         </div>
 
         <div className="flex items-center space-x-4">
+          {/* Nawigacja między sekcjami */}
+          <nav className="flex items-center space-x-2 mr-4">
+            <Link
+              href="/admin"
+              className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                isActive("/admin")
+                  ? "bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300"
+                  : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+              }`}
+            >
+              <LayoutDashboard className="w-4 h-4 inline mr-1.5" />
+              Dashboard
+            </Link>
+            <Link
+              href="/admin/komentarze"
+              className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                isActive("/admin/komentarze")
+                  ? "bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300"
+                  : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+              }`}
+            >
+              <MessageSquare className="w-4 h-4 inline mr-1.5" />
+              Komentarze
+            </Link>
+          </nav>
+
           <Button
             variant="outline"
             onClick={() => router.push("/")}

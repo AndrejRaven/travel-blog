@@ -48,7 +48,7 @@ export default function AdminLoginPage() {
         const data = await response.json();
         setError(data as ErrorDetails);
       }
-    } catch (err) {
+    } catch {
       setError({
         message: "Wystąpił błąd podczas logowania",
         details:
