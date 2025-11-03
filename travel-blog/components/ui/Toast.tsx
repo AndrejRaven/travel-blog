@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { X, Clock, AlertCircle, CheckCircle, Info } from "lucide-react";
 
 export type ToastType = "success" | "error" | "warning" | "info" | "rate-limit";
@@ -54,7 +54,6 @@ const toastConfig = {
 };
 
 export default function Toast({
-  id,
   type,
   title,
   message,
@@ -68,6 +67,14 @@ export default function Toast({
   const config = toastConfig[type];
   const Icon = config.icon;
 
+  const handleClose = useCallback(() => {
+    setIsExiting(true);
+    setTimeout(() => {
+      setIsVisible(false);
+      onClose?.();
+    }, 300); // Match animation duration
+  }, [onClose]);
+
   useEffect(() => {
     if (duration > 0) {
       const timer = setTimeout(() => {
@@ -76,15 +83,7 @@ export default function Toast({
 
       return () => clearTimeout(timer);
     }
-  }, [duration]);
-
-  const handleClose = () => {
-    setIsExiting(true);
-    setTimeout(() => {
-      setIsVisible(false);
-      onClose?.();
-    }, 300); // Match animation duration
-  };
+  }, [duration, handleClose]);
 
   if (!isVisible) return null;
 

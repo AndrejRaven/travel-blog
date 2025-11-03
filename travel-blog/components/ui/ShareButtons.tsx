@@ -18,7 +18,6 @@ export default function ShareButtons({
   postDescription,
   ogTitle,
   ogDescription,
-  ogImageUrl,
 }: ShareButtonsProps) {
   const [copySuccess, setCopySuccess] = useState(false);
   const [isClient, setIsClient] = useState(false);
@@ -45,7 +44,6 @@ export default function ShareButtons({
   // Użyj danych Open Graph jeśli dostępne, w przeciwnym razie fallback do podstawowych danych
   const shareTitle = ogTitle || postTitle;
   const shareDescription = ogDescription || postDescription || "";
-  const shareImageUrl = ogImageUrl || "";
 
   const encodedTitle = encodeURIComponent(shareTitle);
   const encodedUrl = encodeURIComponent(postUrl);

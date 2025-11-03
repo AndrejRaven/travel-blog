@@ -1,7 +1,6 @@
 "use client";
 
 import { useNavigationProgress } from "@/components/providers/NavigationProgressProvider";
-import { useEffect, useState } from "react";
 
 export default function TopLoadingBar() {
   const { isNavigating } = useNavigationProgress();

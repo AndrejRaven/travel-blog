@@ -10,7 +10,6 @@ import { NewsletterData, NewsletterCacheData } from "@/lib/component-types";
 import {
   isValidEmail,
   getNewsletterCache,
-  saveNewsletterCache,
   clearNewsletterCache,
   checkAndRecordRateLimit,
   subscribeNewsletter,
@@ -64,7 +63,6 @@ export default function Newsletter({ data }: Props) {
     features,
     placeholder,
     successMessage,
-    errorMessage,
     // Nowe pola
     successTitle,
     successSubtitle,
@@ -72,17 +70,14 @@ export default function Newsletter({ data }: Props) {
     unsubscribeButtonText,
     alreadySubscribedTitle,
     alreadySubscribedConfirmed,
-    alreadySubscribedPending,
     unsubscribedTitle,
     unsubscribedSubtitle,
     unsubscribedInfo,
     resubscribeButtonText,
     errorInvalidEmail,
-    errorEmailExists,
     errorNetworkIssue,
     errorUnknown,
     rateLimitMessage,
-    rateLimitWait,
   } = data;
 
   // Zabezpieczenie na wypadek gdyby container był undefined
@@ -123,7 +118,8 @@ export default function Newsletter({ data }: Props) {
           });
         }
       }
-    } catch (err) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (_err) {
       addToast({
         type: "error",
         title: "Błąd",
@@ -189,7 +185,8 @@ export default function Newsletter({ data }: Props) {
           setError(response.message);
         }
       }
-    } catch (err) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (_err) {
       setError(
         errorNetworkIssue || "Ups, problem z połączeniem. Spróbuj ponownie."
       );
@@ -238,7 +235,8 @@ export default function Newsletter({ data }: Props) {
           duration: 5000,
         });
       }
-    } catch (err) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (_err) {
       addToast({
         type: "error",
         title: "Błąd",

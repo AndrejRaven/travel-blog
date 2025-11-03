@@ -6,11 +6,6 @@ import { useResponsiveImage } from "@/lib/render-utils";
 import { ANIMATION_CLASSES, HOVER_EFFECTS } from "@/lib/animations";
 import { SanityImage } from "@/lib/sanity";
 
-interface ImageData {
-  src: string;
-  alt?: string;
-}
-
 interface ResponsiveImageProps {
   desktopImage?: SanityImage | { src: string; alt?: string } | null;
   mobileImage?: SanityImage | { src: string; alt?: string } | null;
@@ -48,8 +43,9 @@ export default function ResponsiveImage({
 }: ResponsiveImageProps) {
   const [imageLoaded, setImageLoaded] = useState(false);
   const hasLoadedRef = useRef(false);
-  const { isMobile, getCurrentImage, getOptimizedImageProps } =
-    useResponsiveImage({ quality });
+  const { getCurrentImage, getOptimizedImageProps } = useResponsiveImage({
+    quality,
+  });
 
   const currentImage = getCurrentImage(desktopImage, mobileImage, fallback);
   const optimizedProps = getOptimizedImageProps(currentImage, fallback);

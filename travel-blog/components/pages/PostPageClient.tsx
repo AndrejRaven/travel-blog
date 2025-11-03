@@ -172,7 +172,7 @@ export default function PostPageClient({
       {/* Komponenty */}
       {post.components && post.components.length > 0 ? (
         <div className="relative">
-          {post.components.map((component, index) => {
+          {post.components.map((component) => {
             return (
               <div key={component._key} className={`relative`}>
                 <ComponentRenderer component={component as PostComponent} />

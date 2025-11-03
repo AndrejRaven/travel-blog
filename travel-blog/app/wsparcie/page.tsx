@@ -1,4 +1,3 @@
-import Link from "@/components/ui/Link";
 import Button from "@/components/ui/Button";
 import PageLayout from "@/components/shared/PageLayout";
 import PageHeader from "@/components/shared/PageHeader";
@@ -67,6 +66,7 @@ export default function Wsparcie() {
         {/* PATRONITE */}
         <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-8 text-center hover:shadow-lg transition-shadow">
           <div className="w-16 h-16 bg-purple-100 dark:bg-purple-900 rounded-full flex items-center justify-center mx-auto mb-4">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/patronite.svg" alt="Patronite" className="w-8 h-8" />
           </div>
           <h3 className="text-xl font-serif font-semibold text-gray-900 dark:text-gray-100 mb-3">
@@ -89,6 +89,7 @@ export default function Wsparcie() {
         {/* REVOLUT */}
         <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-8 text-center hover:shadow-lg transition-shadow">
           <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center mx-auto mb-4">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/revolut.svg" alt="Revolut" className="w-8 h-8" />
           </div>
           <h3 className="text-xl font-serif font-semibold text-gray-900 dark:text-gray-100 mb-3">

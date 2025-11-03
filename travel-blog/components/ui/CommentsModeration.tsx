@@ -5,10 +5,7 @@ import {
   MessageCircle,
   CheckCircle,
   XCircle,
-  Clock,
   Trash2,
-  Eye,
-  EyeOff,
   Filter,
   Search,
   RefreshCw,
@@ -171,21 +168,6 @@ export default function CommentsModeration({
 
     return matchesFilter && matchesSearch;
   });
-
-  const getStatusIcon = (status: Comment["status"]) => {
-    switch (status) {
-      case "approved":
-        return <CheckCircle className="w-4 h-4 text-green-500" />;
-      case "pending":
-        return <Clock className="w-4 h-4 text-yellow-500" />;
-      case "rejected":
-        return <XCircle className="w-4 h-4 text-red-500" />;
-      case "spam":
-        return <XCircle className="w-4 h-4 text-red-500" />;
-      default:
-        return null;
-    }
-  };
 
   const getStatusColor = (status: Comment["status"]) => {
     switch (status) {

@@ -89,7 +89,8 @@ export async function findSubscriberByEmail(
     // If direct search fails, try group search as fallback
     try {
       return await findSubscriberInGroupByEmail(email, mlConfig || getMailerLiteConfig()!);
-    } catch (fallbackError) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (_fallbackError) {
       throw error; // Throw original error
     }
   }
@@ -187,7 +188,8 @@ export async function findSubscriberInGroup(
       // This is a double-check to ensure subscriber is in the group
       const groupSubscriber = await findSubscriberInGroupByEmail(email, mlConfig);
       return groupSubscriber;
-    } catch (fallbackError) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (_fallbackError) {
       throw error; // Throw original error
     }
   }

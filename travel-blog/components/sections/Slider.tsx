@@ -8,7 +8,6 @@ import "swiper/css";
 import "swiper/css/pagination";
 import "swiper/css/navigation";
 import SectionContainer from "@/components/shared/SectionContainer";
-import { useAnimation } from "@/lib/useAnimation";
 import { SliderData } from "@/lib/component-types";
 
 type Props = {
@@ -19,7 +18,6 @@ export default function Slider({ data }: Props) {
   // Wszystkie hooki muszą być przed wczesnymi returnami
   const [activeSlide, setActiveSlide] = useState(0);
   const swiperRef = useRef<SwiperType | null>(null);
-  const { isLoaded, isInView, containerRef } = useAnimation();
 
   // Zabezpieczenie na wypadek gdyby data był undefined
   if (!data) {
@@ -27,7 +25,7 @@ export default function Slider({ data }: Props) {
     return null;
   }
 
-  const { container, title, slides } = data;
+  const { container, slides } = data;
 
   // Zabezpieczenie na wypadek gdyby container był undefined
   if (!container) {

@@ -105,7 +105,7 @@ export default function RichText({
   };
 
   const renderBlock = (block: RichTextBlock) => {
-    const { _key, style, listItem, children = [], markDefs = [] } = block;
+    const { _key, style, children = [], markDefs = [] } = block;
 
     // Renderuj pojedynczy child z markami
     const renderChild = (child: RichTextBlock["children"][number]) => {

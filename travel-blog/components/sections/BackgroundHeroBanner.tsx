@@ -6,13 +6,7 @@ import Button from "@/components/ui/Button";
 import RichText from "@/components/ui/RichText";
 import { BackgroundHeroBannerData } from "@/lib/component-types";
 import { ChevronDown } from "lucide-react";
-import {
-  getBackgroundColorClass,
-  getBorderRadiusClass,
-  getShadowClass,
-  getHeightClass,
-  getTextStyleClass,
-} from "@/lib/section-utils";
+import { getHeightClass, getTextStyleClass } from "@/lib/section-utils";
 import {
   useResponsiveImage,
   useScrollIndicator,
@@ -20,10 +14,8 @@ import {
   getTextAlignmentClasses,
   getFlexLayoutClasses,
   getContainerMarginClasses,
-  getImagePlaceholderClasses,
   getVerticalAlignmentClasses,
 } from "@/lib/render-utils";
-import { useAnimation } from "@/lib/useAnimation";
 import SectionContainer from "@/components/shared/SectionContainer";
 
 type Props = {

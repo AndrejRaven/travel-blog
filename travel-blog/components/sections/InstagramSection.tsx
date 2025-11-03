@@ -7,12 +7,12 @@ import Button from "@/components/ui/Button";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Pagination, Autoplay } from "swiper/modules";
 import "swiper/css";
-import { Instagram, Heart } from "lucide-react";
+import { Instagram } from "lucide-react";
 import "swiper/css/pagination";
 import AnimatedSection from "@/components/shared/AnimatedSection";
 import SectionContainer from "@/components/shared/SectionContainer";
 import { useAnimation } from "@/lib/useAnimation";
-import { useResponsiveImage, getAnimationClass } from "@/lib/render-utils";
+import { useResponsiveImage } from "@/lib/render-utils";
 import { InstagramSectionData } from "@/lib/component-types";
 
 type Props = {
@@ -22,7 +22,6 @@ type Props = {
 export default function InstagramSection({ data }: Props) {
   // Wszystkie hooki muszą być przed wczesnymi returnami
   const [activeSlide, setActiveSlide] = useState(0);
-  const [isTransitioning, setIsTransitioning] = useState(false);
   const { isLoaded, isInView, containerRef } = useAnimation();
 
   // Użyj useResponsiveImage dla optymalizacji obrazków Instagram
@@ -119,12 +118,8 @@ export default function InstagramSection({ data }: Props) {
                 clickable: true,
                 el: ".swiper-pagination",
               }}
-              onTouchStart={() => {
-                setIsTransitioning(true);
-              }}
               onTouchEnd={(swiper) => {
                 setActiveSlide(swiper.activeIndex);
-                setTimeout(() => setIsTransitioning(false), 300);
               }}
               onSlideChange={(swiper) => {
                 setActiveSlide(swiper.activeIndex);
@@ -159,6 +154,7 @@ export default function InstagramSection({ data }: Props) {
                             const imageProps =
                               getOptimizedImageProps(imageData);
                             return (
+                              // eslint-disable-next-line @next/next/no-img-element
                               <img
                                 {...imageProps}
                                 alt={imageProps.alt || "Instagram post"}

@@ -6,7 +6,6 @@ import AnimatedSection from "@/components/shared/AnimatedSection";
 import SectionContainer from "@/components/shared/SectionContainer";
 import { useAnimation } from "@/lib/useAnimation";
 import { useResponsiveImage } from "@/lib/render-utils";
-import { SanityImage } from "@/lib/sanity";
 import { YouTubeChannelData } from "@/lib/component-types";
 
 type Props = {
@@ -75,6 +74,7 @@ export default function YouTubeChannel({ data }: Props) {
                 (() => {
                   const imageProps = getOptimizedImageProps(channelImage);
                   return (
+                    // eslint-disable-next-line @next/next/no-img-element
                     <img
                       {...imageProps}
                       className="w-full h-full rounded-full object-cover"

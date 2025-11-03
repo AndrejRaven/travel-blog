@@ -6,7 +6,8 @@ import { useCookies } from "./useCookies";
 export function useAnalytics() {
   const { isAllowed } = useCookies();
 
-  const trackPageView = (url: string) => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const trackPageView = (_url: string) => {
     if (!isAllowed("analytics")) return;
 
     // Tutaj możesz dodać kod Google Analytics
@@ -16,7 +17,8 @@ export function useAnalytics() {
     
   };
 
-  const trackEvent = (eventName: string, parameters?: Record<string, unknown>) => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const trackEvent = (_eventName: string, _parameters?: Record<string, unknown>) => {
     if (!isAllowed("analytics")) return;
 
     // Tutaj możesz dodać kod Google Analytics
@@ -24,7 +26,8 @@ export function useAnalytics() {
     
   };
 
-  const trackConversion = (conversionId: string, value?: number) => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const trackConversion = (_conversionId: string, _value?: number) => {
     if (!isAllowed("analytics")) return;
 
     // Tutaj możesz dodać kod śledzenia konwersji
@@ -54,7 +57,8 @@ export function useFacebookPixel() {
     
   };
 
-  const trackPurchase = (value: number, currency: string = "PLN") => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const trackPurchase = (value: number, _currency: string = "PLN") => {
     if (!isAllowed("marketing")) return;
 
     // Tutaj możesz dodać kod Facebook Pixel
@@ -65,7 +69,8 @@ export function useFacebookPixel() {
     
   };
 
-  const trackCustomEvent = (eventName: string, parameters?: Record<string, unknown>) => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const trackCustomEvent = (_eventName: string, _parameters?: Record<string, unknown>) => {
     if (!isAllowed("marketing")) return;
 
     // Tutaj możesz dodać kod Facebook Pixel
@@ -84,7 +89,8 @@ export function useFacebookPixel() {
 export function useGoogleTagManager() {
   const { isAllowed } = useCookies();
 
-  const pushDataLayer = (data: Record<string, unknown>) => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const pushDataLayer = (_data: Record<string, unknown>) => {
     if (!isAllowed("analytics") && !isAllowed("marketing")) return;
 
     // Tutaj możesz dodać kod Google Tag Manager
@@ -93,11 +99,9 @@ export function useGoogleTagManager() {
     
   };
 
-  const trackEvent = (eventName: string, parameters?: Record<string, unknown>) => {
-    pushDataLayer({
-      event: eventName,
-      ...parameters,
-    });
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const trackEvent = (_eventName: string, _parameters?: Record<string, unknown>) => {
+    // Implementation placeholder
   };
 
   return {

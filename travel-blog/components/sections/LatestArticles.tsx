@@ -67,15 +67,8 @@ export default function Articles({
     fetchArticles();
   }, [data, selectedArticleIds]);
 
-  const {
-    container,
-    title,
-    showViewAll,
-    viewAllHref,
-    articlesType,
-    selectedArticles,
-    maxArticles,
-  } = data || {};
+  const { container, title, showViewAll, viewAllHref, maxArticles } =
+    data || {};
 
   // Zabezpieczenie na wypadek gdyby container był undefined
   if (!data || !container) {

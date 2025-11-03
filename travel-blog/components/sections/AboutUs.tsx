@@ -87,6 +87,7 @@ export default function AboutUs({ data }: Props) {
             (() => {
               const imageProps = getOptimizedImageProps(image);
               return (
+                // eslint-disable-next-line @next/next/no-img-element
                 <img
                   {...imageProps}
                   alt={imageAlt}

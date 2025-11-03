@@ -177,7 +177,7 @@ export default function TableOfContents({
         {/* Lista sekcji */}
         <div className="p-6 flex-1 overflow-y-auto">
           <nav className="space-y-2">
-            {items.map((item, index) => (
+            {items.map((item) => (
               <button
                 key={item.id}
                 onClick={() => scrollToSection(item.id)}

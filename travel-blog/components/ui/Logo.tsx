@@ -23,6 +23,7 @@ const Logo = ({ headerData }: LogoProps) => {
   return (
     <Link href="/" className="flex items-center gap-2 group">
       {logoUrl && (
+        // eslint-disable-next-line @next/next/no-img-element
         <img
           src={logoUrl}
           alt={headerData.title}

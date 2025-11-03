@@ -3,9 +3,9 @@
  * Eliminuje duplikację kodu między komponentami
  */
 
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import imageUrlBuilder from '@sanity/image-url';
-import { projectId, dataset, apiVersion, SanityImage } from "./sanity";
+import { projectId, dataset, SanityImage } from "./sanity";
 import { ANIMATION_PRESETS, ANIMATION_CLASSES, HOVER_EFFECTS } from "./animations";
 
 // Konfiguracja dla image-url builder

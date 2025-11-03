@@ -1,11 +1,10 @@
 "use client";
 
-import React, { useRef } from "react";
+import React from "react";
 import { useAnimation } from "@/lib/useAnimation";
 import { ANIMATION_PRESETS } from "@/lib/animations";
 import {
   ContainerConfig,
-  getContainerClasses,
   generateSectionId,
   getMaxWidthClass,
   getPaddingClass,

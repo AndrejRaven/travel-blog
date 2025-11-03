@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { ANIMATION_PRESETS, createProgressiveDelayStyle } from "./animations";
 
 // Re-export ANIMATION_PRESETS for easier imports
@@ -25,7 +25,8 @@ export const useAnimation = () => {
 
   useEffect(() => {
     // Sprawdź czy element istnieje
-    if (!containerRef.current) return;
+    const container = containerRef.current;
+    if (!container) return;
 
     // Jeśli już animowano, nie tworz nowego observera
     if (hasAnimated) return;
@@ -36,7 +37,7 @@ export const useAnimation = () => {
     const threshold = isMobile ? 0.05 : 0.1; // Niższy próg dla mobilnych
 
     // Utwórz nowy observer
-    observerRef.current = new IntersectionObserver(
+    const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting && !hasAnimated) {
@@ -46,10 +47,8 @@ export const useAnimation = () => {
             setIsLoaded(true);
             
             // Odłącz observer po pierwszej animacji
-            if (observerRef.current && containerRef.current) {
-              observerRef.current.unobserve(containerRef.current);
-              observerRef.current.disconnect();
-            }
+            observer.unobserve(container);
+            observer.disconnect();
           }
         });
       },
@@ -59,16 +58,18 @@ export const useAnimation = () => {
       }
     );
 
+    observerRef.current = observer;
+
     // Obserwuj element
-    observerRef.current.observe(containerRef.current);
+    observer.observe(container);
 
     return () => {
-      if (observerRef.current && containerRef.current) {
-        observerRef.current.unobserve(containerRef.current);
-        observerRef.current.disconnect();
+      if (observer && container) {
+        observer.unobserve(container);
+        observer.disconnect();
       }
     };
-  }, []); // Pusta dependency array - uruchom tylko raz
+  }, [hasAnimated]);
 
   return {
     isLoaded,
@@ -83,7 +84,8 @@ export const useAnimation = () => {
  * 
  * Używa się gdy mamy listę elementów, które mają się animować jeden po drugim
  */
-export const useProgressiveAnimation = (itemCount: number) => {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export const useProgressiveAnimation = (_itemCount: number) => {
   const { isLoaded, isInView, containerRef } = useAnimation();
 
   // Funkcja do tworzenia stylów z progresywnym opóźnieniem

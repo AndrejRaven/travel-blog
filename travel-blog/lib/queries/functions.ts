@@ -1,20 +1,12 @@
-import { fetchGroq, CACHE_STRATEGIES } from '@/lib/sanity';
+import { fetchGroq } from '@/lib/sanity';
 import { QUERIES } from './index';
 import type { 
   Post, 
   HeaderData, 
   ArticleForList, 
-  ArticlesData,
   Category
 } from '@/lib/sanity';
-import { PostComponent } from '@/lib/component-types';
-
-// Typy błędów dla lepszej obsługi
-type SanityError = {
-  status: number;
-  message: string;
-  details?: unknown;
-};
+import { PostComponent, ArticlesData } from '@/lib/component-types';
 
 // Funkcja pomocnicza do obsługi błędów
 function handleSanityError(error: unknown, context: string): never {

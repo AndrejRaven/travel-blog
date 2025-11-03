@@ -6,7 +6,7 @@ import { getImageUrl } from "@/lib/sanity";
 import PostPageClient from "@/components/pages/PostPageClient";
 import { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { getPrimaryCategory } from "@/lib/utils";
+import { getPrimaryCategory, getCanonicalPath } from "@/lib/utils";
 
 type Params = {
   params: Promise<{
@@ -152,8 +152,20 @@ export default async function PostPage({ params }: Params) {
     );
   }
 
-  // Znajdź główną (pierwszą) kategorię posta
+  // Znajdź główną kategorię dla canonical URL (używane w JSON-LD i przekierowaniach)
   const primaryCategory = getPrimaryCategory(post);
+  const canonicalPostUrl =
+    primaryCategory &&
+    primaryCategory.mainCategory?.superCategory?.slug?.current &&
+    primaryCategory.mainCategory?.slug?.current &&
+    primaryCategory.slug?.current
+      ? `${siteUrl}/${primaryCategory.mainCategory.superCategory.slug.current}/${primaryCategory.mainCategory.slug.current}/${primaryCategory.slug.current}/${slug}`
+      : `${siteUrl}/${superCategory}/${mainCategory}/${category}/${slug}`;
+
+  // Canonical URL - użyj z CMS jeśli jest ustawiony, w przeciwnym razie użyj automatycznego
+  const canonicalUrl = post.seo?.canonicalUrl || canonicalPostUrl;
+
+  // Znajdź główną (pierwszą) kategorię posta
   if (!primaryCategory) {
     return (
       <div className="flex min-h-screen">
@@ -182,8 +194,15 @@ export default async function PostPage({ params }: Params) {
     primaryCategory.mainCategory?.slug?.current &&
     primaryCategory.slug?.current
   ) {
-    const canonicalUrl = `/${primaryCategory.mainCategory.superCategory.slug.current}/${primaryCategory.mainCategory.slug.current}/${primaryCategory.slug.current}/${slug}`;
-    redirect(canonicalUrl);
+    // Wygeneruj automatyczny canonical URL z głównej kategorii (fallback)
+    const autoCanonicalPath = `/${primaryCategory.mainCategory.superCategory.slug.current}/${primaryCategory.mainCategory.slug.current}/${primaryCategory.slug.current}/${slug}`;
+
+    // Sprawdź czy jest canonical URL z CMS, jeśli nie - użyj automatycznego
+    const canonicalPath = getCanonicalPath(
+      post.seo?.canonicalUrl,
+      autoCanonicalPath
+    );
+    redirect(canonicalPath);
   }
 
   // Sprawdź czy post należy do właściwej kategorii (dodatkowe zabezpieczenie)
@@ -283,7 +302,7 @@ export default async function PostPage({ params }: Params) {
     dateModified: post.publishedAt,
     mainEntityOfPage: {
       "@type": "WebPage",
-      "@id": `${process.env.NEXT_PUBLIC_SITE_URL || "https://nasz-blog.com"}/${superCategory}/${mainCategory}/${category}/${slug}`,
+      "@id": canonicalUrl,
     },
     ...(post.categories &&
       post.categories.length > 0 && {

@@ -1,9 +1,5 @@
 import imageUrlBuilder from '@sanity/image-url';
 import { createClient } from 'next-sanity';
-import { ArticlesData } from './component-types';
-
-// Re-export ArticlesData for use in other files
-export type { ArticlesData } from './component-types';
 
 export const projectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID || "k5fsny25";
 export const dataset = process.env.NEXT_PUBLIC_SANITY_DATASET || "production";

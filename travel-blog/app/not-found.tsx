@@ -3,7 +3,7 @@ import PageHeader from "@/components/shared/PageHeader";
 import InfoCard from "@/components/shared/InfoCard";
 import BackToHome from "@/components/shared/BackToHome";
 import Link from "@/components/ui/Link";
-import { Home, FileText, Mail, Heart } from "lucide-react";
+import { Home, Mail, Heart } from "lucide-react";
 
 export default function NotFound() {
   return (
