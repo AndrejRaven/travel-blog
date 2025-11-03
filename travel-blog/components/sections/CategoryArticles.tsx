@@ -3,6 +3,7 @@ import Link from "@/components/ui/Link";
 import CategoryBadge from "@/components/ui/CategoryBadge";
 import ResponsiveImage from "@/components/shared/ResponsiveImage";
 import { ArticleForList } from "@/lib/sanity";
+import { getPostUrl } from "@/lib/utils";
 
 type Props = {
   articles: ArticleForList[];
@@ -115,10 +116,11 @@ export default function CategoryArticles({
               </article>
             );
 
-            return article.slug?.current ? (
+            const postUrl = getPostUrl(article);
+            return postUrl !== "#" ? (
               <Link
                 key={article._id}
-                href={`/post/${article.slug.current}`}
+                href={postUrl}
                 className="block h-full focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-xl"
               >
                 {card}

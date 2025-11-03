@@ -5,6 +5,8 @@ import {
 import { getImageUrl } from "@/lib/sanity";
 import PostPageClient from "@/components/pages/PostPageClient";
 import { Metadata } from "next";
+import { redirect } from "next/navigation";
+import { getPrimaryCategory } from "@/lib/utils";
 
 type Params = {
   params: Promise<{
@@ -17,7 +19,7 @@ type Params = {
 
 // Generuj metadata dla SEO
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
-  const { slug, mainCategory, category } = await params;
+  const { slug, superCategory, mainCategory, category } = await params;
   const post = await getPostBySlug(slug);
 
   if (!post) {
@@ -30,7 +32,19 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   // Podstawowe informacje
   const siteName = "Nasz Blog";
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://nasz-blog.com";
-  const postUrl = `${siteUrl}/${mainCategory}/${category}/${slug}`;
+
+  // Znajdź główną kategorię dla canonical URL
+  const primaryCategory = getPrimaryCategory(post);
+  const canonicalPostUrl =
+    primaryCategory &&
+    primaryCategory.mainCategory?.superCategory?.slug?.current &&
+    primaryCategory.mainCategory?.slug?.current &&
+    primaryCategory.slug?.current
+      ? `${siteUrl}/${primaryCategory.mainCategory.superCategory.slug.current}/${primaryCategory.mainCategory.slug.current}/${primaryCategory.slug.current}/${slug}`
+      : `${siteUrl}/${superCategory}/${mainCategory}/${category}/${slug}`;
+
+  // URL aktualnej strony (może być różny od canonical jeśli użytkownik wszedł przez inną kategorię)
+  const postUrl = `${siteUrl}/${superCategory}/${mainCategory}/${category}/${slug}`;
 
   // SEO Title - użyj seoTitle lub fallback do title
   const seoTitle = post.seo?.seoTitle || post.title;
@@ -53,8 +67,8 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
     ? getImageUrl(ogImage, { width: 1200, height: 630, format: "webp" })
     : null;
 
-  // Canonical URL
-  const canonicalUrl = post.seo?.canonicalUrl || postUrl;
+  // Canonical URL - zawsze wskazuje na główną kategorię
+  const canonicalUrl = post.seo?.canonicalUrl || canonicalPostUrl;
 
   // Keywords
   const keywords =
@@ -138,7 +152,41 @@ export default async function PostPage({ params }: Params) {
     );
   }
 
-  // Sprawdź czy post należy do właściwej kategorii
+  // Znajdź główną (pierwszą) kategorię posta
+  const primaryCategory = getPrimaryCategory(post);
+  if (!primaryCategory) {
+    return (
+      <div className="flex min-h-screen">
+        <main className="flex-1 mx-auto max-w-3xl px-6 py-10">
+          <h1 className="text-2xl font-serif font-semibold text-gray-900 dark:text-gray-100">
+            Post nie ma przypisanej kategorii
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400 font-sans">
+            Sprawdź adres URL lub wróć na stronę główną.
+          </p>
+        </main>
+      </div>
+    );
+  }
+
+  // Sprawdź czy aktualna kategoria to główna kategoria
+  const isPrimaryCategory =
+    primaryCategory.slug.current === category &&
+    primaryCategory.mainCategory?.slug.current === mainCategory &&
+    primaryCategory.mainCategory?.superCategory?.slug.current === superCategory;
+
+  // Jeśli aktualna kategoria NIE jest główną → przekieruj 301 do canonical URL
+  if (
+    !isPrimaryCategory &&
+    primaryCategory.mainCategory?.superCategory?.slug?.current &&
+    primaryCategory.mainCategory?.slug?.current &&
+    primaryCategory.slug?.current
+  ) {
+    const canonicalUrl = `/${primaryCategory.mainCategory.superCategory.slug.current}/${primaryCategory.mainCategory.slug.current}/${primaryCategory.slug.current}/${slug}`;
+    redirect(canonicalUrl);
+  }
+
+  // Sprawdź czy post należy do właściwej kategorii (dodatkowe zabezpieczenie)
   const postCategory = post.categories?.find(
     (cat) => cat.slug.current === category
   );
@@ -235,7 +283,7 @@ export default async function PostPage({ params }: Params) {
     dateModified: post.publishedAt,
     mainEntityOfPage: {
       "@type": "WebPage",
-      "@id": `${process.env.NEXT_PUBLIC_SITE_URL || "https://nasz-blog.com"}/${mainCategory}/${category}/${slug}`,
+      "@id": `${process.env.NEXT_PUBLIC_SITE_URL || "https://nasz-blog.com"}/${superCategory}/${mainCategory}/${category}/${slug}`,
     },
     ...(post.categories &&
       post.categories.length > 0 && {
@@ -252,7 +300,7 @@ export default async function PostPage({ params }: Params) {
       <PostPageClient
         post={post}
         tableOfContentsItems={tableOfContentsItems}
-        postUrl={`${siteUrl}/${mainCategory}/${category}/${slug}`}
+        postUrl={`${siteUrl}/${superCategory}/${mainCategory}/${category}/${slug}`}
         ogTitle={ogTitle}
         ogDescription={ogDescription}
         ogImageUrl={ogImageUrl}
@@ -271,13 +319,14 @@ export async function generateStaticParams() {
   }> = [];
 
   for (const post of postsWithCategories) {
-    // Dla każdego posta generuj ścieżkę dla każdej jego kategorii
+    // Dla każdego posta generuj ścieżkę TYLKO dla pierwszej (głównej) kategorii
     // Zapytanie GROQ już filtruje tylko kategorie z pełną hierarchią (3 poziomy)
-    for (const category of post.categories) {
+    if (post.categories && post.categories.length > 0) {
+      const primaryCategory = post.categories[0];
       params.push({
-        superCategory: category.superCategory,
-        mainCategory: category.mainCategory,
-        category: category.category,
+        superCategory: primaryCategory.superCategory,
+        mainCategory: primaryCategory.mainCategory,
+        category: primaryCategory.category,
         slug: post.slug,
       });
     }

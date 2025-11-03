@@ -35,16 +35,6 @@ export default function NotFound() {
                     <span>Strona główna</span>
                   </Link>
                 </div>
-                <div>
-                  <Link
-                    href="/post"
-                    variant="underline"
-                    className="text-green-700 dark:text-green-300 text-lg font-medium inline-flex items-center space-x-3 py-2 hover:text-green-800 dark:hover:text-green-200 transition-colors"
-                  >
-                    <FileText className="w-5 h-5" />
-                    <span>Wszystkie artykuły</span>
-                  </Link>
-                </div>
               </div>
             </div>
             <div className="space-y-6">

@@ -11,6 +11,7 @@ import SectionContainer from "@/components/shared/SectionContainer";
 import { ArticlesData } from "@/lib/component-types";
 import { ArticleForList } from "@/lib/sanity";
 import { getSelectedPosts, getLatestPosts } from "@/lib/queries/functions";
+import { getPostUrl } from "@/lib/utils";
 
 // Używamy typu z Sanity
 type Article = ArticleForList;
@@ -200,10 +201,11 @@ export default function Articles({
                 </AnimatedSection>
               );
 
-              return article.slug?.current ? (
+              const postUrl = getPostUrl(article);
+              return postUrl !== "#" ? (
                 <Link
                   key={article._id}
-                  href={`/post/${article.slug.current}`}
+                  href={postUrl}
                   className="block h-full focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-xl"
                 >
                   {card}

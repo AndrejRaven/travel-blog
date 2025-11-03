@@ -11,6 +11,7 @@ import { Post } from "@/lib/sanity";
 import { PostComponent } from "@/lib/component-types";
 import { useAnimation, ANIMATION_PRESETS } from "@/lib/useAnimation";
 import { useComments } from "@/lib/useComments";
+import { getPostUrl } from "@/lib/utils";
 
 interface PostPageClientProps {
   post: Post;
@@ -213,7 +214,9 @@ export default function PostPageClient({
           {(() => {
             const finalUrl =
               postUrl ||
-              `${typeof window !== "undefined" ? window.location.origin : ""}/post/${post.slug?.current || ""}`;
+              (typeof window !== "undefined"
+                ? `${window.location.origin}${getPostUrl(post)}`
+                : getPostUrl(post));
 
             return (
               <ShareButtons
