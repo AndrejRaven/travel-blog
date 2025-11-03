@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import Link from "@/components/ui/Link";
 import { AdminStats } from "@/lib/admin-stats";
+import { getPostUrl } from "@/lib/utils";
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState<AdminStats | null>(null);
@@ -164,35 +165,38 @@ export default function AdminDashboard() {
                 Najnowsze posty
               </h3>
               <div className="space-y-2">
-                {stats.posts.recent.map((post) => (
-                  <div
-                    key={post._id}
-                    className="flex items-center justify-between py-2 border-b border-gray-200 dark:border-gray-700 last:border-b-0"
-                  >
-                    <div className="flex-1">
-                      <Link
-                        href={`/post/${post.slug?.current || ""}`}
-                        variant="underline"
-                        className="text-gray-900 dark:text-gray-100"
-                      >
-                        {post.title}
-                      </Link>
-                      {post.publishedAt && (
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                          {new Date(post.publishedAt).toLocaleDateString(
-                            "pl-PL",
-                            {
-                              year: "numeric",
-                              month: "long",
-                              day: "numeric",
-                            }
-                          )}
-                        </p>
-                      )}
+                {stats.posts.recent.map((post) => {
+                  const postUrl = getPostUrl(post);
+                  return (
+                    <div
+                      key={post._id}
+                      className="flex items-center justify-between py-2 border-b border-gray-200 dark:border-gray-700 last:border-b-0"
+                    >
+                      <div className="flex-1">
+                        <Link
+                          href={postUrl !== "#" ? postUrl : "#"}
+                          variant="underline"
+                          className="text-gray-900 dark:text-gray-100"
+                        >
+                          {post.title}
+                        </Link>
+                        {post.publishedAt && (
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                            {new Date(post.publishedAt).toLocaleDateString(
+                              "pl-PL",
+                              {
+                                year: "numeric",
+                                month: "long",
+                                day: "numeric",
+                              }
+                            )}
+                          </p>
+                        )}
+                      </div>
+                      <ArrowRight className="w-4 h-4 text-gray-400 ml-4" />
                     </div>
-                    <ArrowRight className="w-4 h-4 text-gray-400 ml-4" />
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}

@@ -378,7 +378,28 @@ export const QUERIES = {
       _id,
       title,
       slug,
-      publishedAt
+      publishedAt,
+      categories[]-> {
+        _id,
+        name,
+        slug {
+          current
+        },
+        mainCategory-> {
+          _id,
+          name,
+          slug {
+            current
+          },
+          superCategory-> {
+            _id,
+            name,
+            slug {
+              current
+            }
+          }
+        }
+      }
     }`
   },
 

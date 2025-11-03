@@ -2,7 +2,7 @@
  * Funkcje pomocnicze do pobierania statystyk dla dashboardu admin
  */
 
-import { fetchGroq } from "./sanity";
+import { fetchGroq, Post } from "./sanity";
 import { QUERIES } from "./queries";
 import { getMailerLiteConfig } from "./mailerlite";
 import { client } from "./sanity";
@@ -23,12 +23,7 @@ export interface NewsletterStats {
 
 export interface PostStats {
   total: number;
-  recent: Array<{
-    _id: string;
-    title: string;
-    slug?: { current: string };
-    publishedAt?: string;
-  }>;
+  recent: Post[];
   error?: string;
 }
 
@@ -170,14 +165,7 @@ export async function getPostsStats(): Promise<PostStats> {
   try {
     const [total, recent] = await Promise.all([
       fetchGroq<number>(QUERIES.POST.ALL_COUNT, {}, "POSTS"),
-      fetchGroq<
-        Array<{
-          _id: string;
-          title: string;
-          slug?: { current: string };
-          publishedAt?: string;
-        }>
-      >(QUERIES.POST.RECENT, {}, "POSTS"),
+      fetchGroq<Post[]>(QUERIES.POST.RECENT, {}, "POSTS"),
     ]);
 
     return {
