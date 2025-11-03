@@ -7,6 +7,7 @@ import PostPageClient from "@/components/pages/PostPageClient";
 import { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getPrimaryCategory, getCanonicalPath } from "@/lib/utils";
+import { SITE_CONFIG } from "@/lib/config";
 
 type Params = {
   params: Promise<{
@@ -279,7 +280,66 @@ export default async function PostPage({ params }: Params) {
   const tableOfContentsItems = generateTableOfContents();
 
   // Generuj JSON-LD dla lepszego SEO
-  const jsonLd = {
+  const organizationUrl = SITE_CONFIG.url;
+  const organizationName = SITE_CONFIG.author.name;
+
+  // BreadcrumbList
+  const breadcrumbItems = [
+    {
+      "@type": "ListItem",
+      position: 1,
+      name: "Strona główna",
+      item: siteUrl,
+    },
+  ];
+
+  let position = 2;
+
+  if (primaryCategory.mainCategory?.superCategory) {
+    const superCat = primaryCategory.mainCategory.superCategory;
+    breadcrumbItems.push({
+      "@type": "ListItem",
+      position: position++,
+      name: superCat.name || "Kategoria",
+      item: `${siteUrl}/${superCat.slug.current}`,
+    });
+  }
+
+  if (primaryCategory.mainCategory) {
+    const mainCat = primaryCategory.mainCategory;
+    const superCatSlug = mainCat.superCategory?.slug.current;
+    if (superCatSlug) {
+      breadcrumbItems.push({
+        "@type": "ListItem",
+        position: position++,
+        name: mainCat.name || "Kategoria główna",
+        item: `${siteUrl}/${superCatSlug}/${mainCat.slug.current}`,
+      });
+    }
+  }
+
+  if (primaryCategory.slug?.current) {
+    const superCatSlug =
+      primaryCategory.mainCategory?.superCategory?.slug.current;
+    const mainCatSlug = primaryCategory.mainCategory?.slug.current;
+    if (superCatSlug && mainCatSlug) {
+      breadcrumbItems.push({
+        "@type": "ListItem",
+        position: position++,
+        name: primaryCategory.name || "Podkategoria",
+        item: `${siteUrl}/${superCatSlug}/${mainCatSlug}/${primaryCategory.slug.current}`,
+      });
+    }
+  }
+
+  breadcrumbItems.push({
+    "@type": "ListItem",
+    position: position,
+    name: post.title,
+    item: canonicalUrl,
+  });
+
+  const articleJsonLd = {
     "@context": "https://schema.org",
     "@type": "Article",
     headline: post.title,
@@ -292,14 +352,18 @@ export default async function PostPage({ params }: Params) {
       : undefined,
     author: {
       "@type": "Organization",
-      name: "Nasz Blog",
+      "@id": `${organizationUrl}#organization`,
+      name: organizationName,
+      url: organizationUrl,
     },
     publisher: {
       "@type": "Organization",
-      name: "Nasz Blog",
+      "@id": `${organizationUrl}#organization`,
+      name: organizationName,
+      url: organizationUrl,
     },
     datePublished: post.publishedAt,
-    dateModified: post.publishedAt,
+    ...(post.publishedAt && { dateModified: post.publishedAt }),
     mainEntityOfPage: {
       "@type": "WebPage",
       "@id": canonicalUrl,
@@ -310,11 +374,49 @@ export default async function PostPage({ params }: Params) {
       }),
   };
 
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: breadcrumbItems,
+  };
+
+  const organizationJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "@id": `${organizationUrl}#organization`,
+    name: organizationName,
+    url: organizationUrl,
+    description: SITE_CONFIG.description,
+    ...((SITE_CONFIG.social.twitter ||
+      SITE_CONFIG.social.facebook ||
+      SITE_CONFIG.social.instagram) && {
+      sameAs: [
+        ...(SITE_CONFIG.social.twitter
+          ? [`https://twitter.com/${SITE_CONFIG.social.twitter}`]
+          : []),
+        ...(SITE_CONFIG.social.facebook
+          ? [`https://facebook.com/${SITE_CONFIG.social.facebook}`]
+          : []),
+        ...(SITE_CONFIG.social.instagram
+          ? [`https://instagram.com/${SITE_CONFIG.social.instagram}`]
+          : []),
+      ].filter(Boolean),
+    }),
+  };
+
   return (
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
       />
       <PostPageClient
         post={post}

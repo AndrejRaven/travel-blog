@@ -1,6 +1,7 @@
 import React from "react";
 import { getHomepageData } from "@/lib/queries/functions";
 import HomePageClient from "@/components/pages/HomePageClient";
+import { SITE_CONFIG } from "@/lib/config";
 
 export default async function Home() {
   // Pobierz dane homepage z Sanity na serwerze
@@ -29,11 +30,63 @@ export default async function Home() {
     ...homepageDataRaw,
   };
 
+  // Generuj JSON-LD dla strony głównej
+  const organizationUrl = SITE_CONFIG.url;
+  const organizationName = SITE_CONFIG.author.name;
+
+  const websiteJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: SITE_CONFIG.name,
+    url: organizationUrl,
+    description: SITE_CONFIG.description,
+    publisher: {
+      "@type": "Organization",
+      "@id": `${organizationUrl}#organization`,
+      name: organizationName,
+      url: organizationUrl,
+    },
+  };
+
+  const organizationJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "@id": `${organizationUrl}#organization`,
+    name: organizationName,
+    url: organizationUrl,
+    description: SITE_CONFIG.description,
+    ...((SITE_CONFIG.social.twitter ||
+      SITE_CONFIG.social.facebook ||
+      SITE_CONFIG.social.instagram) && {
+      sameAs: [
+        ...(SITE_CONFIG.social.twitter
+          ? [`https://twitter.com/${SITE_CONFIG.social.twitter}`]
+          : []),
+        ...(SITE_CONFIG.social.facebook
+          ? [`https://facebook.com/${SITE_CONFIG.social.facebook}`]
+          : []),
+        ...(SITE_CONFIG.social.instagram
+          ? [`https://instagram.com/${SITE_CONFIG.social.instagram}`]
+          : []),
+      ].filter(Boolean),
+    }),
+  };
+
   return (
-    <HomePageClient
-      homepageData={
-        homepageData as Parameters<typeof HomePageClient>[0]["homepageData"]
-      }
-    />
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+      />
+      <HomePageClient
+        homepageData={
+          homepageData as Parameters<typeof HomePageClient>[0]["homepageData"]
+        }
+      />
+    </>
   );
 }
