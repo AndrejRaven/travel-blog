@@ -48,6 +48,20 @@ export default function CommentsModeration({
   >("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedComments, setSelectedComments] = useState<string[]>([]);
+  const [processingActions, setProcessingActions] = useState<Set<string>>(
+    new Set()
+  );
+  const [bulkProcessing, setBulkProcessing] = useState(false);
+
+  // Pomocnicze funkcje do śledzenia operacji
+  const getActionKey = (commentId: string, action: string) =>
+    `${commentId}-${action}`;
+  const isProcessing = (commentId: string, action: string) =>
+    processingActions.has(getActionKey(commentId, action));
+  const isAnyProcessing = (commentId: string) =>
+    isProcessing(commentId, "approve") ||
+    isProcessing(commentId, "reject") ||
+    isProcessing(commentId, "delete");
 
   const fetchComments = async () => {
     try {
@@ -74,7 +88,10 @@ export default function CommentsModeration({
     commentId: string,
     newStatus: Comment["status"]
   ) => {
+    const action = newStatus === "approved" ? "approve" : "reject";
+    const actionKey = getActionKey(commentId, action);
     try {
+      setProcessingActions((prev) => new Set(prev).add(actionKey));
       const response = await fetch(`/api/comments/${commentId}/status`, {
         method: "PATCH",
         headers: {
@@ -99,11 +116,19 @@ export default function CommentsModeration({
     } catch (err) {
       console.error("Błąd podczas aktualizacji statusu:", err);
       setError(err instanceof Error ? err.message : "Nieznany błąd");
+    } finally {
+      setProcessingActions((prev) => {
+        const next = new Set(prev);
+        next.delete(actionKey);
+        return next;
+      });
     }
   };
 
   const deleteComment = async (commentId: string) => {
+    const actionKey = getActionKey(commentId, "delete");
     try {
+      setProcessingActions((prev) => new Set(prev).add(actionKey));
       const response = await fetch(`/api/comments/${commentId}`, {
         method: "DELETE",
       });
@@ -119,11 +144,18 @@ export default function CommentsModeration({
     } catch (err) {
       console.error("Błąd podczas usuwania komentarza:", err);
       setError(err instanceof Error ? err.message : "Nieznany błąd");
+    } finally {
+      setProcessingActions((prev) => {
+        const next = new Set(prev);
+        next.delete(actionKey);
+        return next;
+      });
     }
   };
 
   const bulkUpdateStatus = async (status: Comment["status"]) => {
     try {
+      setBulkProcessing(true);
       const response = await fetch("/api/comments/bulk-status", {
         method: "PATCH",
         headers: {
@@ -151,6 +183,8 @@ export default function CommentsModeration({
     } catch (err) {
       console.error("Błąd podczas masowej aktualizacji:", err);
       setError(err instanceof Error ? err.message : "Nieznany błąd");
+    } finally {
+      setBulkProcessing(false);
     }
   };
 
@@ -283,25 +317,40 @@ export default function CommentsModeration({
           <div className="flex gap-2">
             <Button
               onClick={() => bulkUpdateStatus("approved")}
+              disabled={bulkProcessing}
               className="bg-green-600 hover:bg-green-700 px-4 py-2 text-sm"
             >
-              <CheckCircle className="w-4 h-4 mr-1" />
+              {bulkProcessing ? (
+                <RefreshCw className="w-4 h-4 mr-1 animate-spin" />
+              ) : (
+                <CheckCircle className="w-4 h-4 mr-1" />
+              )}
               Zatwierdź
             </Button>
             <Button
               variant="outline"
               onClick={() => bulkUpdateStatus("rejected")}
+              disabled={bulkProcessing}
               className="border-red-300 text-red-600 hover:bg-red-50 px-4 py-2 text-sm"
             >
-              <XCircle className="w-4 h-4 mr-1" />
+              {bulkProcessing ? (
+                <RefreshCw className="w-4 h-4 mr-1 animate-spin" />
+              ) : (
+                <XCircle className="w-4 h-4 mr-1" />
+              )}
               Odrzuć
             </Button>
             <Button
               variant="outline"
               onClick={() => bulkUpdateStatus("spam")}
+              disabled={bulkProcessing}
               className="border-red-300 text-red-600 hover:bg-red-50 px-4 py-2 text-sm"
             >
-              <XCircle className="w-4 h-4 mr-1" />
+              {bulkProcessing ? (
+                <RefreshCw className="w-4 h-4 mr-1 animate-spin" />
+              ) : (
+                <XCircle className="w-4 h-4 mr-1" />
+              )}
               Oznacz jako spam
             </Button>
           </div>
@@ -380,27 +429,46 @@ export default function CommentsModeration({
                   <Button
                     variant="outline"
                     onClick={() => updateCommentStatus(comment._id, "approved")}
-                    disabled={comment.status === "approved"}
+                    disabled={
+                      comment.status === "approved" ||
+                      isAnyProcessing(comment._id)
+                    }
                     className="text-green-600 border-green-300 hover:bg-green-50 px-3 py-2 text-sm"
                   >
-                    <CheckCircle className="w-4 h-4" />
+                    {isProcessing(comment._id, "approve") ? (
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <CheckCircle className="w-4 h-4" />
+                    )}
                   </Button>
 
                   <Button
                     variant="outline"
                     onClick={() => updateCommentStatus(comment._id, "rejected")}
-                    disabled={comment.status === "rejected"}
+                    disabled={
+                      comment.status === "rejected" ||
+                      isAnyProcessing(comment._id)
+                    }
                     className="text-red-600 border-red-300 hover:bg-red-50 px-3 py-2 text-sm"
                   >
-                    <XCircle className="w-4 h-4" />
+                    {isProcessing(comment._id, "reject") ? (
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <XCircle className="w-4 h-4" />
+                    )}
                   </Button>
 
                   <Button
                     variant="outline"
                     onClick={() => deleteComment(comment._id)}
+                    disabled={isAnyProcessing(comment._id)}
                     className="text-red-600 border-red-300 hover:bg-red-50 px-3 py-2 text-sm"
                   >
-                    <Trash2 className="w-4 h-4" />
+                    {isProcessing(comment._id, "delete") ? (
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Trash2 className="w-4 h-4" />
+                    )}
                   </Button>
                 </div>
               </div>
