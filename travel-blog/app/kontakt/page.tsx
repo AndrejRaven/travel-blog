@@ -7,14 +7,7 @@ import PageLayout from "@/components/shared/PageLayout";
 import PageHeader from "@/components/shared/PageHeader";
 import InfoCard from "@/components/shared/InfoCard";
 import BackToHome from "@/components/shared/BackToHome";
-import {
-  Check,
-  ChevronDown,
-  Mail,
-  Phone,
-  MapPin,
-  Instagram,
-} from "lucide-react";
+import { Check, ChevronDown, Mail, Instagram } from "lucide-react";
 
 export default function Kontakt() {
   const [formData, setFormData] = useState({

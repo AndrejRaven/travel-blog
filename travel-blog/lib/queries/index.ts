@@ -353,6 +353,7 @@ export const QUERIES = {
           crop,
           alt
         },
+        invertOnDark,
         mainCategory-> {
           _id,
           name,
@@ -629,6 +630,7 @@ export const QUERIES = {
           crop,
           alt
         },
+        invertOnDark,
         mainCategory-> {
           _id,
           name,
@@ -742,6 +744,7 @@ export const QUERIES = {
         crop,
         alt
       },
+      invertOnDark,
       mainCategory-> {
         _id,
         name,
@@ -811,6 +814,7 @@ export const QUERIES = {
           crop,
           alt
         },
+        invertOnDark,
         mainCategory-> {
           _id,
           name,
@@ -858,6 +862,7 @@ export const QUERIES = {
         crop,
         alt
       },
+      invertOnDark,
       mainCategory-> {
         _id,
         name,
@@ -898,6 +903,7 @@ export const QUERIES = {
         crop,
         alt
       },
+      invertOnDark,
       mainCategory-> {
         _id,
         name,
@@ -974,6 +980,7 @@ export const QUERIES = {
           crop,
           alt
         },
+        invertOnDark,
         mainCategory-> {
           _id,
           name,
@@ -1542,7 +1549,8 @@ export const QUERIES = {
             }
           },
           iconSvg,
-          variant
+          variant,
+          invertOnDark
         }
       },
       additionalComponents[] {

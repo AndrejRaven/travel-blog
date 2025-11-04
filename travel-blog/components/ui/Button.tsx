@@ -18,6 +18,7 @@ type ButtonProps = {
   disabled?: boolean;
   external?: boolean;
   type?: "button" | "submit" | "reset";
+  title?: string;
 };
 
 const variantStyles = {
@@ -44,6 +45,7 @@ export default function Button({
   disabled = false,
   external = false,
   type = "button",
+  title,
 }: ButtonProps) {
   const baseStyles =
     "inline-flex items-center justify-center rounded-md px-8 py-2 text-sm font-sans font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed relative z-10";
@@ -58,13 +60,14 @@ export default function Button({
           className={combinedClassName}
           target="_blank"
           rel="noopener noreferrer"
+          title={title}
         >
           {children}
         </a>
       );
     }
     return (
-      <Link href={href} className={combinedClassName}>
+      <Link href={href} className={combinedClassName} title={title}>
         {children}
       </Link>
     );
@@ -76,6 +79,7 @@ export default function Button({
       className={combinedClassName}
       onClick={onClick}
       disabled={disabled}
+      title={title}
     >
       {children}
     </button>

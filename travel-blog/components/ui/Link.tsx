@@ -12,6 +12,7 @@ type LinkProps = {
   variant?: LinkVariant;
   className?: string;
   external?: boolean;
+  title?: string;
 };
 
 const variantStyles = {
@@ -29,6 +30,7 @@ export default function Link({
   variant = "default",
   className = "",
   external = false,
+  title,
 }: LinkProps) {
   const { setNavigating, setActiveElement, activeElement } =
     useNavigationProgress();
@@ -81,6 +83,7 @@ export default function Link({
         target="_blank"
         rel="noopener noreferrer"
         onClick={handleClick}
+        title={title}
       >
         {children}
         {variant === "arrow" && (
@@ -101,6 +104,7 @@ export default function Link({
       className={combinedClassName}
       onClick={handleClick}
       ref={linkRef}
+      title={title}
     >
       {children}
       {variant === "arrow" && (
