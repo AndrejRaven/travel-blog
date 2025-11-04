@@ -87,21 +87,30 @@ export default function PostPageClient({
         (post.coverImage || post.coverMobileImage) && (
           <div
             ref={imageAnimation.containerRef}
-            className={`relative w-full min-h-[300px] overflow-hidden ${ANIMATION_PRESETS.sectionHeader(
+            className={`relative w-full overflow-hidden ${ANIMATION_PRESETS.sectionHeader(
               imageAnimation.isLoaded && imageAnimation.isInView
             )}`}
           >
-            <ResponsiveImage
-              desktopImage={post.coverImage}
-              mobileImage={post.coverMobileImage}
-              fallback={{ src: "/demo-images/demo-asset.png", alt: post.title }}
-              fill
-              priority
-              objectFit="cover"
-              sizes="100vw"
-              className="w-full h-full"
-              onLoad={() => imageAnimation.setIsLoaded(true)}
-            />
+            <div className="relative w-full h-[35vh] md:aspect-[4/1] md:h-auto">
+              <ResponsiveImage
+                desktopImage={post.coverImage}
+                mobileImage={post.coverMobileImage}
+                fallback={{
+                  src: "/demo-images/demo-asset.png",
+                  alt: post.title,
+                }}
+                fill
+                priority
+                objectFit="contain"
+                sizes="100vw"
+                className="w-full h-full"
+                onLoad={() => imageAnimation.setIsLoaded(true)}
+              />
+            </div>
+            {/* Lewy gradient zaciemniający - tylko na desktop */}
+            <div className="hidden md:block absolute left-0 top-0 bottom-0 w-[5%] bg-gradient-to-r from-black/50 to-transparent pointer-events-none" />
+            {/* Prawy gradient zaciemniający - tylko na desktop */}
+            <div className="hidden md:block absolute right-0 top-0 bottom-0 w-[5%] bg-gradient-to-l from-black/50 to-transparent pointer-events-none" />
           </div>
         )}
 

@@ -18,6 +18,33 @@ type Params = {
   }>;
 };
 
+// Funkcja pomocnicza do walidacji i upewnienia się że URL jest absolutny
+function ensureAbsoluteUrl(
+  url: string | null | undefined,
+  siteUrl: string
+): string | null {
+  if (!url) return null;
+
+  // Jeśli URL już zaczyna się od http:// lub https://, zwróć go bez zmian
+  if (url.startsWith("http://") || url.startsWith("https://")) {
+    return url;
+  }
+
+  // Jeśli URL zaczyna się od //, dodaj https:
+  if (url.startsWith("//")) {
+    return `https:${url}`;
+  }
+
+  // Jeśli URL jest względny, połącz z siteUrl
+  if (url.startsWith("/")) {
+    return `${siteUrl}${url}`;
+  }
+
+  // W przeciwnym razie zwróć null (nieprawidłowy URL)
+  console.warn(`Invalid image URL format: ${url}`);
+  return null;
+}
+
 // Generuj metadata dla SEO
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { slug, superCategory, mainCategory, category } = await params;
@@ -64,9 +91,11 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const ogDescription =
     post.seo?.ogDescription || post.subtitle || seoDescription;
   const ogImage = post.seo?.ogImage || post.coverImage;
-  const ogImageUrl = ogImage
+  const rawOgImageUrl = ogImage
     ? getImageUrl(ogImage, { width: 1200, height: 630, format: "webp" })
     : null;
+  // Upewnij się że URL jest absolutny (Facebook wymaga absolutnych URL)
+  const ogImageUrl = ensureAbsoluteUrl(rawOgImageUrl, siteUrl);
 
   // Canonical URL - zawsze wskazuje na główną kategorię
   const canonicalUrl = post.seo?.canonicalUrl || canonicalPostUrl;
@@ -239,10 +268,11 @@ export default async function PostPage({ params }: Params) {
   const ogDescription =
     post.seo?.ogDescription || post.subtitle || seoDescription;
   const ogImage = post.seo?.ogImage || post.coverImage;
-  const ogImageUrl = ogImage
-    ? getImageUrl(ogImage, { width: 1200, height: 630, format: "webp" }) ||
-      undefined
-    : undefined;
+  const rawOgImageUrl = ogImage
+    ? getImageUrl(ogImage, { width: 1200, height: 630, format: "webp" })
+    : null;
+  // Upewnij się że URL jest absolutny (Facebook wymaga absolutnych URL)
+  const ogImageUrl = ensureAbsoluteUrl(rawOgImageUrl, siteUrl) || undefined;
 
   // Generuj spis treści na podstawie komponentów z tytułami treści
   const generateTableOfContents = () => {
