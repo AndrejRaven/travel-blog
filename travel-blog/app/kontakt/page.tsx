@@ -307,42 +307,6 @@ export default function Kontakt() {
               </div>
             </div>
 
-            {/* PHONE */}
-            <div className="flex items-start space-x-4">
-              <div className="w-10 h-10 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center flex-shrink-0">
-                <Phone className="w-5 h-5 text-green-600 dark:text-green-400" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">
-                  Telefon
-                </h3>
-                <p className="text-gray-600 dark:text-gray-300">
-                  [Wpisz swój numer telefonu]
-                </p>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Pon-Pt: 9:00-17:00
-                </p>
-              </div>
-            </div>
-
-            {/* ADDRESS */}
-            <div className="flex items-start space-x-4">
-              <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900 rounded-full flex items-center justify-center flex-shrink-0">
-                <MapPin className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">
-                  Adres
-                </h3>
-                <p className="text-gray-600 dark:text-gray-300">
-                  [Wpisz swój adres]
-                </p>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Polska
-                </p>
-              </div>
-            </div>
-
             {/* SOCIAL MEDIA */}
             <div className="flex items-start space-x-4">
               <div className="w-10 h-10 bg-pink-100 dark:bg-pink-900 rounded-full flex items-center justify-center flex-shrink-0">
@@ -353,13 +317,28 @@ export default function Kontakt() {
                   Media społecznościowe
                 </h3>
                 <div className="flex space-x-4">
-                  <Link href="#" variant="underline" className="text-sm">
+                  <Link
+                    href="https://instagram.com/vlogizdrogiaa"
+                    variant="underline"
+                    className="text-sm"
+                    external
+                  >
                     Instagram
                   </Link>
-                  <Link href="#" variant="underline" className="text-sm">
+                  <Link
+                    href="https://www.facebook.com/vlogizdrogi"
+                    variant="underline"
+                    className="text-sm"
+                    external
+                  >
                     Facebook
                   </Link>
-                  <Link href="#" variant="underline" className="text-sm">
+                  <Link
+                    href="https://youtube.com/@vlogizdrogiaa"
+                    variant="underline"
+                    className="text-sm"
+                    external
+                  >
                     YouTube
                   </Link>
                 </div>

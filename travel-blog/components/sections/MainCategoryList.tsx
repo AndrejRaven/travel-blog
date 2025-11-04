@@ -71,7 +71,7 @@ export default function MainCategoryList({ data }: Props) {
                   <p className="text-sm font-sans text-gray-600 dark:text-gray-400">
                     {mainCategory.description}
                   </p>
-                  {mainCategory.articleCount && (
+                  {mainCategory.articleCount !== undefined && (
                     <p className="text-xs font-sans text-gray-500 dark:text-gray-500 mt-1">
                       {mainCategory.articleCount} artykułów
                     </p>

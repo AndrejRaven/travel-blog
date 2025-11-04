@@ -310,48 +310,51 @@ export default function CommentsModeration({
 
       {/* Masowe akcje */}
       {selectedComments.length > 0 && (
-        <div className="flex items-center gap-3 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-          <span className="text-sm text-blue-700 dark:text-blue-300">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+          <span className="text-sm text-blue-700 dark:text-blue-300 flex-shrink-0">
             Wybrano {selectedComments.length} komentarzy
           </span>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button
               onClick={() => bulkUpdateStatus("approved")}
               disabled={bulkProcessing}
-              className="bg-green-600 hover:bg-green-700 px-4 py-2 text-sm"
+              className="bg-green-600 hover:bg-green-700 px-3 sm:px-4 py-2 text-sm flex-1 sm:flex-initial whitespace-nowrap"
             >
               {bulkProcessing ? (
-                <RefreshCw className="w-4 h-4 mr-1 animate-spin" />
+                <RefreshCw className="w-4 h-4 sm:mr-1 animate-spin" />
               ) : (
-                <CheckCircle className="w-4 h-4 mr-1" />
+                <CheckCircle className="w-4 h-4 sm:mr-1" />
               )}
-              Zatwierdź
+              <span className="hidden sm:inline">Zatwierdź</span>
+              <span className="sm:hidden">OK</span>
             </Button>
             <Button
               variant="outline"
               onClick={() => bulkUpdateStatus("rejected")}
               disabled={bulkProcessing}
-              className="border-red-300 text-red-600 hover:bg-red-50 px-4 py-2 text-sm"
+              className="border-red-300 text-red-600 hover:bg-red-50 px-3 sm:px-4 py-2 text-sm flex-1 sm:flex-initial whitespace-nowrap"
             >
               {bulkProcessing ? (
-                <RefreshCw className="w-4 h-4 mr-1 animate-spin" />
+                <RefreshCw className="w-4 h-4 sm:mr-1 animate-spin" />
               ) : (
-                <XCircle className="w-4 h-4 mr-1" />
+                <XCircle className="w-4 h-4 sm:mr-1" />
               )}
-              Odrzuć
+              <span className="hidden sm:inline">Odrzuć</span>
+              <span className="sm:hidden">X</span>
             </Button>
             <Button
               variant="outline"
               onClick={() => bulkUpdateStatus("spam")}
               disabled={bulkProcessing}
-              className="border-red-300 text-red-600 hover:bg-red-50 px-4 py-2 text-sm"
+              className="border-red-300 text-red-600 hover:bg-red-50 px-3 sm:px-4 py-2 text-sm flex-1 sm:flex-initial whitespace-nowrap"
             >
               {bulkProcessing ? (
-                <RefreshCw className="w-4 h-4 mr-1 animate-spin" />
+                <RefreshCw className="w-4 h-4 sm:mr-1 animate-spin" />
               ) : (
-                <XCircle className="w-4 h-4 mr-1" />
+                <XCircle className="w-4 h-4 sm:mr-1" />
               )}
-              Oznacz jako spam
+              <span className="hidden sm:inline">Oznacz jako spam</span>
+              <span className="sm:hidden">Spam</span>
             </Button>
           </div>
         </div>
@@ -363,10 +366,10 @@ export default function CommentsModeration({
           filteredComments.map((comment) => (
             <div
               key={comment._id}
-              className="p-6 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
+              className="p-4 sm:p-6 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
             >
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-start gap-3">
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
+                <div className="flex items-start gap-3 flex-1 min-w-0">
                   <input
                     type="checkbox"
                     checked={selectedComments.includes(comment._id)}
@@ -379,31 +382,31 @@ export default function CommentsModeration({
                         );
                       }
                     }}
-                    className="mt-1"
+                    className="mt-1 flex-shrink-0"
                   />
 
-                  <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
                     <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
                       {comment.author.name.charAt(0).toUpperCase()}
                     </span>
                   </div>
 
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h4 className="font-medium text-gray-900 dark:text-gray-100">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-2 mb-1">
+                      <h4 className="font-medium text-gray-900 dark:text-gray-100 truncate">
                         {comment.author.name}
                       </h4>
                       <span
-                        className={`px-2 py-1 text-xs rounded-full ${getStatusColor(comment.status)}`}
+                        className={`px-2 py-1 text-xs rounded-full flex-shrink-0 ${getStatusColor(comment.status)}`}
                       >
                         {comment.status}
                       </span>
                     </div>
 
                     <div className="text-sm text-gray-500 dark:text-gray-400 space-y-1">
-                      <p>{comment.author.email}</p>
+                      <p className="break-all">{comment.author.email}</p>
                       {comment.author.website && (
-                        <p>
+                        <p className="break-all">
                           <a
                             href={comment.author.website}
                             target="_blank"
@@ -416,7 +419,7 @@ export default function CommentsModeration({
                       )}
                       <p>{formatDate(comment.createdAt)}</p>
                       {comment.post && (
-                        <p>
+                        <p className="break-words">
                           <span className="font-medium">Post:</span>{" "}
                           {comment.post.title}
                         </p>
@@ -425,7 +428,7 @@ export default function CommentsModeration({
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-shrink-0 sm:ml-4">
                   <Button
                     variant="outline"
                     onClick={() => updateCommentStatus(comment._id, "approved")}
@@ -433,7 +436,8 @@ export default function CommentsModeration({
                       comment.status === "approved" ||
                       isAnyProcessing(comment._id)
                     }
-                    className="text-green-600 border-green-300 hover:bg-green-50 px-3 py-2 text-sm"
+                    className="text-green-600 border-green-300 hover:bg-green-50 px-2 sm:px-3 py-2 text-sm"
+                    title="Zatwierdź"
                   >
                     {isProcessing(comment._id, "approve") ? (
                       <RefreshCw className="w-4 h-4 animate-spin" />
@@ -449,7 +453,8 @@ export default function CommentsModeration({
                       comment.status === "rejected" ||
                       isAnyProcessing(comment._id)
                     }
-                    className="text-red-600 border-red-300 hover:bg-red-50 px-3 py-2 text-sm"
+                    className="text-red-600 border-red-300 hover:bg-red-50 px-2 sm:px-3 py-2 text-sm"
+                    title="Odrzuć"
                   >
                     {isProcessing(comment._id, "reject") ? (
                       <RefreshCw className="w-4 h-4 animate-spin" />
@@ -462,7 +467,8 @@ export default function CommentsModeration({
                     variant="outline"
                     onClick={() => deleteComment(comment._id)}
                     disabled={isAnyProcessing(comment._id)}
-                    className="text-red-600 border-red-300 hover:bg-red-50 px-3 py-2 text-sm"
+                    className="text-red-600 border-red-300 hover:bg-red-50 px-2 sm:px-3 py-2 text-sm"
+                    title="Usuń"
                   >
                     {isProcessing(comment._id, "delete") ? (
                       <RefreshCw className="w-4 h-4 animate-spin" />

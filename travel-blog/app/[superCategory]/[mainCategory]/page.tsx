@@ -78,6 +78,21 @@ export default async function MainCategoryPage({
     notFound();
   }
 
+  // Pobierz liczbę postów dla każdej subcategory
+  const subcategoriesWithCounts = await Promise.all(
+    subcategories.map(async (subcategory) => {
+      const articleCount = await fetchGroq<number>(
+        QUERIES.CATEGORY.POSTS_COUNT,
+        { slug: subcategory.slug.current },
+        "POSTS"
+      );
+      return {
+        ...subcategory,
+        articleCount,
+      };
+    })
+  );
+
   return (
     <PageLayout maxWidth="6xl">
       <PageHeader
@@ -116,7 +131,7 @@ export default async function MainCategoryPage({
       </nav>
 
       {/* Podkategorie */}
-      {subcategories.length > 0 && (
+      {subcategoriesWithCounts.length > 0 && (
         <div className="mb-12">
           <SubcategoryList
             data={{
@@ -130,7 +145,7 @@ export default async function MainCategoryPage({
                 height: "auto",
               },
               title: `Podkategorie w ${mainCategory.name}`,
-              subcategories: subcategories.map((subcategory) => ({
+              subcategories: subcategoriesWithCounts.map((subcategory) => ({
                 id: subcategory._id,
                 name: subcategory.name,
                 description: subcategory.description || "",
@@ -144,6 +159,7 @@ export default async function MainCategoryPage({
                     }
                   : undefined,
                 invertOnDark: subcategory.invertOnDark,
+                articleCount: subcategory.articleCount,
               })),
             }}
           />
@@ -190,7 +206,7 @@ export default async function MainCategoryPage({
         <>
           <CategoryArticles
             articles={posts}
-            title={`Wszystkie posty z kategorii ${mainCategory.name}`}
+            title={`Wszystkie posty z kategorii ${mainCategory.name} (${posts.length})`}
           />
           <BackToHome />
         </>

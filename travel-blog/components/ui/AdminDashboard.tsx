@@ -71,11 +71,15 @@ export default function AdminDashboard() {
     <div className="space-y-8">
       {/* Statystyki komentarzy */}
       <div>
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
           <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
             Komentarze
           </h2>
-          <Link href="/admin/komentarze" variant="arrow">
+          <Link
+            href="/admin/komentarze"
+            variant="arrow"
+            className="text-sm sm:text-base whitespace-nowrap"
+          >
             Zarządzaj komentarzami
           </Link>
         </div>
@@ -170,13 +174,13 @@ export default function AdminDashboard() {
                   return (
                     <div
                       key={post._id}
-                      className="flex items-center justify-between py-2 border-b border-gray-200 dark:border-gray-700 last:border-b-0"
+                      className="flex items-center justify-between py-2 border-b border-gray-200 dark:border-gray-700 last:border-b-0 gap-3"
                     >
-                      <div className="flex-1">
+                      <div className="flex-1 min-w-0">
                         <Link
                           href={postUrl !== "#" ? postUrl : "#"}
                           variant="underline"
-                          className="text-gray-900 dark:text-gray-100"
+                          className="text-gray-900 dark:text-gray-100 break-words"
                         >
                           {post.title}
                         </Link>
@@ -193,7 +197,7 @@ export default function AdminDashboard() {
                           </p>
                         )}
                       </div>
-                      <ArrowRight className="w-4 h-4 text-gray-400 ml-4" />
+                      <ArrowRight className="w-4 h-4 text-gray-400 flex-shrink-0" />
                     </div>
                   );
                 })}

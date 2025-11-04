@@ -71,7 +71,7 @@ export default function SubcategoryList({ data }: Props) {
                   <p className="text-sm font-sans text-gray-600 dark:text-gray-400">
                     {subcategory.description}
                   </p>
-                  {subcategory.articleCount && (
+                  {subcategory.articleCount !== undefined && (
                     <p className="text-xs font-sans text-gray-500 dark:text-gray-500 mt-1">
                       {subcategory.articleCount} artykułów
                     </p>

@@ -11,6 +11,7 @@ import {
   isValidEmail,
   getNewsletterCache,
   clearNewsletterCache,
+  saveNewsletterCache,
   checkAndRecordRateLimit,
   subscribeNewsletter,
   unsubscribeNewsletter,
@@ -157,6 +158,48 @@ export default function Newsletter({ data }: Props) {
     setError("");
 
     try {
+      // Sprawdź czy email już jest zapisany przed próbą subskrypcji
+      try {
+        const status = await checkSubscriptionStatus(email);
+        if (status.subscribed) {
+          // Email już zapisany - przełącz na stan subscribed
+          const cache: NewsletterCacheData = {
+            email: email.trim(),
+            subscribed: true,
+            confirmed: status.confirmed,
+            timestamp: Date.now(),
+          };
+          saveNewsletterCache(cache);
+          setCache(cache);
+          setNewsletterState("subscribed");
+
+          const message = status.confirmed
+            ? replacePlaceholders(
+                alreadySubscribedConfirmed ||
+                  "Twój email {{email}} jest zapisany. Dziękujemy za zaufanie!",
+                { email: email.trim() }
+              )
+            : "Twój email jest już zapisany. Sprawdź skrzynkę — wysłaliśmy potwierdzenie.";
+
+          addToast({
+            type: "info",
+            title:
+              alreadySubscribedTitle ||
+              "Cześć, wygląda na to, że jesteś już z nami!",
+            message,
+            duration: 5000,
+          });
+          return;
+        }
+      } catch (statusError) {
+        // Jeśli sprawdzanie statusu się nie powiodło, kontynuuj z normalnym flow
+        // (może być problem z połączeniem, ale subskrypcja może się udać)
+        console.warn(
+          "Failed to check subscription status, continuing with subscribe:",
+          statusError
+        );
+      }
+
       const response = await subscribeNewsletter(email);
 
       if (response.success) {
@@ -486,7 +529,7 @@ export default function Newsletter({ data }: Props) {
     <SectionContainer config={container}>
       <section
         ref={containerRef}
-        className="mx-auto max-w-4xl px-6 py-16 bg-gray-50 dark:bg-gray-900"
+        className="mx-auto max-w-4xl px-6 py-6 bg-gray-50 dark:bg-gray-900"
       >
         {newsletterState === "new" && renderNewUserForm()}
         {newsletterState === "subscribed" && renderSubscribedState()}

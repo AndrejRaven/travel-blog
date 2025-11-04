@@ -75,6 +75,21 @@ export default async function SuperCategoryPage({
     notFound();
   }
 
+  // Pobierz liczbę postów dla każdej mainCategory
+  const mainCategoriesWithCounts = await Promise.all(
+    mainCategories.map(async (mainCategory) => {
+      const articleCount = await fetchGroq<number>(
+        QUERIES.MAIN_CATEGORY.POSTS_COUNT,
+        { mainCategorySlug: mainCategory.slug.current },
+        "POSTS"
+      );
+      return {
+        ...mainCategory,
+        articleCount,
+      };
+    })
+  );
+
   return (
     <PageLayout maxWidth="6xl">
       <PageHeader
@@ -86,7 +101,7 @@ export default async function SuperCategoryPage({
       />
 
       {/* Kategorie główne */}
-      {mainCategories.length > 0 && (
+      {mainCategoriesWithCounts.length > 0 && (
         <div className="mb-12">
           <MainCategoryList
             data={{
@@ -100,7 +115,7 @@ export default async function SuperCategoryPage({
                 height: "auto",
               },
               title: `Kategorie w ${superCategory.name}`,
-              mainCategories: mainCategories.map((mainCategory) => ({
+              mainCategories: mainCategoriesWithCounts.map((mainCategory) => ({
                 id: mainCategory._id,
                 name: mainCategory.name,
                 description: mainCategory.description || "",
@@ -114,6 +129,7 @@ export default async function SuperCategoryPage({
                     }
                   : undefined,
                 invertOnDark: mainCategory.invertOnDark,
+                articleCount: mainCategory.articleCount,
               })),
             }}
           />
@@ -160,7 +176,7 @@ export default async function SuperCategoryPage({
         <>
           <CategoryArticles
             articles={posts}
-            title={`Wszystkie posty z kategorii ${superCategory.name}`}
+            title={`Wszystkie posty z kategorii ${superCategory.name} (${posts.length})`}
           />
           <BackToHome />
         </>

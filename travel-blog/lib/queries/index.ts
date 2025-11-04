@@ -644,7 +644,10 @@ export const QUERIES = {
           }
         }
       }
-    }`
+    }`,
+
+    // Liczba postów w kategorii nadrzędnej (wszystkie podkategorie)
+    POSTS_COUNT: `count(*[_type == "post" && defined(publishedAt) && $superCategorySlug in categories[]->mainCategory->superCategory->slug.current])`
   },
 
   // Zapytania dla kategorii głównych
@@ -823,7 +826,10 @@ export const QUERIES = {
           }
         }
       }
-    }`
+    }`,
+
+    // Liczba postów w kategorii głównej (łącznie z podkategoriami)
+    POSTS_COUNT: `count(*[_type == "post" && defined(publishedAt) && ($mainCategorySlug in mainCategories[]->slug.current || $mainCategorySlug in categories[]->mainCategory->slug.current)])`
   },
 
   // Zapytania dla podkategorii
@@ -983,7 +989,10 @@ export const QUERIES = {
           }
         }
       }
-    }`
+    }`,
+
+    // Liczba postów w podkategorii
+    POSTS_COUNT: `count(*[_type == "post" && defined(publishedAt) && $slug in categories[]->slug.current])`
   },
 
   // Zapytania dla strony głównej

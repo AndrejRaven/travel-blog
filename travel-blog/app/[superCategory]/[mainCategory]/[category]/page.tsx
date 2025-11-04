@@ -163,7 +163,7 @@ export default async function SubcategoryPage({
         <>
           <CategoryArticles
             articles={posts}
-            title={`Wszystkie posty z podkategorii ${category.name}`}
+            title={`Wszystkie posty z podkategorii ${category.name} (${posts.length})`}
           />
           <BackToHome />
         </>

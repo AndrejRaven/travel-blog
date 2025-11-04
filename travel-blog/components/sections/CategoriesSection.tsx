@@ -15,13 +15,19 @@ type Props = {
   data: CategoriesSectionData;
 };
 
+type SuperCategoryWithCount = SuperCategory & {
+  articleCount?: number;
+};
+
 export default function CategoriesSection({ data }: Props) {
   // Wszystkie hooki muszą być przed wczesnymi returnami
-  const [superCategories, setSuperCategories] = useState<SuperCategory[]>([]);
+  const [superCategories, setSuperCategories] = useState<
+    SuperCategoryWithCount[]
+  >([]);
   const [isLoading, setIsLoading] = useState(true);
   const { isLoaded, isInView, containerRef } = useAnimation();
 
-  // Pobierz kategorie nadrzędne
+  // Pobierz kategorie nadrzędne wraz z liczbą postów
   useEffect(() => {
     const fetchSuperCategories = async () => {
       try {
@@ -30,7 +36,30 @@ export default function CategoriesSection({ data }: Props) {
           {},
           "CATEGORIES"
         );
-        setSuperCategories(categories);
+
+        // Pobierz liczbę postów dla każdej kategorii
+        const categoriesWithCounts = await Promise.all(
+          categories.map(async (category) => {
+            try {
+              const articleCount = await fetchGroq<number>(
+                QUERIES.SUPER_CATEGORY.POSTS_COUNT,
+                { superCategorySlug: category.slug.current },
+                "POSTS"
+              );
+              return {
+                ...category,
+                articleCount,
+              };
+            } catch {
+              return {
+                ...category,
+                articleCount: 0,
+              };
+            }
+          })
+        );
+
+        setSuperCategories(categoriesWithCounts);
       } catch {
         // Ignore errors
       } finally {
@@ -153,6 +182,11 @@ export default function CategoriesSection({ data }: Props) {
                     <p className="text-sm font-sans text-gray-600 dark:text-gray-400">
                       {category.description}
                     </p>
+                    {category.articleCount !== undefined && (
+                      <p className="text-xs font-sans text-gray-500 dark:text-gray-500 mt-1">
+                        {category.articleCount} artykułów
+                      </p>
+                    )}
                   </div>
                   {category.icon?.asset?.url ? (
                     <Image
