@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import ComponentRenderer from "@/components/ui/ComponentRenderer";
 import TableOfContents from "@/components/ui/TableOfContents";
 import CategoryBadge from "@/components/ui/CategoryBadge";
@@ -35,7 +35,6 @@ export default function PostPageClient({
   ogImageUrl,
 }: PostPageClientProps) {
   const [isTocOpen, setIsTocOpen] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
 
   // Hooki animacji dla różnych sekcji
   const imageAnimation = useAnimation();
@@ -44,17 +43,6 @@ export default function PostPageClient({
 
   // Hook do zarządzania komentarzami
   const { comments, addComment, replyToComment } = useComments(post._id);
-
-  useEffect(() => {
-    const checkIsMobile = () => {
-      setIsMobile(window.innerWidth < 640);
-    };
-
-    checkIsMobile();
-    window.addEventListener("resize", checkIsMobile);
-
-    return () => window.removeEventListener("resize", checkIsMobile);
-  }, []);
 
   const formattedDate = post.publishedAt
     ? new Intl.DateTimeFormat("pl-PL", {
@@ -101,9 +89,8 @@ export default function PostPageClient({
                 }}
                 fill
                 priority
-                objectFit="contain"
                 sizes="100vw"
-                className="w-full h-full"
+                className="w-full h-full object-cover md:object-contain"
                 onLoad={() => imageAnimation.setIsLoaded(true)}
               />
             </div>
@@ -161,17 +148,23 @@ export default function PostPageClient({
               {/* Kategorie - ograniczone do 3 na mobile, więcej na desktop */}
               {post.categories && post.categories.length > 0 && (
                 <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
-                  {post.categories
-                    .slice(0, isMobile ? 3 : post.categories.length)
-                    .map((category) => (
+                  {/* Na mobile pokazujemy tylko 3, na desktop wszystkie */}
+                  <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 sm:hidden">
+                    {post.categories.slice(0, 3).map((category) => (
                       <CategoryBadge key={category._id} category={category} />
                     ))}
-                  {/* Pokazuj "+X więcej" jeśli są ukryte kategorie na mobile */}
-                  {isMobile && post.categories.length > 3 && (
-                    <span className="text-xs text-gray-500 dark:text-gray-400">
-                      +{post.categories.length - 3} więcej
-                    </span>
-                  )}
+                    {post.categories.length > 3 && (
+                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                        +{post.categories.length - 3} więcej
+                      </span>
+                    )}
+                  </div>
+                  {/* Na desktop pokazujemy wszystkie */}
+                  <div className="hidden sm:flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
+                    {post.categories.map((category) => (
+                      <CategoryBadge key={category._id} category={category} />
+                    ))}
+                  </div>
                 </div>
               )}
             </div>

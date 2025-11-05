@@ -1,3 +1,5 @@
+"use client";
+
 import React from "react";
 import Link from "@/components/ui/Link";
 import CategoryBadge from "@/components/ui/CategoryBadge";
@@ -74,7 +76,10 @@ export default function CategoryArticles({
                   />
 
                   {/* Badge kategorii na obrazie */}
-                  <div className="absolute top-3 left-3">
+                  <div
+                    className="absolute top-3 left-3 z-10"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     {article.categories && article.categories.length > 0 ? (
                       <div className="flex flex-wrap items-center gap-1">
                         {article.categories.slice(0, 2).map((category) => (
