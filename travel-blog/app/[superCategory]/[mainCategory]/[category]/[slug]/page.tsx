@@ -58,8 +58,8 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   }
 
   // Podstawowe informacje
-  const siteName = "Nasz Blog";
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://nasz-blog.com";
+  const siteName = SITE_CONFIG.name;
+  const siteUrl = SITE_CONFIG.url;
 
   // Znajdź główną kategorię dla canonical URL
   const primaryCategory = getPrimaryCategory(post);
@@ -165,7 +165,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 export default async function PostPage({ params }: Params) {
   const { superCategory, mainCategory, category, slug } = await params;
   const post = await getPostBySlug(slug);
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://nasz-blog.com";
+  const siteUrl = SITE_CONFIG.url;
 
   if (!post) {
     return (
