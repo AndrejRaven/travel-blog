@@ -371,6 +371,84 @@ export const QUERIES = {
       }
     }`,
 
+    // Pobierz wszystkie opublikowane posty
+    ALL: `*[_type == "post" && defined(publishedAt)] | order(publishedAt desc, _createdAt desc) {
+      _id,
+      title,
+      subtitle,
+      description,
+      slug,
+      publishedAt,
+      coverImage {
+        asset-> {
+          _id,
+          url,
+          metadata {
+            dimensions {
+              width,
+              height
+            }
+          }
+        },
+        hotspot,
+        crop,
+        alt
+      },
+      coverMobileImage {
+        asset-> {
+          _id,
+          url,
+          metadata {
+            dimensions {
+              width,
+              height
+            }
+          }
+        },
+        hotspot,
+        crop,
+        alt
+      },
+      categories[]-> {
+        _id,
+        name,
+        slug {
+          current
+        },
+        color,
+        icon {
+          asset-> {
+            _id,
+            url,
+            metadata {
+              dimensions {
+                width,
+                height
+              }
+            }
+          },
+          hotspot,
+          crop,
+          alt
+        },
+        invertOnDark,
+        mainCategory-> {
+          _id,
+          name,
+          slug {
+            current
+          },
+          superCategory-> {
+            _id,
+            name,
+            slug {
+              current
+            }
+          }
+        }
+      }
+    }`,
+
     // Pobierz liczbę wszystkich postów
     ALL_COUNT: `count(*[_type == "post"])`,
 
