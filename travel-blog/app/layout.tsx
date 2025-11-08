@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Inter, Playfair_Display, Source_Code_Pro } from "next/font/google";
 import { Suspense } from "react";
+import { draftMode } from "next/headers";
+import { VisualEditing } from "next-sanity";
 import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
@@ -39,14 +41,21 @@ export const metadata: Metadata = {
     "Witamy na naszym blogu! Tutaj znajdziesz nasze najnowsze wyprawy i informacje o naszych przygodach.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const draft = await draftMode();
+  const isDraftMode = draft.isEnabled;
+
   return (
     <html lang="pl">
       <head>
+        <meta
+          httpEquiv="Permissions-Policy"
+          content="autoplay=*, encrypted-media=*, fullscreen=*, accelerometer=*, gyroscope=*, clipboard-write=*, clipboard-read=*"
+        />
         <script
           dangerouslySetInnerHTML={{
             __html: `
@@ -84,6 +93,8 @@ export default function RootLayout({
                 <CookieBanner />
                 <ScrollToTop />
                 <ToastContainer />
+                {/* Visual Editing - tylko gdy draft mode jest aktywny */}
+                {isDraftMode && <VisualEditing />}
               </NotificationProvider>
             </NavigationProgressProvider>
           </Suspense>

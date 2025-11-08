@@ -24,6 +24,16 @@ export const writeClient = createClient({
   perspective: 'published',
 });
 
+// Preview client do podglądu draftów (bez CDN, z perspective: 'drafts')
+export const previewClient = createClient({
+  projectId,
+  dataset,
+  apiVersion,
+  useCdn: false, // ✅ Bez CDN dla preview (zawsze świeże dane)
+  token: process.env.SANITY_VIEWER_TOKEN,
+  perspective: 'drafts', // ✅ Używa draftów zamiast opublikowanych
+});
+
 // Alias dla kompatybilności wstecznej
 export const client = writeClient;
 
@@ -52,6 +62,24 @@ export async function fetchGroq<T>(
   params: GroqParams = {},
   cacheStrategy: keyof typeof CACHE_STRATEGIES = 'POSTS'
 ): Promise<T> {
+  // Sprawdź draft mode dynamicznie (tylko w Server Components)
+  // W Next.js 15 draftMode() musi być awaitowane
+  let isDraft = false;
+  try {
+    const { draftMode } = await import('next/headers');
+    const draft = await draftMode();
+    isDraft = draft.isEnabled;
+  } catch {
+    // W przypadku błędu (np. poza Server Component) kontynuuj bez draft mode
+    isDraft = false;
+  }
+
+  // Jeśli draft mode jest aktywny, użyj preview client
+  if (isDraft) {
+    return await previewClient.fetch<T>(query, params);
+  }
+
+  // W przeciwnym razie użyj standardowego fetch z cache
   const url = `https://${projectId}.api.sanity.io/v${apiVersion}/data/query/${dataset}`;
   const res = await fetch(url, {
     method: "POST",

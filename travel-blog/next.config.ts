@@ -11,6 +11,28 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  async headers() {
+    return [
+      {
+        // Zastosuj nagłówki do wszystkich ścieżek
+        source: '/:path*',
+        headers: [
+          {
+            key: 'Permissions-Policy',
+            value: [
+              'autoplay=*',
+              'encrypted-media=*',
+              'fullscreen=*',
+              'accelerometer=*',
+              'gyroscope=*',
+              'clipboard-write=*',
+              'clipboard-read=*',
+            ].join(', '),
+          },
+        ],
+      },
+    ];
+  },
 };
 
 export default nextConfig;
