@@ -102,6 +102,21 @@ export default {
               },
             ],
           },
+          {
+            title: 'Plik do pobrania',
+            name: 'fileReference',
+            type: 'object',
+            fields: [
+              {
+                title: 'Plik',
+                name: 'file',
+                type: 'reference',
+                to: [{ type: 'sanity.fileAsset' }],
+                description: 'Wybierz plik z biblioteki mediów (PDF, DOCX, etc.)',
+                validation: (Rule: any) => Rule.required().error('Plik jest wymagany'),
+              },
+            ],
+          },
         ],
       },
     },

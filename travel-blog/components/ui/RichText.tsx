@@ -1,5 +1,6 @@
 import React from "react";
 import Link from "next/link";
+import { FileText } from "lucide-react";
 import { RichTextBlock } from "@/lib/component-types";
 
 type Props = {
@@ -173,6 +174,41 @@ export default function RichText({
                 </Link>
               );
           }
+        } else if (
+          markDefs.some((def) => def._key === mark && def._type === "fileReference")
+        ) {
+          const fileDef = markDefs.find((def) => def._key === mark && def._type === "fileReference");
+          if (fileDef && fileDef.file) {
+            // Użyj _id jeśli dostępne (zawsze jest), w przeciwnym razie originalFilename
+            const fileId = fileDef.file._id || fileDef.file._ref || fileDef.file.asset?._id || fileDef.file.asset?._ref;
+            const fileName = fileDef.file.originalFilename || fileDef.file.asset?.originalFilename;
+            const mimeType = fileDef.file.mimeType || fileDef.file.asset?.mimeType || "";
+            const isPdf = mimeType === "application/pdf";
+
+            // Użyj _id jeśli dostępne (bardziej niezawodne), w przeciwnym razie originalFilename
+            const fileIdentifier = fileId || fileName;
+            
+            if (!fileIdentifier) {
+              console.warn("Brak ID lub nazwy pliku dla fileReference", fileDef);
+              return element;
+            }
+
+            // Użyj endpointu API zamiast bezpośredniego URL z Sanity
+            const downloadUrl = `/api/downloads/${encodeURIComponent(fileIdentifier)}`;
+
+            element = (
+              <a
+                key={child._key}
+                href={downloadUrl}
+                download={fileName || undefined}
+                className="inline-flex items-center gap-1.5 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors duration-200 relative group"
+              >
+                {element}
+                {isPdf && <FileText className="w-4 h-4 flex-shrink-0" />}
+                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-current group-hover:w-full transition-all duration-300 ease-out"></span>
+              </a>
+            );
+          }
         }
       });
 
@@ -319,6 +355,41 @@ export default function RichText({
                             <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-current group-hover:w-full transition-all duration-300 ease-out"></span>
                           </Link>
                         );
+                    }
+                  } else if (
+                    markDefs.some((def) => def._key === mark && def._type === "fileReference")
+                  ) {
+                    const fileDef = markDefs.find((def) => def._key === mark && def._type === "fileReference");
+                    if (fileDef && fileDef.file) {
+                      // Użyj _id jeśli dostępne (zawsze jest), w przeciwnym razie originalFilename
+                      const fileId = fileDef.file._id || fileDef.file._ref || fileDef.file.asset?._id || fileDef.file.asset?._ref;
+                      const fileName = fileDef.file.originalFilename || fileDef.file.asset?.originalFilename;
+                      const mimeType = fileDef.file.mimeType || fileDef.file.asset?.mimeType || "";
+                      const isPdf = mimeType === "application/pdf";
+
+                      // Użyj _id jeśli dostępne (bardziej niezawodne), w przeciwnym razie originalFilename
+                      const fileIdentifier = fileId || fileName;
+                      
+                      if (!fileIdentifier) {
+                        console.warn("Brak ID lub nazwy pliku dla fileReference", fileDef);
+                        return element;
+                      }
+
+                      // Użyj endpointu API zamiast bezpośredniego URL z Sanity
+                      const downloadUrl = `/api/downloads/${encodeURIComponent(fileIdentifier)}`;
+
+                      element = (
+                        <a
+                          key={child._key}
+                          href={downloadUrl}
+                          download={fileName || undefined}
+                          className="inline-flex items-center gap-1.5 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors duration-200 relative group"
+                        >
+                          {element}
+                          {isPdf && <FileText className="w-4 h-4 flex-shrink-0" />}
+                          <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-current group-hover:w-full transition-all duration-300 ease-out"></span>
+                        </a>
+                      );
                     }
                   }
                 });

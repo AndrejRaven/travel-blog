@@ -13,13 +13,30 @@ export type RichTextBlock = {
     marks?: string[];
   }>;
   markDefs?: Array<{
-    _type: 'link' | 'customStyle';
+    _type: 'link' | 'customStyle' | 'fileReference';
     _key: string;
     linkType?: 'internal' | 'external';
     internalHref?: string;
     externalHref?: string;
     blank?: boolean;
     style?: 'link-primary' | 'link-secondary' | 'margin-top' | 'margin-bottom' | 'highlight' | 'warning' | 'success' | 'error' | 'info';
+    file?: {
+      _type?: 'reference';
+      _ref?: string;
+      _weak?: boolean;
+      _id?: string;
+      url?: string;
+      originalFilename?: string;
+      mimeType?: string;
+      size?: number;
+      asset?: {
+        _type?: 'reference';
+        _ref?: string;
+        url?: string;
+        originalFilename?: string;
+        mimeType?: string;
+      };
+    };
   }>;
 };
 

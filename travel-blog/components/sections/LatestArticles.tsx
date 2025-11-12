@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useRouter } from "next/navigation";
 import Link from "@/components/ui/Link";
 import CategoryBadge from "@/components/ui/CategoryBadge";
 import SectionHeader from "@/components/shared/SectionHeader";
@@ -29,6 +30,7 @@ export default function Articles({
   isInView = true,
   containerRef,
 }: Props) {
+  const router = useRouter();
   // Wszystkie hooki muszą być przed wczesnymi returnami
   const [displayedArticles, setDisplayedArticles] = React.useState<Article[]>(
     []
@@ -159,17 +161,38 @@ export default function Articles({
                     {/* Badge kategorii na obrazie */}
                     <div
                       className="absolute top-3 left-3 z-10"
-                      onClick={(e) => e.stopPropagation()}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                      }}
                     >
                       {article.categories && article.categories.length > 0 ? (
                         <div className="flex flex-wrap items-center gap-1">
-                          {article.categories.slice(0, 2).map((category) => (
-                            <CategoryBadge
-                              key={category._id}
-                              category={category}
-                              showLink={true}
-                            />
-                          ))}
+                          {article.categories.slice(0, 2).map((category) => {
+                            // Buduj URL kategorii
+                            const categoryUrl =
+                              category.mainCategory?.superCategory?.slug?.current &&
+                              category.mainCategory?.slug?.current
+                                ? `/${category.mainCategory.superCategory.slug.current}/${category.mainCategory.slug.current}/${category.slug.current}`
+                                : `/${category.slug.current}`;
+
+                            return (
+                              <div
+                                key={category._id}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  e.preventDefault();
+                                  router.push(categoryUrl);
+                                }}
+                                className="cursor-pointer"
+                              >
+                                <CategoryBadge
+                                  category={category}
+                                  showLink={false}
+                                />
+                              </div>
+                            );
+                          })}
                           {(article.categories?.length || 0) > 2 && (
                             <span className="text-xs font-medium text-white bg-black/50 px-2 py-1 rounded-full">
                               +{(article.categories?.length || 0) - 2} więcej

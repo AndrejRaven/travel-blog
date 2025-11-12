@@ -122,6 +122,16 @@ export const QUERIES = {
               _type == "customStyle" => {
                 ...,
                 "style": @.style
+              },
+              _type == "fileReference" => {
+                ...,
+                file-> {
+                  _id,
+                  url,
+                  originalFilename,
+                  mimeType,
+                  size
+                }
               }
             }
           }
@@ -195,6 +205,16 @@ export const QUERIES = {
               _type == "customStyle" => {
                 ...,
                 "style": @.style
+              },
+              _type == "fileReference" => {
+                ...,
+                file-> {
+                  _id,
+                  url,
+                  originalFilename,
+                  mimeType,
+                  size
+                }
               }
             }
           }
@@ -1156,6 +1176,16 @@ export const QUERIES = {
             _type == "customStyle" => {
               ...,
               "style": @.style
+            },
+            _type == "fileReference" => {
+              ...,
+              file-> {
+                _id,
+                url,
+                originalFilename,
+                mimeType,
+                size
+              }
             }
           }
         }
@@ -1215,6 +1245,16 @@ export const QUERIES = {
             _type == "customStyle" => {
               ...,
               "style": @.style
+            },
+            _type == "fileReference" => {
+              ...,
+              file-> {
+                _id,
+                url,
+                originalFilename,
+                mimeType,
+                size
+              }
             }
           }
         },
@@ -1293,6 +1333,16 @@ export const QUERIES = {
               _type == "customStyle" => {
                 ...,
                 "style": @.style
+              },
+              _type == "fileReference" => {
+                ...,
+                file-> {
+                  _id,
+                  url,
+                  originalFilename,
+                  mimeType,
+                  size
+                }
               }
             }
           }
@@ -1366,6 +1416,16 @@ export const QUERIES = {
               _type == "customStyle" => {
                 ...,
                 "style": @.style
+              },
+              _type == "fileReference" => {
+                ...,
+                file-> {
+                  _id,
+                  url,
+                  originalFilename,
+                  mimeType,
+                  size
+                }
               }
             }
           }
@@ -1394,6 +1454,16 @@ export const QUERIES = {
               _type == "customStyle" => {
                 ...,
                 "style": @.style
+              },
+              _type == "fileReference" => {
+                ...,
+                file-> {
+                  _id,
+                  url,
+                  originalFilename,
+                  mimeType,
+                  size
+                }
               }
             }
           }
@@ -1467,6 +1537,16 @@ export const QUERIES = {
               _type == "customStyle" => {
                 ...,
                 "style": @.style
+              },
+              _type == "fileReference" => {
+                ...,
+                file-> {
+                  _id,
+                  url,
+                  originalFilename,
+                  mimeType,
+                  size
+                }
               }
             }
           }
@@ -1654,6 +1734,16 @@ export const QUERIES = {
               _type == "customStyle" => {
                 ...,
                 "style": @.style
+              },
+              _type == "fileReference" => {
+                ...,
+                file-> {
+                  _id,
+                  url,
+                  originalFilename,
+                  mimeType,
+                  size
+                }
               }
             }
           }
@@ -1749,6 +1839,16 @@ export const QUERIES = {
               _type == "customStyle" => {
                 ...,
                 "style": @.style
+              },
+              _type == "fileReference" => {
+                ...,
+                file-> {
+                  _id,
+                  url,
+                  originalFilename,
+                  mimeType,
+                  size
+                }
               }
             }
           }
