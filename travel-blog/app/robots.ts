@@ -16,6 +16,27 @@ export default function robots(): MetadataRoute.Robots {
           '/api/draft/',
         ],
       },
+      // Facebook crawlers - wymagane dla Open Graph
+      {
+        userAgent: 'facebookexternalhit',
+        allow: '/',
+        disallow: [
+          '/admin/',
+          '/api/admin/',
+          '/api/comments/admin/',
+          '/api/draft/',
+        ],
+      },
+      {
+        userAgent: 'Facebot',
+        allow: '/',
+        disallow: [
+          '/admin/',
+          '/api/admin/',
+          '/api/comments/admin/',
+          '/api/draft/',
+        ],
+      },
       // OpenAI GPTBot
       {
         userAgent: 'GPTBot',
