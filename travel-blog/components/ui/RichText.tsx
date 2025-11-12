@@ -180,9 +180,9 @@ export default function RichText({
           const fileDef = markDefs.find((def) => def._key === mark && def._type === "fileReference");
           if (fileDef && fileDef.file) {
             // Użyj _id jeśli dostępne (zawsze jest), w przeciwnym razie originalFilename
-            const fileId = fileDef.file._id || fileDef.file._ref || fileDef.file.asset?._id || fileDef.file.asset?._ref;
-            const fileName = fileDef.file.originalFilename || fileDef.file.asset?.originalFilename;
-            const mimeType = fileDef.file.mimeType || fileDef.file.asset?.mimeType || "";
+            const fileId = fileDef.file._id || fileDef.file._ref;
+            const fileName = fileDef.file.originalFilename;
+            const mimeType = fileDef.file.mimeType || "";
             const isPdf = mimeType === "application/pdf";
 
             // Użyj _id jeśli dostępne (bardziej niezawodne), w przeciwnym razie originalFilename
@@ -362,9 +362,9 @@ export default function RichText({
                     const fileDef = markDefs.find((def) => def._key === mark && def._type === "fileReference");
                     if (fileDef && fileDef.file) {
                       // Użyj _id jeśli dostępne (zawsze jest), w przeciwnym razie originalFilename
-                      const fileId = fileDef.file._id || fileDef.file._ref || fileDef.file.asset?._id || fileDef.file.asset?._ref;
-                      const fileName = fileDef.file.originalFilename || fileDef.file.asset?.originalFilename;
-                      const mimeType = fileDef.file.mimeType || fileDef.file.asset?.mimeType || "";
+                      const fileId = fileDef.file._id || fileDef.file._ref;
+                      const fileName = fileDef.file.originalFilename;
+                      const mimeType = fileDef.file.mimeType || "";
                       const isPdf = mimeType === "application/pdf";
 
                       // Użyj _id jeśli dostępne (bardziej niezawodne), w przeciwnym razie originalFilename

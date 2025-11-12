@@ -96,6 +96,11 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
     : null;
   // Upewnij się że URL jest absolutny (Facebook wymaga absolutnych URL)
   const ogImageUrl = ensureAbsoluteUrl(rawOgImageUrl, siteUrl);
+  
+  // Upewnij się, że URL używa HTTPS (secure_url dla Facebook)
+  const secureOgImageUrl = ogImageUrl && ogImageUrl.startsWith("http://")
+    ? ogImageUrl.replace("http://", "https://")
+    : ogImageUrl;
 
   // Canonical URL - zawsze wskazuje na główną kategorię
   const canonicalUrl = post.seo?.canonicalUrl || canonicalPostUrl;
@@ -128,10 +133,10 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
       url: postUrl,
       siteName,
       locale: "pl_PL",
-      ...(ogImageUrl && {
+      ...(secureOgImageUrl && {
         images: [
           {
-            url: ogImageUrl,
+            url: secureOgImageUrl,
             width: 1200,
             height: 630,
             alt: ogTitle,
@@ -146,8 +151,8 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
       card: "summary_large_image",
       title: ogTitle,
       description: ogDescription,
-      ...(ogImageUrl && {
-        images: [ogImageUrl],
+      ...(secureOgImageUrl && {
+        images: [secureOgImageUrl],
       }),
     },
     other: {
@@ -155,6 +160,9 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
       "article:section": post.categories?.[0]?.name || "Blog",
       ...(post.publishedAt && {
         "article:published_time": post.publishedAt,
+      }),
+      ...(secureOgImageUrl && {
+        "og:image:secure_url": secureOgImageUrl,
       }),
     },
   };
@@ -272,7 +280,11 @@ export default async function PostPage({ params }: Params) {
     ? getImageUrl(ogImage, { width: 1200, height: 630, format: "webp" })
     : null;
   // Upewnij się że URL jest absolutny (Facebook wymaga absolutnych URL)
-  const ogImageUrl = ensureAbsoluteUrl(rawOgImageUrl, siteUrl) || undefined;
+  const ogImageUrlRaw = ensureAbsoluteUrl(rawOgImageUrl, siteUrl);
+  // Upewnij się, że URL używa HTTPS (secure_url dla Facebook)
+  const ogImageUrl = ogImageUrlRaw && ogImageUrlRaw.startsWith("http://")
+    ? ogImageUrlRaw.replace("http://", "https://")
+    : ogImageUrlRaw || undefined;
 
   // Generuj spis treści na podstawie komponentów z tytułami treści
   const generateTableOfContents = () => {

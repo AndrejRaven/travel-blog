@@ -5,11 +5,11 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: Promise<{ filename: string }> | { filename: string } }
+  { params }: { params: Promise<{ filename: string }> }
 ) {
   try {
-    // Obsługa Next.js 15 gdzie params może być Promise
-    const resolvedParams = await Promise.resolve(params);
+    // Next.js 15 wymaga Promise dla params
+    const resolvedParams = await params;
     const fileIdOrName = decodeURIComponent(resolvedParams.filename);
 
     if (!fileIdOrName) {

@@ -1,7 +1,161 @@
 import React from "react";
+import { Metadata } from "next";
 import { getHomepageData } from "@/lib/queries/functions";
 import HomePageClient from "@/components/pages/HomePageClient";
 import { SITE_CONFIG } from "@/lib/config";
+import { getImageUrl, SanityImage } from "@/lib/sanity";
+
+// Funkcja pomocnicza do walidacji i upewnienia się że URL jest absolutny
+function ensureAbsoluteUrl(
+  url: string | null | undefined,
+  siteUrl: string
+): string | null {
+  if (!url) return null;
+
+  // Jeśli URL już zaczyna się od http:// lub https://, zwróć go bez zmian
+  if (url.startsWith("http://") || url.startsWith("https://")) {
+    return url;
+  }
+
+  // Jeśli URL zaczyna się od //, dodaj https:
+  if (url.startsWith("//")) {
+    return `https:${url}`;
+  }
+
+  // Jeśli URL jest względny, połącz z siteUrl
+  if (url.startsWith("/")) {
+    return `${siteUrl}${url}`;
+  }
+
+  // W przeciwnym razie zwróć null (nieprawidłowy URL)
+  console.warn(`Invalid image URL format: ${url}`);
+  return null;
+}
+
+// Generuj metadata dla strony głównej
+export async function generateMetadata(): Promise<Metadata> {
+  const homepageDataRaw = await getHomepageData();
+  const siteName = SITE_CONFIG.name;
+  const siteUrl = SITE_CONFIG.url;
+
+  // Jeśli nie ma danych, użyj domyślnych wartości
+  if (!homepageDataRaw || typeof homepageDataRaw !== "object") {
+    return {
+      title: `${siteName} | Blog podróżniczy`,
+      description: SITE_CONFIG.description,
+      openGraph: {
+        type: "website",
+        title: siteName,
+        description: SITE_CONFIG.description,
+        url: siteUrl,
+        siteName,
+        locale: "pl_PL",
+      },
+      twitter: {
+        card: "summary_large_image",
+        title: siteName,
+        description: SITE_CONFIG.description,
+      },
+    };
+  }
+
+  const homepageData = homepageDataRaw as {
+    seo?: {
+      seoTitle?: string;
+      seoDescription?: string;
+      seoKeywords?: string[];
+      canonicalUrl?: string;
+      noIndex?: boolean;
+      noFollow?: boolean;
+      ogTitle?: string;
+      ogDescription?: string;
+      ogImage?: SanityImage | null;
+    };
+  };
+
+  // SEO Title - użyj seoTitle lub fallback
+  const seoTitle = homepageData.seo?.seoTitle || siteName;
+  const fullTitle = seoTitle.includes(siteName)
+    ? seoTitle
+    : `${seoTitle} | ${siteName}`;
+
+  // SEO Description - użyj seoDescription lub fallback
+  const seoDescription =
+    homepageData.seo?.seoDescription || SITE_CONFIG.description;
+
+  // Open Graph
+  const ogTitle = homepageData.seo?.ogTitle || siteName;
+  const ogDescription =
+    homepageData.seo?.ogDescription || seoDescription;
+  const ogImage = homepageData.seo?.ogImage;
+  const rawOgImageUrl = ogImage
+    ? getImageUrl(ogImage, { width: 1200, height: 630, format: "webp" })
+    : null;
+  // Upewnij się że URL jest absolutny (Facebook wymaga absolutnych URL)
+  const ogImageUrlRaw = ensureAbsoluteUrl(rawOgImageUrl, siteUrl);
+  // Upewnij się, że URL używa HTTPS (secure_url dla Facebook)
+  const secureOgImageUrl = ogImageUrlRaw && ogImageUrlRaw.startsWith("http://")
+    ? ogImageUrlRaw.replace("http://", "https://")
+    : ogImageUrlRaw;
+
+  // Keywords
+  const keywords = homepageData.seo?.seoKeywords || [];
+
+  // Robots
+  const robots = [];
+  if (homepageData.seo?.noIndex) robots.push("noindex");
+  if (homepageData.seo?.noFollow) robots.push("nofollow");
+  if (robots.length === 0) robots.push("index", "follow");
+
+  // Canonical URL
+  const canonicalUrl = homepageData.seo?.canonicalUrl || siteUrl;
+
+  const metadata: Metadata = {
+    title: fullTitle,
+    description: seoDescription,
+    keywords: keywords.length > 0 ? keywords.join(", ") : undefined,
+    authors: [{ name: siteName }],
+    creator: siteName,
+    publisher: siteName,
+    robots: robots.join(", "),
+    alternates: {
+      canonical: canonicalUrl,
+    },
+    openGraph: {
+      type: "website",
+      title: ogTitle,
+      description: ogDescription,
+      url: siteUrl,
+      siteName,
+      locale: "pl_PL",
+      ...(secureOgImageUrl && {
+        images: [
+          {
+            url: secureOgImageUrl,
+            width: 1200,
+            height: 630,
+            alt: ogTitle,
+          },
+        ],
+      }),
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: ogTitle,
+      description: ogDescription,
+      ...(secureOgImageUrl && {
+        images: [secureOgImageUrl],
+      }),
+    },
+    other: {
+      ...(secureOgImageUrl && {
+        "og:image:secure_url": secureOgImageUrl,
+      }),
+    },
+  };
+
+  return metadata;
+}
 
 export default async function Home() {
   // Pobierz dane homepage z Sanity na serwerze
