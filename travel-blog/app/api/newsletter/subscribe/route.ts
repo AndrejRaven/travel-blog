@@ -1,14 +1,51 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { checkRateLimit, rateLimitConfigs } from "@/lib/rate-limit";
+import { validateEmail } from "@/lib/validation";
 
 export const dynamic = 'force-dynamic';
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
+    // Rate limiting
+    const forwarded = req.headers.get("x-forwarded-for");
+    const ipAddress = forwarded
+      ? forwarded.split(",")[0]
+      : req.headers.get("x-real-ip") || "unknown";
+
+    const rateLimitResult = checkRateLimit(
+      `newsletter:${ipAddress}`,
+      rateLimitConfigs.newsletter
+    );
+
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Zbyt wiele prób zapisu. Spróbuj ponownie później.",
+          retryAfter: Math.ceil(
+            (rateLimitResult.reset - Date.now()) / 1000
+          ),
+        },
+        {
+          status: 429,
+          headers: {
+            "X-RateLimit-Limit": rateLimitResult.limit.toString(),
+            "X-RateLimit-Remaining": rateLimitResult.remaining.toString(),
+            "Retry-After": Math.ceil(
+              (rateLimitResult.reset - Date.now()) / 1000
+            ).toString(),
+          },
+        }
+      );
+    }
+
     const { email } = await req.json();
 
-    if (!email || typeof email !== "string") {
+    // Walidacja email
+    const emailValidation = validateEmail(email);
+    if (!emailValidation.valid) {
       return NextResponse.json(
-        { success: false, message: "Adres e-mail jest wymagany." },
+        { success: false, message: emailValidation.error || "Nieprawidłowy adres e-mail." },
         { status: 400 }
       );
     }

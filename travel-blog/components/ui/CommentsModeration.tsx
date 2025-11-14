@@ -52,6 +52,23 @@ export default function CommentsModeration({
     new Set()
   );
   const [bulkProcessing, setBulkProcessing] = useState(false);
+  const [csrfToken, setCsrfToken] = useState<string | null>(null);
+
+  // Pobierz token CSRF przy załadowaniu komponentu
+  useEffect(() => {
+    const fetchCsrfToken = async () => {
+      try {
+        const response = await fetch("/api/csrf-token");
+        if (response.ok) {
+          const data = await response.json();
+          setCsrfToken(data.token);
+        }
+      } catch (err) {
+        console.error("Błąd podczas pobierania tokenu CSRF:", err);
+      }
+    };
+    fetchCsrfToken();
+  }, []);
 
   // Pomocnicze funkcje do śledzenia operacji
   const getActionKey = (commentId: string, action: string) =>
@@ -92,11 +109,16 @@ export default function CommentsModeration({
     const actionKey = getActionKey(commentId, action);
     try {
       setProcessingActions((prev) => new Set(prev).add(actionKey));
+      const headers: HeadersInit = {
+        "Content-Type": "application/json",
+      };
+      if (csrfToken) {
+        headers["x-csrf-token"] = csrfToken;
+      }
+
       const response = await fetch(`/api/comments/${commentId}/status`, {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers,
         body: JSON.stringify({ status: newStatus }),
       });
 
@@ -129,8 +151,14 @@ export default function CommentsModeration({
     const actionKey = getActionKey(commentId, "delete");
     try {
       setProcessingActions((prev) => new Set(prev).add(actionKey));
+      const headers: HeadersInit = {};
+      if (csrfToken) {
+        headers["x-csrf-token"] = csrfToken;
+      }
+
       const response = await fetch(`/api/comments/${commentId}`, {
         method: "DELETE",
+        headers,
       });
 
       if (!response.ok) {
@@ -156,11 +184,16 @@ export default function CommentsModeration({
   const bulkUpdateStatus = async (status: Comment["status"]) => {
     try {
       setBulkProcessing(true);
+      const headers: HeadersInit = {
+        "Content-Type": "application/json",
+      };
+      if (csrfToken) {
+        headers["x-csrf-token"] = csrfToken;
+      }
+
       const response = await fetch("/api/comments/bulk-status", {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers,
         body: JSON.stringify({
           commentIds: selectedComments,
           status,

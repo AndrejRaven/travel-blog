@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Playfair_Display, Source_Code_Pro } from "next/font/google";
 import { Suspense } from "react";
+import Script from "next/script";
 import { draftMode } from "next/headers";
 import { VisualEditing } from "next-sanity";
 import Header from "@/components/layout/header";
@@ -56,26 +57,9 @@ export default async function RootLayout({
           httpEquiv="Permissions-Policy"
           content="autoplay=*, encrypted-media=*, fullscreen=*, accelerometer=*, gyroscope=*, clipboard-write=*, clipboard-read=*"
         />
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              (function() {
-                try {
-                  const theme = localStorage.getItem('theme') || 
-                    (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-                  
-                  if (theme === 'dark') {
-                    document.documentElement.classList.add('dark');
-                  } else {
-                    document.documentElement.classList.remove('dark');
-                  }
-                } catch (e) {
-                  // Fallback do light theme jeśli localStorage nie jest dostępny
-                  document.documentElement.classList.remove('dark');
-                }
-              })();
-            `,
-          }}
+        <Script
+          src="/scripts/theme-init.js"
+          strategy="beforeInteractive"
         />
       </head>
       <body

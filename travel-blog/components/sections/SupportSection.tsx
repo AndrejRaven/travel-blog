@@ -1,12 +1,13 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Button from "@/components/ui/Button";
 import AnimatedSection from "@/components/shared/AnimatedSection";
 import SectionContainer from "@/components/shared/SectionContainer";
 import { useAnimation } from "@/lib/useAnimation";
 import { SupportSectionData } from "@/lib/component-types";
+import { sanitizeSvg } from "@/lib/svg-sanitizer";
 
 type Props = {
   data: SupportSectionData;
@@ -15,6 +16,23 @@ type Props = {
 export default function SupportSection({ data }: Props) {
   // Wszystkie hooki muszą być przed wczesnymi returnami
   const { isLoaded, isInView, containerRef } = useAnimation();
+  const [sanitizedSvgs, setSanitizedSvgs] = useState<Record<string, string>>({});
+
+  // Sanitizuj SVG po stronie klienta
+  useEffect(() => {
+    if (!data?.supportOptions) return;
+    
+    const sanitizeAllSvgs = async () => {
+      const sanitized: Record<string, string> = {};
+      for (const option of data.supportOptions) {
+        if (option.iconSvg) {
+          sanitized[option.id] = await sanitizeSvg(option.iconSvg);
+        }
+      }
+      setSanitizedSvgs(sanitized);
+    };
+    sanitizeAllSvgs();
+  }, [data?.supportOptions]);
 
   // Zabezpieczenie na wypadek gdyby data był undefined
   if (!data) {
@@ -92,7 +110,7 @@ export default function SupportSection({ data }: Props) {
                     ) : null;
                   })()
                 ) : option.iconSvg ? (
-                  <div dangerouslySetInnerHTML={{ __html: option.iconSvg }} />
+                  <div dangerouslySetInnerHTML={{ __html: sanitizedSvgs[option.id] || option.iconSvg }} />
                 ) : null}
                 <span>{option.name}</span>
               </Button>

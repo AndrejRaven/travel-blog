@@ -1,10 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { client } from '@/lib/sanity';
+import { requireAdmin } from '@/lib/auth';
+import { verifyCsrfToken } from '@/lib/csrf';
 
 export const dynamic = 'force-dynamic';
 
 export async function PATCH(request: NextRequest) {
   try {
+    // Weryfikacja uprawnień admin
+    await requireAdmin();
+
+    // Weryfikuj CSRF token
+    if (!(await verifyCsrfToken(request))) {
+      return NextResponse.json({ error: "Invalid CSRF token" }, { status: 403 });
+    }
+
     const body = await request.json();
     const { commentIds, status } = body;
 
@@ -51,6 +61,9 @@ export async function PATCH(request: NextRequest) {
     });
 
   } catch (error) {
+    if (error instanceof Error && error.message === "Unauthorized") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     console.error('Błąd podczas masowej aktualizacji statusu komentarzy:', error);
     return NextResponse.json({ error: 'Błąd serwera' }, { status: 500 });
   }

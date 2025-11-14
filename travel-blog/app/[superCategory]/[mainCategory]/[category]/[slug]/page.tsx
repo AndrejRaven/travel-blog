@@ -8,6 +8,7 @@ import { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getPrimaryCategory, getCanonicalPath } from "@/lib/utils";
 import { SITE_CONFIG } from "@/lib/config";
+import { safeJsonLd } from "@/lib/json-ld-utils";
 
 type Params = {
   params: Promise<{
@@ -448,18 +449,24 @@ export default async function PostPage({ params }: Params) {
 
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
-      />
+      {safeJsonLd(articleJsonLd) && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: safeJsonLd(articleJsonLd)! }}
+        />
+      )}
+      {safeJsonLd(breadcrumbJsonLd) && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbJsonLd)! }}
+        />
+      )}
+      {safeJsonLd(organizationJsonLd) && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: safeJsonLd(organizationJsonLd)! }}
+        />
+      )}
       <PostPageClient
         post={post}
         tableOfContentsItems={tableOfContentsItems}

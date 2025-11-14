@@ -9,9 +9,10 @@ import { projectId, dataset, SanityImage } from "./sanity";
 import { ANIMATION_PRESETS, ANIMATION_CLASSES, HOVER_EFFECTS } from "./animations";
 
 // Konfiguracja dla image-url builder
+// projectId i dataset są walidowane w sanity.ts, więc tutaj używamy non-null assertion
 const builder = imageUrlBuilder({
-  projectId,
-  dataset,
+  projectId: projectId!,
+  dataset: dataset!,
 });
 
 // Funkcja urlFor dla użycia w komponentach

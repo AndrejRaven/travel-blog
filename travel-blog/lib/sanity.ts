@@ -1,9 +1,21 @@
 import imageUrlBuilder from '@sanity/image-url';
 import { createClient } from 'next-sanity';
 
-export const projectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID || "k5fsny25";
-export const dataset = process.env.NEXT_PUBLIC_SANITY_DATASET || "production";
+export const projectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID;
+export const dataset = process.env.NEXT_PUBLIC_SANITY_DATASET;
 export const apiVersion = process.env.NEXT_PUBLIC_SANITY_API_VERSION || "2024-01-01";
+
+if (!projectId) {
+  throw new Error(
+    "NEXT_PUBLIC_SANITY_PROJECT_ID environment variable is required"
+  );
+}
+
+if (!dataset) {
+  throw new Error(
+    "NEXT_PUBLIC_SANITY_DATASET environment variable is required"
+  );
+}
 
 // Client tylko do odczytu (z CDN dla lepszej wydajności)
 export const readOnlyClient = createClient({

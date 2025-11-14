@@ -4,6 +4,7 @@ import { getHomepageData } from "@/lib/queries/functions";
 import HomePageClient from "@/components/pages/HomePageClient";
 import { SITE_CONFIG } from "@/lib/config";
 import { getImageUrl, SanityImage } from "@/lib/sanity";
+import { safeJsonLd } from "@/lib/json-ld-utils";
 
 // Funkcja pomocnicza do walidacji i upewnienia się że URL jest absolutny
 function ensureAbsoluteUrl(
@@ -228,14 +229,18 @@ export default async function Home() {
 
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
-      />
+      {safeJsonLd(websiteJsonLd) && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: safeJsonLd(websiteJsonLd)! }}
+        />
+      )}
+      {safeJsonLd(organizationJsonLd) && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: safeJsonLd(organizationJsonLd)! }}
+        />
+      )}
       <HomePageClient
         homepageData={
           homepageData as Parameters<typeof HomePageClient>[0]["homepageData"]

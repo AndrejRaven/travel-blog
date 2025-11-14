@@ -1,7 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import { SignJWT } from "jose";
+import { checkRateLimit, rateLimitConfigs } from "@/lib/rate-limit";
+import { logger } from "@/lib/logger";
+import crypto from "crypto";
 
 export const dynamic = 'force-dynamic';
+
+// Porównaj hasła w sposób odporny na timing attacks
+function secureCompare(a: string, b: string): boolean {
+  if (a.length !== b.length) {
+    return false;
+  }
+
+  const bufferA = Buffer.from(a, "utf8");
+  const bufferB = Buffer.from(b, "utf8");
+
+  return crypto.timingSafeEqual(bufferA, bufferB);
+}
 
 // Funkcja do pobierania i walidacji zmiennych środowiskowych
 const getEnvVars = () => {
@@ -10,22 +25,52 @@ const getEnvVars = () => {
   const secret = process.env.JWT_SECRET?.trim();
 
   // Debug logging w development
-  if (process.env.NODE_ENV !== 'production') {
-    console.log('[AUTH DEBUG] Environment variables check:', {
-      hasUsername: !!username,
-      hasPassword: !!password,
-      hasSecret: !!secret,
-      usernameLength: username?.length || 0,
-      passwordLength: password?.length || 0,
-      secretLength: secret?.length || 0,
-    });
-  }
+  logger.debug("Environment variables check", {
+    hasUsername: !!username,
+    hasPassword: !!password,
+    hasSecret: !!secret,
+    usernameLength: username?.length || 0,
+    // NIE loguj passwordLength, secretLength - wrażliwe dane
+  });
 
   return { username, password, secret };
 };
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limiting
+    const forwarded = request.headers.get("x-forwarded-for");
+    const ipAddress = forwarded
+      ? forwarded.split(",")[0]
+      : request.headers.get("x-real-ip") || "unknown";
+
+    const rateLimitResult = checkRateLimit(
+      `auth:${ipAddress}`,
+      rateLimitConfigs.auth
+    );
+
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        {
+          message: "Zbyt wiele prób logowania. Spróbuj ponownie później.",
+          type: "rate_limit_error",
+          retryAfter: Math.ceil(
+            (rateLimitResult.reset - Date.now()) / 1000
+          ),
+        },
+        {
+          status: 429,
+          headers: {
+            "X-RateLimit-Limit": rateLimitResult.limit.toString(),
+            "X-RateLimit-Remaining": rateLimitResult.remaining.toString(),
+            "Retry-After": Math.ceil(
+              (rateLimitResult.reset - Date.now()) / 1000
+            ).toString(),
+          },
+        }
+      );
+    }
+
     const { username: inputUsername, password: inputPassword } = await request.json();
     const { username: envUsername, password: envPassword, secret: jwtSecret } = getEnvVars();
 
@@ -36,7 +81,7 @@ export async function POST(request: NextRequest) {
       if (!envPassword) missingVars.push('ADMIN_PASSWORD');
       if (!jwtSecret) missingVars.push('JWT_SECRET');
 
-      console.error('[AUTH ERROR] Missing environment variables:', missingVars);
+      logger.error("Missing environment variables", { missingVars });
       
       return NextResponse.json(
         { 
@@ -54,9 +99,7 @@ export async function POST(request: NextRequest) {
       if (!inputUsername) missingFields.push('nazwa użytkownika');
       if (!inputPassword) missingFields.push('hasło');
 
-      if (process.env.NODE_ENV !== 'production') {
-        console.log('[AUTH DEBUG] Missing input fields:', missingFields);
-      }
+      logger.debug("Missing input fields", { missingFields });
 
       return NextResponse.json(
         { 
@@ -74,20 +117,14 @@ export async function POST(request: NextRequest) {
 
     // Sprawdź dane logowania z szczegółowym feedbackiem
     const usernameMatch = trimmedInputUsername === envUsername;
-    const passwordMatch = trimmedInputPassword === envPassword;
+    const passwordMatch = secureCompare(trimmedInputPassword, envPassword);
 
     if (!usernameMatch || !passwordMatch) {
       // Loguj w development dla debugowania (bez danych wrażliwych)
-      if (process.env.NODE_ENV !== 'production') {
-        console.log('[AUTH DEBUG] Login attempt failed:', {
-          inputUsernameLength: trimmedInputUsername.length,
-          inputPasswordLength: trimmedInputPassword.length,
-          envUsernameLength: envUsername.length,
-          envPasswordLength: envPassword.length,
-          usernameMatch,
-          passwordMatch
-        });
-      }
+      logger.debug("Login attempt failed", {
+        inputUsernameLength: trimmedInputUsername.length,
+        // NIE loguj passwordLength, envPasswordLength, usernameMatch, passwordMatch - wrażliwe dane
+      });
 
       // Zwróć szczegółowy komunikat o błędzie
       const message = "Nieprawidłowe dane logowania";
@@ -139,13 +176,11 @@ export async function POST(request: NextRequest) {
         path: "/",
       });
 
-      if (process.env.NODE_ENV !== 'production') {
-        console.log('[AUTH DEBUG] Login successful for user:', envUsername);
-      }
+      logger.debug("Login successful", { username: envUsername });
 
       return response;
     } catch (jwtError) {
-      console.error('[AUTH ERROR] JWT token creation failed:', jwtError);
+      logger.error("JWT token creation failed", jwtError);
       return NextResponse.json(
         { 
           message: "Błąd podczas tworzenia sesji",
@@ -156,7 +191,7 @@ export async function POST(request: NextRequest) {
       );
     }
   } catch (error) {
-    console.error("[AUTH ERROR] Unexpected error:", error);
+    logger.error("Unexpected error during login", error);
     return NextResponse.json(
       { 
         message: "Wystąpił błąd podczas logowania",
@@ -176,7 +211,7 @@ export async function DELETE() {
 
     return response;
   } catch (error) {
-    console.error("Logout error:", error);
+    logger.error("Logout error", error);
     return NextResponse.json(
       { message: "Wystąpił błąd podczas wylogowania" },
       { status: 500 }

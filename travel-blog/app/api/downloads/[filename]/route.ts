@@ -3,6 +3,28 @@ import { readOnlyClient } from "@/lib/sanity";
 
 export const dynamic = 'force-dynamic';
 
+// Funkcja do walidacji i normalizacji nazwy pliku
+function validateFilename(filename: string): string | null {
+  // Decode URI component
+  const decoded = decodeURIComponent(filename);
+
+  // Sprawdź czy zawiera niebezpieczne znaki
+  if (
+    decoded.includes("..") ||
+    decoded.includes("/") ||
+    decoded.includes("\\")
+  ) {
+    return null; // Path traversal attempt
+  }
+
+  // Sprawdź długość
+  if (decoded.length > 255) {
+    return null; // Za długa nazwa
+  }
+
+  return decoded;
+}
+
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ filename: string }> }
@@ -10,11 +32,12 @@ export async function GET(
   try {
     // Next.js 15 wymaga Promise dla params
     const resolvedParams = await params;
-    const fileIdOrName = decodeURIComponent(resolvedParams.filename);
 
+    // Waliduj nazwę pliku
+    const fileIdOrName = validateFilename(resolvedParams.filename);
     if (!fileIdOrName) {
       return NextResponse.json(
-        { error: "ID lub nazwa pliku jest wymagana" },
+        { error: "Nieprawidłowa nazwa pliku" },
         { status: 400 }
       );
     }
