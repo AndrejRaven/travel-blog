@@ -1,7 +1,10 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { getLatestYouTubeVideoClient } from "@/lib/youtube";
+import {
+  getLatestYouTubeVideoClient,
+  getYouTubeVideoByIdClient,
+} from "@/lib/youtube";
 import SectionContainer from "@/components/shared/SectionContainer";
 
 import { EmbedYoutubeData } from "@/lib/component-types";
@@ -18,16 +21,20 @@ export default function EmbedYoutube({
   const [error, setError] = useState<string | null>(null);
   // Rozwiąż videoId - jeśli to "latest" lub useLatestVideo jest true, pobierz najnowszy film
   const [resolvedVideoId, setResolvedVideoId] = useState(videoId);
+  // Data publikacji filmu dla SEO (uploadDate)
+  const [publishedAt, setPublishedAt] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchLatestVideo = async () => {
+    const fetchVideoData = async () => {
       if (videoId === "latest" || useLatestVideo) {
+        // Pobierz najnowszy film
         setIsLoading(true);
         setError(null);
         try {
           const latestVideo = await getLatestYouTubeVideoClient();
           if (latestVideo) {
             setResolvedVideoId(latestVideo.id);
+            setPublishedAt(latestVideo.publishedAt || null);
           } else {
             setError("Nie udało się pobrać najnowszego filmu");
           }
@@ -41,11 +48,20 @@ export default function EmbedYoutube({
         } finally {
           setIsLoading(false);
         }
+      } else if (videoId && videoId !== "latest") {
+        // Dla zwykłego videoId, spróbuj pobrać datę publikacji z RSS feed
+        try {
+          const publishedDate = await getYouTubeVideoByIdClient(videoId);
+          setPublishedAt(publishedDate);
+        } catch (error) {
+          console.error("❌ Error fetching video date:", error);
+          // Nie ustawiamy błędu, bo brak daty nie jest krytyczny
+        }
       }
     };
 
     if (container) {
-      fetchLatestVideo();
+      fetchVideoData();
     }
   }, [videoId, useLatestVideo, container]);
 
@@ -168,6 +184,7 @@ export default function EmbedYoutube({
           itemProp="thumbnailUrl"
           content={`https://img.youtube.com/vi/${resolvedVideoId}/maxresdefault.jpg`}
         />
+        {publishedAt && <meta itemProp="uploadDate" content={publishedAt} />}
       </div>
     </SectionContainer>
   );

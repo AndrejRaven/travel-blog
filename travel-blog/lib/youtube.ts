@@ -228,6 +228,57 @@ export async function getYouTubeChannelInfo(): Promise<YouTubeChannelInfo | null
 }
 
 /**
+ * Pobiera datę publikacji dla konkretnego videoId z RSS feed (client-side)
+ * Zwraca publishedAt jeśli film jest w RSS feed, w przeciwnym razie null
+ */
+export async function getYouTubeVideoByIdClient(
+  videoId: string
+): Promise<string | null> {
+  try {
+    const response = await fetch(YOUTUBE_API_URL);
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const xmlText = await response.text();
+
+    // Parsowanie XML za pomocą DOMParser (działa w przeglądarce)
+    const parser = new DOMParser();
+    const xmlDoc = parser.parseFromString(xmlText, "text/xml");
+
+    // Pobierz wszystkie filmy
+    const entries = xmlDoc.querySelectorAll("entry");
+
+    // Szukaj filmu o podanym ID
+    for (const entry of entries) {
+      // Wyciągnij ID filmu z URL
+      const videoUrl = entry.querySelector("link")?.getAttribute("href");
+      if (!videoUrl) {
+        continue;
+      }
+
+      const entryVideoId = videoUrl.split("v=")[1]?.split("&")[0];
+      if (!entryVideoId) {
+        continue;
+      }
+
+      // Jeśli znaleziono film o podanym ID, zwróć datę publikacji
+      if (entryVideoId === videoId) {
+        const publishedAt = entry.querySelector("published")?.textContent || "";
+        return publishedAt || null;
+      }
+    }
+
+    // Film nie został znaleziony w RSS feed
+    return null;
+  } catch (error) {
+    console.error("Error fetching YouTube video by ID:", error);
+    return null;
+  }
+}
+
+/**
  * Sprawdza czy videoId to "latest" i zwraca odpowiedni ID
  */
 export async function resolveVideoId(videoId: string): Promise<string> {
