@@ -28,16 +28,23 @@ type MainCategoryPageProps = {
 };
 
 export async function generateStaticParams() {
-  const mainCategories = await fetchGroq<MainCategory[]>(
-    QUERIES.MAIN_CATEGORY.ALL,
-    {},
-    "CATEGORIES"
-  );
+  try {
+    const mainCategories = await fetchGroq<MainCategory[]>(
+      QUERIES.MAIN_CATEGORY.ALL,
+      {},
+      "CATEGORIES"
+    );
 
-  return mainCategories.map((mainCategory) => ({
-    superCategory: mainCategory.superCategory?.slug.current || "unknown",
-    mainCategory: mainCategory.slug.current,
-  }));
+    return mainCategories.map((mainCategory) => ({
+      superCategory: mainCategory.superCategory?.slug.current || "unknown",
+      mainCategory: mainCategory.slug.current,
+    }));
+  } catch (error) {
+    // Jeśli zmienne środowiskowe nie są dostępne podczas build time,
+    // zwróć pustą tablicę - strony będą generowane dynamicznie
+    console.warn('Warning: Could not generate static params. Pages will be generated dynamically.', error);
+    return [];
+  }
 }
 
 export async function generateMetadata({ params }: MainCategoryPageProps) {

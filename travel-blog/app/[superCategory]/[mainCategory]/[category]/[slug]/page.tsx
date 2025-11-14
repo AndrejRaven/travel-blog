@@ -538,27 +538,34 @@ export default async function PostPage({ params }: Params) {
 }
 
 export async function generateStaticParams() {
-  const postsWithCategories = await getAllPostSlugsWithCategories();
-  const params: Array<{
-    superCategory: string;
-    mainCategory: string;
-    category: string;
-    slug: string;
-  }> = [];
+  try {
+    const postsWithCategories = await getAllPostSlugsWithCategories();
+    const params: Array<{
+      superCategory: string;
+      mainCategory: string;
+      category: string;
+      slug: string;
+    }> = [];
 
-  for (const post of postsWithCategories) {
-    // Dla każdego posta generuj ścieżkę TYLKO dla pierwszej (głównej) kategorii
-    // Zapytanie GROQ już filtruje tylko kategorie z pełną hierarchią (3 poziomy)
-    if (post.categories && post.categories.length > 0) {
-      const primaryCategory = post.categories[0];
-      params.push({
-        superCategory: primaryCategory.superCategory,
-        mainCategory: primaryCategory.mainCategory,
-        category: primaryCategory.category,
-        slug: post.slug,
-      });
+    for (const post of postsWithCategories) {
+      // Dla każdego posta generuj ścieżkę TYLKO dla pierwszej (głównej) kategorii
+      // Zapytanie GROQ już filtruje tylko kategorie z pełną hierarchią (3 poziomy)
+      if (post.categories && post.categories.length > 0) {
+        const primaryCategory = post.categories[0];
+        params.push({
+          superCategory: primaryCategory.superCategory,
+          mainCategory: primaryCategory.mainCategory,
+          category: primaryCategory.category,
+          slug: post.slug,
+        });
+      }
     }
-  }
 
-  return params;
+    return params;
+  } catch (error) {
+    // Jeśli zmienne środowiskowe nie są dostępne podczas build time,
+    // zwróć pustą tablicę - strony będą generowane dynamicznie
+    console.warn('Warning: Could not generate static params. Pages will be generated dynamically.', error);
+    return [];
+  }
 }
