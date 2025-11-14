@@ -153,7 +153,10 @@ export async function getHeaderData(): Promise<HeaderData | null> {
       'HEADER'
     );
   } catch (error) {
-    handleSanityError(error, 'Error fetching header data');
+    // Jeśli zmienne środowiskowe nie są dostępne, zwróć null zamiast rzucać błąd
+    // To pozwoli buildowi przejść, a header będzie działał bez danych z Sanity
+    console.warn('Warning: Could not fetch header data. Header will render without Sanity data.', error);
+    return null;
   }
 }
 
