@@ -138,6 +138,7 @@ export const CACHE_STRATEGIES = {
 export async function fetchGroq<T>(
   query: string, 
   params: GroqParams = {},
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   cacheStrategy: keyof typeof CACHE_STRATEGIES = 'POSTS'
 ): Promise<T> {
   // Sprawdź draft mode dynamicznie (tylko w Server Components)
@@ -154,26 +155,18 @@ export async function fetchGroq<T>(
 
   // Jeśli draft mode jest aktywny, użyj preview client
   if (isDraft) {
-    return await previewClient.fetch<T>(query, params);
+    try {
+      return await previewClient.fetch<T>(query, params);
+    } catch {
+      // Jeśli preview client nie działa, użyj readOnlyClient jako fallback
+      return await readOnlyClient.fetch<T>(query, params);
+    }
   }
 
-  // W przeciwnym razie użyj standardowego fetch z cache
-  const url = `https://${projectId}.api.sanity.io/v${apiVersion}/data/query/${dataset}`;
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ query, params }),
-    next: {
-      ...CACHE_STRATEGIES[cacheStrategy],
-      tags: [cacheStrategy.toLowerCase()], // Dodaj tagi dla lepszego cache invalidation
-    },
-  });
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(`Sanity query failed: ${res.status} ${res.statusText} ${text}`);
-  }
-  const data = await res.json();
-  return data.result as T;
+  // Zawsze używaj readOnlyClient (ma lazy initialization i obsługuje brakujące zmienne środowiskowe)
+  // readOnlyClient używa Proxy, więc getReadOnlyClient() zostanie wywołane tylko przy pierwszym dostępie
+  // Jeśli zmienne środowiskowe nie są dostępne, getReadOnlyClient() rzuci błąd z czytelnym komunikatem
+  return await readOnlyClient.fetch<T>(query, params);
 }
 
 export type PortableBlock = {
