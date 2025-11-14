@@ -8,6 +8,16 @@ import InfoCard from "@/components/shared/InfoCard";
 import CategoryArticles from "@/components/sections/CategoryArticles";
 import MainCategoryList from "@/components/sections/MainCategoryList";
 import { SuperCategory, ArticleForList, MainCategory } from "@/lib/sanity";
+import { SITE_CONFIG } from "@/lib/config";
+import { safeJsonLd } from "@/lib/json-ld-utils";
+import {
+  generateCollectionPageSchema,
+  generateItemListSchema,
+  generateBreadcrumbListSchema,
+  type BreadcrumbItem,
+  type ArticleItem,
+} from "@/lib/schema-org";
+import { getPostUrl } from "@/lib/utils";
 
 type SuperCategoryPageProps = {
   params: Promise<{
@@ -90,8 +100,75 @@ export default async function SuperCategoryPage({
     })
   );
 
+  // Generuj Schema.org
+  const siteUrl = SITE_CONFIG.url;
+  const superCategoryUrl = `${siteUrl}/${superCategorySlug}`;
+
+  // BreadcrumbList
+  const breadcrumbItems: BreadcrumbItem[] = [
+    {
+      name: "Strona główna",
+      url: siteUrl,
+      position: 1,
+    },
+    {
+      name: superCategory.name,
+      url: superCategoryUrl,
+      position: 2,
+    },
+  ];
+
+  const breadcrumbJsonLd = generateBreadcrumbListSchema(breadcrumbItems);
+
+  // CollectionPage
+  const collectionPageJsonLd = generateCollectionPageSchema({
+    name: superCategory.name,
+    description:
+      superCategory.description ||
+      `Wszystkie posty z kategorii ${superCategory.name}`,
+    url: superCategoryUrl,
+    breadcrumb: breadcrumbItems,
+  });
+
+  // ItemList z artykułami
+  const articleItems: ArticleItem[] = posts.map((post) => ({
+    title: post.title,
+    url: getPostUrl(post),
+    description: post.subtitle,
+    datePublished: post.publishedAt,
+  }));
+
+  const itemListJsonLd =
+    articleItems.length > 0
+      ? generateItemListSchema({
+          name: `Artykuły w kategorii ${superCategory.name}`,
+          description: `Lista wszystkich artykułów w kategorii ${superCategory.name}`,
+          items: articleItems,
+          url: superCategoryUrl,
+        })
+      : null;
+
   return (
-    <PageLayout maxWidth="6xl">
+    <>
+      {safeJsonLd(collectionPageJsonLd) && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: safeJsonLd(collectionPageJsonLd)! }}
+        />
+      )}
+      {itemListJsonLd && safeJsonLd(itemListJsonLd) && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: safeJsonLd(itemListJsonLd)! }}
+        />
+      )}
+      {safeJsonLd(breadcrumbJsonLd) && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbJsonLd)! }}
+        />
+      )}
+      <PageLayout maxWidth="6xl">
       <PageHeader
         title={superCategory.name}
         subtitle={
@@ -181,6 +258,7 @@ export default async function SuperCategoryPage({
           <BackToHome />
         </>
       )}
-    </PageLayout>
+      </PageLayout>
+    </>
   );
 }

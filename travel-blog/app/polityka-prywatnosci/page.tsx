@@ -32,13 +32,13 @@ export default function PolitykaPrywatnosci() {
           </h2>
           <InfoCard variant="gray">
             <p className="mb-2">
-              <strong>Nazwa:</strong> Nasz Blog – Blog Podróżniczy
+              <strong>Nazwa:</strong> Vlogi Z Drogi – Blog Podróżniczy
             </p>
             <p className="mb-2">
               <strong>Właściciele:</strong> Andrej i Agnieszka
             </p>
             <p className="mb-2">
-              <strong>E-mail:</strong> kontakt@naszblog.pl
+              <strong>E-mail:</strong> poczta@vlogizdrogi.pl
             </p>
             <p>
               <strong>Charakter:</strong> Strona prywatna, niekomercyjna
@@ -261,7 +261,7 @@ export default function PolitykaPrywatnosci() {
               się z nami skontaktować:
             </p>
             <p className="text-gray-700 dark:text-gray-300 mb-2">
-              <strong>E-mail:</strong> kontakt@naszblog.pl
+              <strong>E-mail:</strong> poczta@vlogizdrogi.pl
             </p>
           </div>
         </section>

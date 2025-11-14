@@ -13,6 +13,13 @@ import {
   ArticleForList,
 } from "@/lib/sanity";
 import { getPostUrl } from "@/lib/utils";
+import { SITE_CONFIG } from "@/lib/config";
+import { safeJsonLd } from "@/lib/json-ld-utils";
+import {
+  generateCollectionPageSchema,
+  generateItemListSchema,
+  type ArticleItem,
+} from "@/lib/schema-org";
 
 export async function generateMetadata() {
   return {
@@ -90,8 +97,50 @@ export default async function WszystkieArtykulyPage() {
       )
   );
 
+  // Generuj Schema.org
+  const siteUrl = SITE_CONFIG.url;
+  const allArticlesUrl = `${siteUrl}/wszystkie-artykuly`;
+
+  // CollectionPage
+  const collectionPageJsonLd = generateCollectionPageSchema({
+    name: "Wszystkie artykuły",
+    description: "Przeglądaj wszystkie artykuły ze wszystkich kategorii",
+    url: allArticlesUrl,
+  });
+
+  // ItemList z wszystkimi artykułami
+  const articleItems: ArticleItem[] = allPosts.map((post) => ({
+    title: post.title,
+    url: getPostUrl(post),
+    description: post.subtitle,
+    datePublished: post.publishedAt,
+  }));
+
+  const itemListJsonLd =
+    articleItems.length > 0
+      ? generateItemListSchema({
+          name: "Wszystkie artykuły",
+          description: "Lista wszystkich artykułów na blogu",
+          items: articleItems,
+          url: allArticlesUrl,
+        })
+      : null;
+
   return (
-    <PageLayout maxWidth="6xl">
+    <>
+      {safeJsonLd(collectionPageJsonLd) && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: safeJsonLd(collectionPageJsonLd)! }}
+        />
+      )}
+      {itemListJsonLd && safeJsonLd(itemListJsonLd) && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: safeJsonLd(itemListJsonLd)! }}
+        />
+      )}
+      <PageLayout maxWidth="6xl">
       <PageHeader
         title="Wszystkie artykuły"
         subtitle="Przeglądaj wszystkie artykuły ze wszystkich kategorii"
@@ -262,6 +311,7 @@ export default async function WszystkieArtykulyPage() {
       )}
 
       <BackToHome className="mt-12" />
-    </PageLayout>
+      </PageLayout>
+    </>
   );
 }

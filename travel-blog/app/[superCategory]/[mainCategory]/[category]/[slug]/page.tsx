@@ -9,6 +9,14 @@ import { redirect } from "next/navigation";
 import { getPrimaryCategory, getCanonicalPath } from "@/lib/utils";
 import { SITE_CONFIG } from "@/lib/config";
 import { safeJsonLd } from "@/lib/json-ld-utils";
+import {
+  generateBlogPostingSchema,
+  generateBreadcrumbListSchema,
+  generateOrganizationSchema,
+  generatePersonSchema,
+  generateVideoObjectSchema,
+  type BreadcrumbItem,
+} from "@/lib/schema-org";
 
 type Params = {
   params: Promise<{
@@ -322,17 +330,14 @@ export default async function PostPage({ params }: Params) {
 
   const tableOfContentsItems = generateTableOfContents();
 
-  // Generuj JSON-LD dla lepszego SEO
-  const organizationUrl = SITE_CONFIG.url;
-  const organizationName = SITE_CONFIG.author.name;
+  // Generuj JSON-LD dla lepszego SEO używając nowych funkcji Schema.org
 
-  // BreadcrumbList
-  const breadcrumbItems = [
+  // BreadcrumbList - ulepszony
+  const breadcrumbItems: BreadcrumbItem[] = [
     {
-      "@type": "ListItem",
-      position: 1,
       name: "Strona główna",
-      item: siteUrl,
+      url: siteUrl,
+      position: 1,
     },
   ];
 
@@ -341,10 +346,9 @@ export default async function PostPage({ params }: Params) {
   if (primaryCategory.mainCategory?.superCategory) {
     const superCat = primaryCategory.mainCategory.superCategory;
     breadcrumbItems.push({
-      "@type": "ListItem",
-      position: position++,
       name: superCat.name || "Kategoria",
-      item: `${siteUrl}/${superCat.slug.current}`,
+      url: `${siteUrl}/${superCat.slug.current}`,
+      position: position++,
     });
   }
 
@@ -353,10 +357,9 @@ export default async function PostPage({ params }: Params) {
     const superCatSlug = mainCat.superCategory?.slug.current;
     if (superCatSlug) {
       breadcrumbItems.push({
-        "@type": "ListItem",
-        position: position++,
         name: mainCat.name || "Kategoria główna",
-        item: `${siteUrl}/${superCatSlug}/${mainCat.slug.current}`,
+        url: `${siteUrl}/${superCatSlug}/${mainCat.slug.current}`,
+        position: position++,
       });
     }
   }
@@ -367,92 +370,131 @@ export default async function PostPage({ params }: Params) {
     const mainCatSlug = primaryCategory.mainCategory?.slug.current;
     if (superCatSlug && mainCatSlug) {
       breadcrumbItems.push({
-        "@type": "ListItem",
-        position: position++,
         name: primaryCategory.name || "Podkategoria",
-        item: `${siteUrl}/${superCatSlug}/${mainCatSlug}/${primaryCategory.slug.current}`,
+        url: `${siteUrl}/${superCatSlug}/${mainCatSlug}/${primaryCategory.slug.current}`,
+        position: position++,
       });
     }
   }
 
   breadcrumbItems.push({
-    "@type": "ListItem",
-    position: position,
     name: post.title,
-    item: canonicalUrl,
+    url: canonicalUrl,
+    position: position,
   });
 
-  const articleJsonLd = {
-    "@context": "https://schema.org",
-    "@type": "Article",
+  const breadcrumbJsonLd = generateBreadcrumbListSchema(breadcrumbItems);
+
+  // BlogPosting schema (zamiast Article)
+  const blogPostingJsonLd = generateBlogPostingSchema({
     headline: post.title,
     description:
       post.seo?.seoDescription ||
       post.subtitle ||
       `Przeczytaj artykuł: ${post.title}`,
-    image: post.coverImage
-      ? getImageUrl(post.coverImage, { width: 1200, height: 630 })
-      : undefined,
-    author: {
-      "@type": "Organization",
-      "@id": `${organizationUrl}#organization`,
-      name: organizationName,
-      url: organizationUrl,
-    },
+    image: post.coverImage,
+    url: canonicalUrl,
+    datePublished: post.publishedAt || new Date().toISOString(),
+    dateModified: post.publishedAt || new Date().toISOString(),
+    author:
+      SITE_CONFIG.author.type === "Person"
+        ? {
+            name: SITE_CONFIG.author.name,
+            url: SITE_CONFIG.author.url || siteUrl,
+            sameAs: [
+              ...(SITE_CONFIG.social.twitter
+                ? [`https://twitter.com/${SITE_CONFIG.social.twitter}`]
+                : []),
+              ...(SITE_CONFIG.social.facebook
+                ? [`https://facebook.com/${SITE_CONFIG.social.facebook}`]
+                : []),
+              ...(SITE_CONFIG.social.instagram
+                ? [`https://instagram.com/${SITE_CONFIG.social.instagram}`]
+                : []),
+              ...(SITE_CONFIG.social.youtube
+                ? [`https://youtube.com/${SITE_CONFIG.social.youtube}`]
+                : []),
+            ].filter(Boolean),
+          }
+        : SITE_CONFIG.author.name,
     publisher: {
-      "@type": "Organization",
-      "@id": `${organizationUrl}#organization`,
-      name: organizationName,
-      url: organizationUrl,
+      name: SITE_CONFIG.author.name,
+      url: siteUrl,
     },
-    datePublished: post.publishedAt,
-    ...(post.publishedAt && { dateModified: post.publishedAt }),
-    mainEntityOfPage: {
-      "@type": "WebPage",
-      "@id": canonicalUrl,
-    },
-    ...(post.categories &&
-      post.categories.length > 0 && {
-        articleSection: post.categories.map((cat) => cat.name).join(", "),
-      }),
-  };
+    articleSection:
+      post.categories && post.categories.length > 0
+        ? post.categories.map((cat) => cat.name)
+        : undefined,
+    keywords: post.seo?.seoKeywords,
+    mainEntityOfPage: canonicalUrl,
+  });
 
-  const breadcrumbJsonLd = {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    itemListElement: breadcrumbItems,
-  };
+  // Organization schema
+  const organizationJsonLd = generateOrganizationSchema();
 
-  const organizationJsonLd = {
-    "@context": "https://schema.org",
-    "@type": "Organization",
-    "@id": `${organizationUrl}#organization`,
-    name: organizationName,
-    url: organizationUrl,
-    description: SITE_CONFIG.description,
-    ...((SITE_CONFIG.social.twitter ||
-      SITE_CONFIG.social.facebook ||
-      SITE_CONFIG.social.instagram) && {
-      sameAs: [
-        ...(SITE_CONFIG.social.twitter
-          ? [`https://twitter.com/${SITE_CONFIG.social.twitter}`]
-          : []),
-        ...(SITE_CONFIG.social.facebook
-          ? [`https://facebook.com/${SITE_CONFIG.social.facebook}`]
-          : []),
-        ...(SITE_CONFIG.social.instagram
-          ? [`https://instagram.com/${SITE_CONFIG.social.instagram}`]
-          : []),
-      ].filter(Boolean),
-    }),
-  };
+  // Person schema dla autorów (jeśli SITE_CONFIG.author.type === "Person")
+  const personJsonLd =
+    SITE_CONFIG.author.type === "Person"
+      ? generatePersonSchema({
+          name: SITE_CONFIG.author.name,
+          url: SITE_CONFIG.author.url || siteUrl,
+          sameAs: [
+            ...(SITE_CONFIG.social.twitter
+              ? [`https://twitter.com/${SITE_CONFIG.social.twitter}`]
+              : []),
+            ...(SITE_CONFIG.social.facebook
+              ? [`https://facebook.com/${SITE_CONFIG.social.facebook}`]
+              : []),
+            ...(SITE_CONFIG.social.instagram
+              ? [`https://instagram.com/${SITE_CONFIG.social.instagram}`]
+              : []),
+            ...(SITE_CONFIG.social.youtube
+              ? [`https://youtube.com/${SITE_CONFIG.social.youtube}`]
+              : []),
+          ].filter(Boolean),
+        })
+      : null;
+
+  // VideoObject dla osadzonych filmów YouTube w komponentach
+  const videoObjects: object[] = [];
+  if (post.components) {
+    for (const component of post.components) {
+      if (component._type === "embedYoutube") {
+        const embedYoutube = component as {
+          videoId?: string;
+          title?: string;
+          description?: string;
+        };
+        if (embedYoutube.videoId) {
+          const videoId = embedYoutube.videoId;
+          const videoTitle = embedYoutube.title || post.title;
+          const videoDescription =
+            embedYoutube.description ||
+            post.subtitle ||
+            post.seo?.seoDescription;
+
+          const videoJsonLd = generateVideoObjectSchema({
+            name: videoTitle,
+            description: videoDescription,
+            thumbnailUrl: `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`,
+            embedUrl: `https://www.youtube.com/embed/${videoId}`,
+            contentUrl: `https://www.youtube.com/watch?v=${videoId}`,
+            url: `https://www.youtube.com/watch?v=${videoId}`,
+            uploadDate: post.publishedAt,
+          });
+
+          videoObjects.push(videoJsonLd);
+        }
+      }
+    }
+  }
 
   return (
     <>
-      {safeJsonLd(articleJsonLd) && (
+      {safeJsonLd(blogPostingJsonLd) && (
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: safeJsonLd(articleJsonLd)! }}
+          dangerouslySetInnerHTML={{ __html: safeJsonLd(blogPostingJsonLd)! }}
         />
       )}
       {safeJsonLd(breadcrumbJsonLd) && (
@@ -467,6 +509,22 @@ export default async function PostPage({ params }: Params) {
           dangerouslySetInnerHTML={{ __html: safeJsonLd(organizationJsonLd)! }}
         />
       )}
+      {personJsonLd && safeJsonLd(personJsonLd) && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: safeJsonLd(personJsonLd)! }}
+        />
+      )}
+      {videoObjects.map((videoJsonLd, index) => {
+        const jsonLd = safeJsonLd(videoJsonLd);
+        return jsonLd ? (
+          <script
+            key={`video-${index}`}
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: jsonLd }}
+          />
+        ) : null;
+      })}
       <PostPageClient
         post={post}
         tableOfContentsItems={tableOfContentsItems}

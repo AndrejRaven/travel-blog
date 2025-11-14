@@ -3,10 +3,45 @@ import PageLayout from "@/components/shared/PageLayout";
 import PageHeader from "@/components/shared/PageHeader";
 import InfoCard from "@/components/shared/InfoCard";
 import BackToHome from "@/components/shared/BackToHome";
+import { SITE_CONFIG } from "@/lib/config";
+import { safeJsonLd } from "@/lib/json-ld-utils";
+import {
+  generateWebPageSchema,
+  generateOrganizationSchema,
+} from "@/lib/schema-org";
 
 export default function Wsparcie() {
+  const siteUrl = SITE_CONFIG.url;
+  const supportUrl = `${siteUrl}/wsparcie`;
+
+  // WebPage schema
+  const webPageJsonLd = generateWebPageSchema({
+    name: "Wsparcie naszego bloga",
+    description:
+      "Pomóż nam tworzyć lepsze treści i kontynuować nasze podróżnicze przygody",
+    url: supportUrl,
+  });
+
+  // Organization schema z paymentAccepted
+  const organizationJsonLd = generateOrganizationSchema({
+    paymentAccepted: ["Credit Card", "PayPal", "Bank Transfer"],
+  });
+
   return (
-    <PageLayout maxWidth="6xl">
+    <>
+      {safeJsonLd(webPageJsonLd) && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: safeJsonLd(webPageJsonLd)! }}
+        />
+      )}
+      {safeJsonLd(organizationJsonLd) && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: safeJsonLd(organizationJsonLd)! }}
+        />
+      )}
+      <PageLayout maxWidth="6xl">
       <PageHeader
         title="Wsparcie naszego bloga"
         subtitle="Pomóż nam tworzyć lepsze treści i kontynuować nasze podróżnicze przygody"
@@ -239,6 +274,7 @@ export default function Wsparcie() {
       </div>
 
       <BackToHome className="mt-12" />
-    </PageLayout>
+      </PageLayout>
+    </>
   );
 }

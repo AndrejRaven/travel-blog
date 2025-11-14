@@ -8,6 +8,16 @@ import InfoCard from "@/components/shared/InfoCard";
 import CategoryArticles from "@/components/sections/CategoryArticles";
 import Link from "@/components/ui/Link";
 import { Category, ArticleForList } from "@/lib/sanity";
+import { SITE_CONFIG } from "@/lib/config";
+import { safeJsonLd } from "@/lib/json-ld-utils";
+import {
+  generateCollectionPageSchema,
+  generateItemListSchema,
+  generateBreadcrumbListSchema,
+  type BreadcrumbItem,
+  type ArticleItem,
+} from "@/lib/schema-org";
+import { getPostUrl } from "@/lib/utils";
 
 type SubcategoryPageProps = {
   params: Promise<{
@@ -79,8 +89,96 @@ export default async function SubcategoryPage({
     notFound();
   }
 
+  // Generuj Schema.org
+  const siteUrl = SITE_CONFIG.url;
+  const categoryUrl = `${siteUrl}/${superCategory}/${mainCategory}/${categorySlug}`;
+
+  // BreadcrumbList
+  const breadcrumbItems: BreadcrumbItem[] = [
+    {
+      name: "Strona główna",
+      url: siteUrl,
+      position: 1,
+    },
+  ];
+
+  let position = 2;
+
+  if (category.mainCategory?.superCategory) {
+    breadcrumbItems.push({
+      name: category.mainCategory.superCategory.name || "Kategoria",
+      url: `${siteUrl}/${category.mainCategory.superCategory.slug.current}`,
+      position: position++,
+    });
+  }
+
+  if (category.mainCategory) {
+    const superCatSlug = category.mainCategory.superCategory?.slug.current;
+    if (superCatSlug) {
+      breadcrumbItems.push({
+        name: category.mainCategory.name || "Kategoria główna",
+        url: `${siteUrl}/${superCatSlug}/${category.mainCategory.slug.current}`,
+        position: position++,
+      });
+    }
+  }
+
+  breadcrumbItems.push({
+    name: category.name,
+    url: categoryUrl,
+    position: position,
+  });
+
+  const breadcrumbJsonLd = generateBreadcrumbListSchema(breadcrumbItems);
+
+  // CollectionPage
+  const collectionPageJsonLd = generateCollectionPageSchema({
+    name: category.name,
+    description:
+      category.description || `Wszystkie posty z podkategorii ${category.name}`,
+    url: categoryUrl,
+    breadcrumb: breadcrumbItems,
+  });
+
+  // ItemList z artykułami
+  const articleItems: ArticleItem[] = posts.map((post) => ({
+    title: post.title,
+    url: getPostUrl(post),
+    description: post.subtitle,
+    datePublished: post.publishedAt,
+  }));
+
+  const itemListJsonLd =
+    articleItems.length > 0
+      ? generateItemListSchema({
+          name: `Artykuły w kategorii ${category.name}`,
+          description: `Lista wszystkich artykułów w podkategorii ${category.name}`,
+          items: articleItems,
+          url: categoryUrl,
+        })
+      : null;
+
   return (
-    <PageLayout maxWidth="6xl">
+    <>
+      {safeJsonLd(collectionPageJsonLd) && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: safeJsonLd(collectionPageJsonLd)! }}
+        />
+      )}
+      {itemListJsonLd && safeJsonLd(itemListJsonLd) && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: safeJsonLd(itemListJsonLd)! }}
+        />
+      )}
+      {safeJsonLd(breadcrumbJsonLd) && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbJsonLd)! }}
+        />
+      )}
+      <PageLayout maxWidth="6xl">
       <PageHeader
         title={category.name}
         subtitle={
@@ -168,6 +266,7 @@ export default async function SubcategoryPage({
           <BackToHome />
         </>
       )}
-    </PageLayout>
+      </PageLayout>
+    </>
   );
 }

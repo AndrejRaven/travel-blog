@@ -5,6 +5,11 @@ import HomePageClient from "@/components/pages/HomePageClient";
 import { SITE_CONFIG } from "@/lib/config";
 import { getImageUrl, SanityImage } from "@/lib/sanity";
 import { safeJsonLd } from "@/lib/json-ld-utils";
+import {
+  generateOrganizationSchema,
+  generateWebSiteSchema,
+  generatePersonSchema,
+} from "@/lib/schema-org";
 
 // Funkcja pomocnicza do walidacji i upewnienia się że URL jest absolutny
 function ensureAbsoluteUrl(
@@ -185,47 +190,55 @@ export default async function Home() {
     ...homepageDataRaw,
   };
 
-  // Generuj JSON-LD dla strony głównej
-  const organizationUrl = SITE_CONFIG.url;
-  const organizationName = SITE_CONFIG.author.name;
+  // Generuj JSON-LD dla strony głównej używając nowych funkcji Schema.org
+  const siteUrl = SITE_CONFIG.url;
 
-  const websiteJsonLd = {
-    "@context": "https://schema.org",
-    "@type": "WebSite",
-    name: SITE_CONFIG.name,
-    url: organizationUrl,
-    description: SITE_CONFIG.description,
-    publisher: {
-      "@type": "Organization",
-      "@id": `${organizationUrl}#organization`,
-      name: organizationName,
-      url: organizationUrl,
+  // Organization schema z Logo (jeśli dostępne w homepageData)
+  const homepageDataTyped = homepageData as {
+    seo?: {
+      ogImage?: SanityImage | null;
+    };
+  };
+  const logoImage = homepageDataTyped.seo?.ogImage || null;
+
+  const organizationJsonLd = generateOrganizationSchema({
+    logo: logoImage,
+    contactPoint: {
+      email: "kontakt@naszblog.pl", // Można dodać do konfiguracji
+      contactType: "customer service",
     },
-  };
+  });
 
-  const organizationJsonLd = {
-    "@context": "https://schema.org",
-    "@type": "Organization",
-    "@id": `${organizationUrl}#organization`,
-    name: organizationName,
-    url: organizationUrl,
-    description: SITE_CONFIG.description,
-    ...((SITE_CONFIG.social.twitter ||
-      SITE_CONFIG.social.facebook ||
-      SITE_CONFIG.social.instagram) && {
-      sameAs: [
-        ...(SITE_CONFIG.social.twitter
-          ? [`https://twitter.com/${SITE_CONFIG.social.twitter}`]
-          : []),
-        ...(SITE_CONFIG.social.facebook
-          ? [`https://facebook.com/${SITE_CONFIG.social.facebook}`]
-          : []),
-        ...(SITE_CONFIG.social.instagram
-          ? [`https://instagram.com/${SITE_CONFIG.social.instagram}`]
-          : []),
-      ].filter(Boolean),
-    }),
-  };
+  // WebSite schema z SearchAction
+  const websiteJsonLd = generateWebSiteSchema({
+    potentialAction: {
+      target: `${siteUrl}/wszystkie-artykuly?q={search_term_string}`,
+      queryInput: "required name=search_term_string",
+    },
+  });
+
+  // Person schema dla autorów (jeśli SITE_CONFIG.author.type === "Person")
+  const personJsonLd =
+    SITE_CONFIG.author.type === "Person"
+      ? generatePersonSchema({
+          name: SITE_CONFIG.author.name,
+          url: SITE_CONFIG.author.url || siteUrl,
+          sameAs: [
+            ...(SITE_CONFIG.social.twitter
+              ? [`https://twitter.com/${SITE_CONFIG.social.twitter}`]
+              : []),
+            ...(SITE_CONFIG.social.facebook
+              ? [`https://facebook.com/${SITE_CONFIG.social.facebook}`]
+              : []),
+            ...(SITE_CONFIG.social.instagram
+              ? [`https://instagram.com/${SITE_CONFIG.social.instagram}`]
+              : []),
+            ...(SITE_CONFIG.social.youtube
+              ? [`https://youtube.com/${SITE_CONFIG.social.youtube}`]
+              : []),
+          ].filter(Boolean),
+        })
+      : null;
 
   return (
     <>
@@ -239,6 +252,12 @@ export default async function Home() {
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: safeJsonLd(organizationJsonLd)! }}
+        />
+      )}
+      {personJsonLd && safeJsonLd(personJsonLd) && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: safeJsonLd(personJsonLd)! }}
         />
       )}
       <HomePageClient

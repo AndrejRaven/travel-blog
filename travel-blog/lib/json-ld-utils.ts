@@ -12,6 +12,21 @@ export function safeJsonLd(data: unknown): string | null {
       return null;
     }
     
+    // Podstawowa walidacja Schema.org - sprawdź czy ma @context i @type
+    try {
+      const parsed = JSON.parse(json);
+      if (typeof parsed === "object" && parsed !== null) {
+        if (!parsed["@context"]) {
+          console.warn("JSON-LD missing @context");
+        }
+        if (!parsed["@type"]) {
+          console.warn("JSON-LD missing @type");
+        }
+      }
+    } catch {
+      // Ignoruj błędy parsowania - to może być poprawny JSON-LD
+    }
+    
     return json;
   } catch (e) {
     console.error("Invalid JSON-LD data", e);

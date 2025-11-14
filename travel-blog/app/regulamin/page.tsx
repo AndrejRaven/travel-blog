@@ -18,9 +18,9 @@ export default function Regulamin() {
           </h2>
           <p>
             Niniejszy regulamin określa zasady korzystania z bloga podróżniczego
-            &quot;Nasz Blog&quot; dostępnego pod adresem [Wpisz swój adres
-            domeny]. Korzystanie z bloga oznacza akceptację postanowień
-            niniejszego regulaminu.
+            &quot;Nasz Blog&quot; dostępnego pod adresem www.vlogizdrogi.pl.
+            Korzystanie z bloga oznacza akceptację postanowień niniejszego
+            regulaminu.
           </p>
         </InfoCard>
 
@@ -32,7 +32,7 @@ export default function Regulamin() {
             <ul className="space-y-3">
               <li>
                 <strong>Blog</strong> - strona internetowa dostępna pod adresem
-                [Wpisz swój adres domeny]
+                www.vlogizdrogi.pl
               </li>
               <li>
                 <strong>Użytkownik</strong> - osoba fizyczna, prawna lub
@@ -61,9 +61,8 @@ export default function Regulamin() {
           </h2>
           <div className="space-y-4 text-gray-700 dark:text-gray-300">
             <p>
-              1. Blog &quot;Nasz Blog&quot; jest blogiem podróżniczym
-              prowadzonym przez [Wpisz swoje imię i nazwisko] z siedzibą w
-              [Wpisz swój adres].
+              1. Blog &quot;Vlogi Z Drogi&quot; jest blogiem podróżniczym
+              prowadzonym przez Agnieszka i Andreja.
             </p>
             <p>
               2. Celem Blogu jest dzielenie się doświadczeniami podróżniczymi,
@@ -314,7 +313,7 @@ export default function Regulamin() {
               W sprawach związanych z Regulaminem można się z nami skontaktować:
             </p>
             <p className="text-gray-700 dark:text-gray-300 mb-2">
-              <strong>E-mail:</strong> kontakt@naszblog.pl
+              <strong>E-mail:</strong> poczta@vlogizdrogi.pl
             </p>
           </div>
         </section>
