@@ -8,6 +8,7 @@ import PageHeader from "@/components/shared/PageHeader";
 import InfoCard from "@/components/shared/InfoCard";
 import BackToHome from "@/components/shared/BackToHome";
 import { Check, ChevronDown, Mail, Instagram } from "lucide-react";
+import { useAnalytics } from "@/lib/cookie-analytics";
 
 export default function KontaktClient() {
   const [formData, setFormData] = useState({
@@ -20,6 +21,7 @@ export default function KontaktClient() {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const analytics = useAnalytics();
 
   const subjects = [
     { value: "wspolpraca", label: "Współpraca" },
@@ -59,6 +61,12 @@ export default function KontaktClient() {
     setIsSubmitted(true);
     setIsSubmitting(false);
     setFormData({ name: "", email: "", subject: "", message: "" });
+    
+    // Śledzenie wysłania formularza kontaktowego
+    analytics.trackEvent("contact_form_submit", {
+      subject: formData.subject,
+    });
+    analytics.trackConversion("contact_form", 1);
   };
 
   const handleChange = (

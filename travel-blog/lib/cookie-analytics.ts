@@ -1,41 +1,40 @@
 "use client";
 
 import { useCookies } from "./useCookies";
+import { track } from "@vercel/analytics";
 
-// Przykładowa implementacja Google Analytics
+// Implementacja analityki z Vercel Analytics
 export function useAnalytics() {
   const { isAllowed } = useCookies();
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const trackPageView = (_url: string) => {
+  // Vercel Analytics automatycznie śledzi page views, więc ta funkcja jest głównie dla kompatybilności
+  const trackPageView = (url: string) => {
     if (!isAllowed("analytics")) return;
 
-    // Tutaj możesz dodać kod Google Analytics
-    // gtag('config', 'GA_MEASUREMENT_ID', {
-    //   page_path: url,
-    // });
-    
+    // Vercel Analytics automatycznie śledzi zmiany routingu
+    // Możemy użyć track() do śledzenia custom page view jeśli potrzeba
+    track("page_view", {
+      url,
+      timestamp: new Date().toISOString(),
+    });
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const trackEvent = (_eventName: string, _parameters?: Record<string, unknown>) => {
+  const trackEvent = (
+    eventName: string,
+    parameters?: Record<string, string | number | boolean | null>
+  ) => {
     if (!isAllowed("analytics")) return;
 
-    // Tutaj możesz dodać kod Google Analytics
-    // gtag('event', eventName, parameters);
-    
+    track(eventName, parameters);
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const trackConversion = (_conversionId: string, _value?: number) => {
+  const trackConversion = (conversionId: string, value?: number) => {
     if (!isAllowed("analytics")) return;
 
-    // Tutaj możesz dodać kod śledzenia konwersji
-    // gtag('event', 'conversion', {
-    //   send_to: conversionId,
-    //   value: value,
-    // });
-    
+    track("conversion", {
+      conversion_id: conversionId,
+      value: value ?? null,
+    });
   };
 
   return {

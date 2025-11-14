@@ -21,6 +21,7 @@ import {
   checkSubscriptionStatus,
 } from "@/lib/newsletter";
 import { useToast } from "@/components/ui/Toast";
+import { useAnalytics } from "@/lib/cookie-analytics";
 
 type Props = {
   data: NewsletterData;
@@ -37,6 +38,7 @@ export default function Newsletter({ data }: Props) {
   const [cache, setCache] = useState<NewsletterCacheData | null>(null);
   const { isLoaded, isInView, containerRef } = useAnimation();
   const { addToast } = useToast();
+  const analytics = useAnalytics();
 
   // Inicjalizacja stanu na podstawie cache
   useEffect(() => {
@@ -189,6 +191,8 @@ export default function Newsletter({ data }: Props) {
             message,
             duration: 5000,
           });
+          // Śledzenie konwersji - email już zapisany
+          analytics.trackConversion("newsletter_subscription", 1);
           return;
         }
       } catch (statusError) {
@@ -211,6 +215,8 @@ export default function Newsletter({ data }: Props) {
           message: response.message,
           duration: 5000,
         });
+        // Śledzenie konwersji - nowa subskrypcja
+        analytics.trackConversion("newsletter_subscription", 1);
       } else {
         // Sprawdź czy to błąd "email już zapisany"
         if (response.message.includes("już zapisany")) {
@@ -223,6 +229,8 @@ export default function Newsletter({ data }: Props) {
             message: response.message,
             duration: 5000,
           });
+          // Śledzenie konwersji - email już zapisany
+          analytics.trackConversion("newsletter_subscription", 1);
         } else {
           // Inne błędy (połączenie, etc.)
           setError(response.message);

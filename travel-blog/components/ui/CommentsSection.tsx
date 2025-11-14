@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import Button from "./Button";
 import { useAnimation, ANIMATION_PRESETS } from "@/lib/useAnimation";
+import { useAnalytics } from "@/lib/cookie-analytics";
 
 interface Comment {
   _id: string;
@@ -40,6 +41,7 @@ interface CommentsSectionProps {
 }
 
 export default function CommentsSection({
+  postId,
   comments,
   onAddComment,
   onReply,
@@ -62,6 +64,7 @@ export default function CommentsSection({
   });
 
   const sectionAnimation = useAnimation();
+  const analytics = useAnalytics();
 
   // Funkcje walidacji
   const validateEmail = (email: string): string => {
@@ -177,6 +180,12 @@ export default function CommentsSection({
       });
       setShowAddForm(false);
       setReplyingTo(null);
+      
+      // Śledzenie dodania komentarza
+      analytics.trackEvent("comment_added", {
+        is_reply: !!replyingTo,
+        post_id: postId,
+      });
     } catch {
       // Error handling - could be improved with proper error state
     } finally {

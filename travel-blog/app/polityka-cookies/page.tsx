@@ -82,6 +82,7 @@ export default function PolitykaCookies() {
                     Przykłady użycia:
                   </h4>
                   <ul className="text-sm text-gray-600 dark:text-gray-300 space-y-1">
+                    <li>• Vercel Analytics - analiza ruchu na stronie i metryki wydajności</li>
                     <li>• Google Analytics - analiza ruchu na stronie</li>
                     <li>• Statystyki odwiedzin i popularności treści</li>
                     <li>• Identyfikacja problemów technicznych</li>

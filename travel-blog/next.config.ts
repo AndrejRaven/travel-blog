@@ -49,7 +49,7 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: https://cdn.sanity.io https://img.youtube.com https:",
               "font-src 'self' data:",
-              "connect-src 'self' https://cdn.sanity.io https://*.sanity.io https://connect.mailerlite.com",
+              "connect-src 'self' https://cdn.sanity.io https://*.sanity.io https://connect.mailerlite.com https://*.vercel-insights.com",
               "frame-src https://www.youtube.com https://youtube.com",
               "object-src 'none'",
               "base-uri 'self'",

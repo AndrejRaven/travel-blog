@@ -85,7 +85,7 @@ export default function PolitykaPrywatnosci() {
             <li>
               Odpowiadania na komentarze pozostawione pod wpisami na blogu
             </li>
-            <li>Analizy ruchu na stronie internetowej (Google Analytics)</li>
+            <li>Analizy ruchu na stronie internetowej (Vercel Analytics, Google Analytics)</li>
             <li>Wyświetlania reklam dopasowanych do Twoich zainteresowań</li>
           </ul>
         </section>
@@ -158,6 +158,9 @@ export default function PolitykaPrywatnosci() {
             Wasze dane osobowe mogą być przekazywane naszym podwykonawcom:
           </p>
           <ul className="list-disc list-inside text-gray-700 dark:text-gray-300 space-y-2">
+            <li>
+              <strong>Vercel Inc.</strong> - usługa Vercel Analytics do analizy ruchu i metryk wydajności
+            </li>
             <li>
               <strong>Google LLC</strong> - usługa Google Analytics i Google Ads
             </li>

@@ -8,6 +8,7 @@ import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import NavigationProgressProvider from "@/components/providers/NavigationProgressProvider";
+import { AnalyticsProvider } from "@/components/providers/AnalyticsProvider";
 import CookieBanner from "@/components/ui/CookieBanner";
 import ScrollToTop from "@/components/ui/ScrollToTop";
 import TopLoadingBar from "@/components/ui/TopLoadingBar";
@@ -66,22 +67,24 @@ export default async function RootLayout({
         className={`${inter.variable} ${playfairDisplay.variable} ${sourceCodePro.variable} antialiased bg-white dark:bg-gray-900`}
       >
         <ThemeProvider>
-          <Suspense fallback={null}>
-            <NavigationProgressProvider>
-              <NotificationProvider>
-                <TopLoadingBar />
-                <Header />
-                {/* Main content */}
-                {children}
-                <Footer />
-                <CookieBanner />
-                <ScrollToTop />
-                <ToastContainer />
-                {/* Visual Editing - tylko gdy draft mode jest aktywny */}
-                {isDraftMode && <VisualEditing />}
-              </NotificationProvider>
-            </NavigationProgressProvider>
-          </Suspense>
+          <AnalyticsProvider>
+            <Suspense fallback={null}>
+              <NavigationProgressProvider>
+                <NotificationProvider>
+                  <TopLoadingBar />
+                  <Header />
+                  {/* Main content */}
+                  {children}
+                  <Footer />
+                  <CookieBanner />
+                  <ScrollToTop />
+                  <ToastContainer />
+                  {/* Visual Editing - tylko gdy draft mode jest aktywny */}
+                  {isDraftMode && <VisualEditing />}
+                </NotificationProvider>
+              </NavigationProgressProvider>
+            </Suspense>
+          </AnalyticsProvider>
         </ThemeProvider>
       </body>
     </html>
