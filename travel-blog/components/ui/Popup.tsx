@@ -23,13 +23,12 @@ export default function Popup({
 
   // Testowe dane
   const popupData = {
-    title: "Zobacz naszą najnowszą serię na YouTube!",
-    description:
-      "Najlepsze miejsca w Europie w 2024 roku - kompletny przewodnik",
+    title: "Odwiedz nasz kanał na YouTube!",
+    description: "Seria o Azji sezon 2024/2025 - kompletny przewodnik",
     channelImage: "/demo-images/demo-asset.png", // Używam istniejącego obrazka
     button: {
-      label: "Obejrzyj serię",
-      href: "https://youtube.com/playlist?list=PLrAXtmRdnEQy6nuLMOVBqg4l7YbYqQq4Q",
+      label: "Obejrzyj kanał",
+      href: "https://www.youtube.com/@VlogizDrogiaa",
       variant: "youtube" as const,
       external: true,
     },
