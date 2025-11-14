@@ -5,58 +5,124 @@ export const projectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID;
 export const dataset = process.env.NEXT_PUBLIC_SANITY_DATASET;
 export const apiVersion = process.env.NEXT_PUBLIC_SANITY_API_VERSION || "2024-01-01";
 
-if (!projectId) {
-  throw new Error(
-    "NEXT_PUBLIC_SANITY_PROJECT_ID environment variable is required"
-  );
+// Funkcja pomocnicza do walidacji zmiennych środowiskowych
+function validateSanityConfig() {
+  if (!projectId) {
+    throw new Error(
+      "NEXT_PUBLIC_SANITY_PROJECT_ID environment variable is required"
+    );
+  }
+
+  if (!dataset) {
+    throw new Error(
+      "NEXT_PUBLIC_SANITY_DATASET environment variable is required"
+    );
+  }
 }
 
-if (!dataset) {
-  throw new Error(
-    "NEXT_PUBLIC_SANITY_DATASET environment variable is required"
-  );
-}
+// Lazy initialization dla klientów - tworzone tylko gdy są potrzebne
+let _readOnlyClient: ReturnType<typeof createClient> | null = null;
+let _writeClient: ReturnType<typeof createClient> | null = null;
+let _previewClient: ReturnType<typeof createClient> | null = null;
+let _builder: ReturnType<typeof imageUrlBuilder> | null = null;
 
 // Client tylko do odczytu (z CDN dla lepszej wydajności)
-export const readOnlyClient = createClient({
-  projectId,
-  dataset,
-  apiVersion,
-  useCdn: true, // ✅ CDN dla read-only queries
-  perspective: 'published',
-});
+function getReadOnlyClient() {
+  if (!_readOnlyClient) {
+    if (!projectId || !dataset) {
+      throw new Error(
+        "NEXT_PUBLIC_SANITY_PROJECT_ID and NEXT_PUBLIC_SANITY_DATASET environment variables are required"
+      );
+    }
+    _readOnlyClient = createClient({
+      projectId,
+      dataset,
+      apiVersion,
+      useCdn: true,
+      perspective: 'published',
+    });
+  }
+  return _readOnlyClient;
+}
 
 // Client do operacji write (bez CDN)
-export const writeClient = createClient({
-  projectId,
-  dataset,
-  apiVersion,
-  useCdn: false, // ✅ Bez CDN dla write operations
-  token: process.env.SANITY_VIEWER_TOKEN,
-  perspective: 'published',
-});
+function getWriteClient() {
+  if (!_writeClient) {
+    if (!projectId || !dataset) {
+      throw new Error(
+        "NEXT_PUBLIC_SANITY_PROJECT_ID and NEXT_PUBLIC_SANITY_DATASET environment variables are required"
+      );
+    }
+    _writeClient = createClient({
+      projectId,
+      dataset,
+      apiVersion,
+      useCdn: false,
+      token: process.env.SANITY_VIEWER_TOKEN,
+      perspective: 'published',
+    });
+  }
+  return _writeClient;
+}
 
 // Preview client do podglądu draftów (bez CDN, z perspective: 'drafts')
-export const previewClient = createClient({
-  projectId,
-  dataset,
-  apiVersion,
-  useCdn: false, // ✅ Bez CDN dla preview (zawsze świeże dane)
-  token: process.env.SANITY_VIEWER_TOKEN,
-  perspective: 'drafts', // ✅ Używa draftów zamiast opublikowanych
-});
+function getPreviewClient() {
+  if (!_previewClient) {
+    if (!projectId || !dataset) {
+      throw new Error(
+        "NEXT_PUBLIC_SANITY_PROJECT_ID and NEXT_PUBLIC_SANITY_DATASET environment variables are required"
+      );
+    }
+    _previewClient = createClient({
+      projectId,
+      dataset,
+      apiVersion,
+      useCdn: false,
+      token: process.env.SANITY_VIEWER_TOKEN,
+      perspective: 'drafts',
+    });
+  }
+  return _previewClient;
+}
+
+// Eksport klientów - lazy initialization przy pierwszym użyciu
+// Używamy Proxy aby uniknąć wywołania podczas importu
+type SanityClient = ReturnType<typeof createClient>;
+
+function createLazyClient(getter: () => SanityClient): SanityClient {
+  return new Proxy({} as SanityClient, {
+    get(_target, prop) {
+      const client = getter();
+      const value = (client as unknown as Record<string, unknown>)[prop as string];
+      if (typeof value === 'function') {
+        return value.bind(client);
+      }
+      return value;
+    }
+  });
+}
+
+export const readOnlyClient = createLazyClient(getReadOnlyClient);
+export const writeClient = createLazyClient(getWriteClient);
+export const previewClient = createLazyClient(getPreviewClient);
 
 // Alias dla kompatybilności wstecznej
 export const client = writeClient;
 
-// Konfiguracja dla image-url builder
-const builder = imageUrlBuilder({
-  projectId,
-  dataset,
-});
+// Konfiguracja dla image-url builder - lazy initialization
+function getBuilder() {
+  if (!_builder) {
+    validateSanityConfig();
+    _builder = imageUrlBuilder({
+      projectId: projectId!,
+      dataset: dataset!,
+    });
+  }
+  return _builder;
+}
 
 // Eksport urlFor dla użycia w komponentach
-export const urlFor = (source: SanityImage) => builder.image(source);
+export const urlFor = (source: SanityImage) => getBuilder().image(source);
 
 type GroqParams = Record<string, unknown>;
 
@@ -351,7 +417,7 @@ export function getImageUrl(
   }
 
   try {
-    const imageBuilder = builder.image(image);
+    const imageBuilder = getBuilder().image(image);
     
     // Zastosuj crop i hotspot jeśli są dostępne
     if (image.crop && image.asset?.metadata?.dimensions) {
