@@ -6,7 +6,6 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { SITE_CONFIG } from '@/lib/config';
 
 export const dynamic = 'force-dynamic';
 
@@ -122,30 +121,60 @@ function parseMetaTags(html: string): SEOAnalysisResult['metaTags'] {
  * Parsuje structured data (JSON-LD)
  */
 function parseStructuredData(html: string): SEOAnalysisResult['structuredData'] {
-  const jsonLdRegex = /<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
   const schemas: Array<{ type: string; content: object }> = [];
   const types = new Set<string>();
 
-  let match;
-  while ((match = jsonLdRegex.exec(html)) !== null) {
-    try {
-      const jsonContent = match[1].trim();
-      const parsed = JSON.parse(jsonContent);
-      
-      // Obsługa tablicy schematów
-      const schemasToProcess = Array.isArray(parsed) ? parsed : [parsed];
-      
-      schemasToProcess.forEach((schema: Record<string, unknown>) => {
-        const type = (schema['@type'] as string) || (schema.type as string) || 'Unknown';
-        types.add(type);
-        schemas.push({
-          type,
-          content: schema as object,
-        });
-      });
-    } catch (error) {
-      // Ignoruj nieprawidłowe JSON
-      console.error('Error parsing JSON-LD:', error);
+  // Rozszerzony regex - obsługuje różne formaty:
+  // 1. Standardowy: <script type="application/ld+json">...</script>
+  // 2. Z pojedynczymi cudzysłowami: <script type='application/ld+json'>...</script>
+  // 3. Bez cudzysłowów: <script type=application/ld+json>...</script>
+  // 4. Z dodatkowymi atrybutami: <script type="application/ld+json" id="...">...</script>
+  // 5. Z białymi znakami: <script type = "application/ld+json" >...</script>
+  const jsonLdPatterns = [
+    // Standardowy pattern z type="application/ld+json"
+    /<script[^>]*type\s*=\s*["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi,
+    // Pattern bez type (niektóre mogą mieć tylko JSON)
+    /<script[^>]*>([\s\S]*?)<\/script>/gi,
+  ];
+
+  for (const pattern of jsonLdPatterns) {
+    let match;
+    // Reset lastIndex dla każdego pattern
+    pattern.lastIndex = 0;
+    
+    while ((match = pattern.exec(html)) !== null) {
+      try {
+        const scriptContent = match[1].trim();
+        
+        // Sprawdź czy to wygląda na JSON (zaczyna się od { lub [)
+        if (!scriptContent.startsWith('{') && !scriptContent.startsWith('[')) {
+          continue;
+        }
+        
+        // Sprawdź czy nie zawiera HTML tagów (może być w komentarzach)
+        if (scriptContent.includes('<') && scriptContent.includes('>')) {
+          // Spróbuj wyciągnąć JSON z komentarzy HTML
+          const commentMatch = scriptContent.match(/<!--[\s\S]*?-->([\s\S]*)/);
+          if (commentMatch) {
+            const jsonInComment = commentMatch[1].trim();
+            if (jsonInComment.startsWith('{') || jsonInComment.startsWith('[')) {
+              const parsed = JSON.parse(jsonInComment);
+              processSchema(parsed, schemas, types);
+              continue;
+            }
+          }
+          continue;
+        }
+        
+        const parsed = JSON.parse(scriptContent);
+        processSchema(parsed, schemas, types);
+      } catch (error) {
+        // Ignoruj nieprawidłowe JSON - może to być zwykły script tag
+        // Debug logging tylko dla development
+        if (process.env.NODE_ENV === 'development') {
+          console.debug('Error parsing JSON-LD:', error);
+        }
+      }
     }
   }
 
@@ -158,10 +187,40 @@ function parseStructuredData(html: string): SEOAnalysisResult['structuredData'] 
 }
 
 /**
- * Sprawdza dostępność sitemap
+ * Przetwarza schemat JSON-LD i dodaje do listy
  */
-async function checkSitemap(baseUrl: string): Promise<SEOAnalysisResult['sitemap']> {
-  const sitemapUrl = `${baseUrl}/sitemap.xml`;
+function processSchema(
+  parsed: unknown,
+  schemas: Array<{ type: string; content: object }>,
+  types: Set<string>
+): void {
+  // Obsługa tablicy schematów
+  const schemasToProcess = Array.isArray(parsed) ? parsed : [parsed];
+  
+  schemasToProcess.forEach((schema: Record<string, unknown>) => {
+    // Sprawdź czy to wygląda na JSON-LD (ma @context lub @type)
+    const hasContext = '@context' in schema;
+    const hasType = '@type' in schema || 'type' in schema;
+    
+    if (!hasContext && !hasType) {
+      // Może to być zwykły obiekt JSON, nie JSON-LD
+      return;
+    }
+    
+    const type = (schema['@type'] as string) || (schema.type as string) || 'Unknown';
+    types.add(type);
+    schemas.push({
+      type,
+      content: schema as object,
+    });
+  });
+}
+
+/**
+ * Sprawdza dostępność sitemap dla danej domeny
+ */
+async function checkSitemap(origin: string): Promise<SEOAnalysisResult['sitemap']> {
+  const sitemapUrl = `${origin}/sitemap.xml`;
   
   try {
     const response = await fetch(sitemapUrl, {
@@ -235,10 +294,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Sprawdź czy URL należy do naszej domeny (opcjonalnie)
-    const siteUrl = new URL(SITE_CONFIG.url);
-    const isSameDomain = urlObj.hostname === siteUrl.hostname;
-
     // Pobierz HTML strony
     let html: string;
     try {
@@ -274,12 +329,8 @@ export async function POST(request: NextRequest) {
     // Parsuj structured data
     const structuredData = parseStructuredData(html);
 
-    // Sprawdź sitemap (tylko dla naszej domeny)
-    const sitemap = isSameDomain ? await checkSitemap(siteUrl.origin) : {
-      available: false,
-      url: `${siteUrl.origin}/sitemap.xml`,
-      error: 'Sitemap sprawdzany tylko dla domeny strony',
-    };
+    // Sprawdź sitemap dla domeny z analizowanego URL
+    const sitemap = await checkSitemap(urlObj.origin);
 
     const result: SEOAnalysisResult = {
       url,
