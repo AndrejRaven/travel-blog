@@ -178,6 +178,183 @@ function parseStructuredData(html: string): SEOAnalysisResult['structuredData'] 
     }
   }
 
+  // 2. Parsuj JSON-LD z React Server Components payload
+  // Next.js renderuje JSON-LD w RSC payload jako escaped JSON w stringu
+  // Format: self.__next_f.push([..., "..."]) gdzie w stringu jest "__html":"{\"@context\":..."
+  if (schemas.length === 0) {
+    // Szukaj wszystkich RSC payload chunks
+    const rscChunks = html.match(/self\.__next_f\.push\(\[[^\]]*,"([^"]*(?:\\.[^"]*)*)"\]\)/g);
+    
+    if (rscChunks) {
+      for (const chunk of rscChunks) {
+        try {
+          // Wyciągnij zawartość stringa z chunk
+          const stringMatch = chunk.match(/self\.__next_f\.push\(\[[^\]]*,"([^"]*(?:\\.[^"]*)*)"\]\)/);
+          if (!stringMatch) continue;
+          
+          const payload = stringMatch[1];
+          
+          // Sprawdź czy zawiera "application/ld+json"
+          if (!payload.includes('application/ld+json')) {
+            continue;
+          }
+          
+          // Szukaj "__html":"{...}" gdzie ... to escaped JSON-LD
+          // Pattern: "__html":"{\"@context\":..." lub "__html":"{\"@type\":..."
+          const jsonLdPattern = /"__html":"(\\"|\\\\)*\{[^"]*(?:\\"|\\\\)*"@(?:context|type)"/;
+          const jsonLdMatch = payload.match(jsonLdPattern);
+          
+          if (!jsonLdMatch) {
+            // Spróbuj szukać bezpośrednio escaped JSON obiektów
+            const escapedJsonPattern = /(\\"|\\\\)*\{[^"]*(?:\\"|\\\\)*"@(?:context|type)"/;
+            const escapedMatch = payload.match(escapedJsonPattern);
+            if (escapedMatch) {
+              // Znajdź początek i koniec JSON obiektu
+              const jsonStart = payload.indexOf(escapedMatch[0]);
+              if (jsonStart === -1) continue;
+              
+              // Przeszukaj od początku JSON do końca
+              let jsonString = payload.substring(jsonStart);
+              
+              // Unescape cały string
+              jsonString = jsonString
+                .replace(/\\"/g, '"')
+                .replace(/\\\\/g, '\\')
+                .replace(/\\n/g, '\n')
+                .replace(/\\r/g, '\r')
+                .replace(/\\t/g, '\t');
+              
+              // Znajdź pełny JSON obiekt
+              const jsonObjStart = jsonString.indexOf('{');
+              if (jsonObjStart === -1) continue;
+              
+              jsonString = jsonString.substring(jsonObjStart);
+              
+              // Znajdź koniec przez zliczanie nawiasów
+              let braceCount = 0;
+              let jsonEnd = -1;
+              let inString = false;
+              let escapeNext = false;
+              
+              for (let i = 0; i < jsonString.length; i++) {
+                const char = jsonString[i];
+                
+                if (escapeNext) {
+                  escapeNext = false;
+                  continue;
+                }
+                
+                if (char === '\\') {
+                  escapeNext = true;
+                  continue;
+                }
+                
+                if (char === '"' && !escapeNext) {
+                  inString = !inString;
+                  continue;
+                }
+                
+                if (!inString) {
+                  if (char === '{') {
+                    braceCount++;
+                  } else if (char === '}') {
+                    braceCount--;
+                    if (braceCount === 0) {
+                      jsonEnd = i + 1;
+                      break;
+                    }
+                  }
+                }
+              }
+              
+              if (jsonEnd > 0) {
+                const fullJson = jsonString.substring(0, jsonEnd);
+                try {
+                  const parsed = JSON.parse(fullJson);
+                  processSchema(parsed, schemas, types);
+                } catch {
+                  // Ignoruj błędy parsowania
+                }
+              }
+            }
+            continue;
+          }
+          
+          // Jeśli znaleziono "__html", wyciągnij JSON
+          const htmlContentMatch = jsonLdMatch[0].match(/"__html":"(.*)"/);
+          if (htmlContentMatch) {
+            let jsonString = htmlContentMatch[1];
+            
+            // Unescape JSON
+            jsonString = jsonString
+              .replace(/\\"/g, '"')
+              .replace(/\\\\/g, '\\')
+              .replace(/\\n/g, '\n')
+              .replace(/\\r/g, '\r')
+              .replace(/\\t/g, '\t');
+            
+            // Znajdź pełny JSON obiekt
+            const jsonStart = jsonString.indexOf('{');
+            if (jsonStart !== -1) {
+              jsonString = jsonString.substring(jsonStart);
+              
+              // Znajdź koniec przez zliczanie nawiasów
+              let braceCount = 0;
+              let jsonEnd = -1;
+              let inString = false;
+              let escapeNext = false;
+              
+              for (let i = 0; i < jsonString.length; i++) {
+                const char = jsonString[i];
+                
+                if (escapeNext) {
+                  escapeNext = false;
+                  continue;
+                }
+                
+                if (char === '\\') {
+                  escapeNext = true;
+                  continue;
+                }
+                
+                if (char === '"' && !escapeNext) {
+                  inString = !inString;
+                  continue;
+                }
+                
+                if (!inString) {
+                  if (char === '{') {
+                    braceCount++;
+                  } else if (char === '}') {
+                    braceCount--;
+                    if (braceCount === 0) {
+                      jsonEnd = i + 1;
+                      break;
+                    }
+                  }
+                }
+              }
+              
+              if (jsonEnd > 0) {
+                const fullJson = jsonString.substring(0, jsonEnd);
+                try {
+                  const parsed = JSON.parse(fullJson);
+                  processSchema(parsed, schemas, types);
+                } catch {
+                  // Ignoruj błędy parsowania
+                }
+              }
+            }
+          }
+        } catch (error) {
+          if (process.env.NODE_ENV === 'development') {
+            console.debug('Error parsing RSC JSON-LD:', error);
+          }
+        }
+      }
+    }
+  }
+
   return {
     found: schemas.length > 0,
     types: Array.from(types),
