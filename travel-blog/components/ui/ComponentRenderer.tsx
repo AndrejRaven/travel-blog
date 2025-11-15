@@ -3,8 +3,8 @@ import HeroBanner from "@/components/sections/HeroBanner";
 import BackgroundHeroBanner from "@/components/sections/BackgroundHeroBanner";
 import TextContent from "@/components/sections/TextContent";
 import ImageCollage from "@/components/sections/ImageCollage";
-import EmbedYoutube from "@/components/sections/EmbedYoutube";
 import Articles from "@/components/sections/LatestArticles";
+import EmbedYoutubeClient from "@/components/ui/EmbedYoutubeClient";
 import {
   PostComponent,
   Articles as ArticlesType,
@@ -141,7 +141,7 @@ const componentMap = {
     animationProps?: {
       isLoaded: boolean;
       isInView: boolean;
-      containerRef: React.RefObject<HTMLDivElement>;
+      containerRef?: React.RefObject<HTMLDivElement>;
     }
   ) => {
     const articles = comp as ArticlesType;
@@ -161,9 +161,11 @@ const componentMap = {
     );
   },
   embedYoutube: (comp: PostComponent) => {
-    const embedYoutube = comp as EmbedYoutubeType & { publishedAt?: string | null };
+    const embedYoutube = comp as EmbedYoutubeType & {
+      publishedAt?: string | null;
+    };
     return (
-      <EmbedYoutube
+      <EmbedYoutubeClient
         {...({
           ...convertToComponentData(comp),
           title: embedYoutube.title,
@@ -171,7 +173,7 @@ const componentMap = {
           videoId: embedYoutube.videoId,
           useLatestVideo: embedYoutube.useLatestVideo,
           publishedAt: embedYoutube.publishedAt,
-        } as Parameters<typeof EmbedYoutube>[0])}
+        } as Parameters<typeof EmbedYoutubeClient>[0])}
       />
     );
   },
@@ -182,7 +184,7 @@ type Props = {
   animationProps?: {
     isLoaded: boolean;
     isInView: boolean;
-    containerRef: React.RefObject<HTMLDivElement>;
+    containerRef?: React.RefObject<HTMLDivElement>;
   };
 };
 

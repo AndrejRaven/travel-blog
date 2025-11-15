@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "seo:check": "npm run lint && npx --yes lighthouse http://localhost:3000 --only-categories=seo --quiet --chrome-flags='--headless --no-sandbox'",
     "generate-preview-secret": "node -e \"const crypto = require('crypto'); const token = crypto.randomBytes(32).toString('hex'); console.log('\\n✅ Wygenerowany token SANITY_PREVIEW_SECRET:'); console.log(token); console.log('\\n📝 Dodaj go do pliku .env.local:'); console.log('SANITY_PREVIEW_SECRET=' + token + '\\n');\""
   },
   "dependencies": {

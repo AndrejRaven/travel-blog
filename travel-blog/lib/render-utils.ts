@@ -26,6 +26,8 @@ export interface ImageConfig {
   format?: "webp" | "jpg" | "png";
   fit?: "fillmax" | "fill" | "crop" | "scale";
   mobileWidth?: number;
+  srcSetWidths?: number[];
+  sizes?: string;
 }
 
 // Typy dla konfiguracji animacji
@@ -77,19 +79,33 @@ export const useResponsiveImage = (config: ImageConfig = {}) => {
     }
 
     // SanityImage - optymalizacja (bez hooka wewnątrz funkcji)
-    if ('asset' in image && image.asset?.url) {
-      // Używamy URL bezpośrednio zamiast hooka wewnątrz funkcji
-      const width = isMobile ? (config.mobileWidth || config.width || 800) : (config.width || 1200);
-      const imageUrl = urlFor(image)
-        .width(width)
-        .quality(config.quality || 100)
-        .format(config.format || "webp")
-        .fit(config.fit || "fillmax")
-        .url();
-      
+    if ("asset" in image && image.asset?.url) {
+      const width = isMobile
+        ? config.mobileWidth || config.width || 800
+        : config.width || 1200;
+
+      const buildVariant = (variantWidth: number) =>
+        urlFor(image)
+          .width(variantWidth)
+          .quality(config.quality || 95)
+          .format(config.format || "webp")
+          .fit(config.fit || "fillmax")
+          .auto("format")
+          .url();
+
+      const imageUrl = buildVariant(width);
+      const srcSetWidths = config.srcSetWidths || [480, 768, 1024, 1440];
+      const srcSet = srcSetWidths
+        .map((variantWidth) => `${buildVariant(variantWidth)} ${variantWidth}w`)
+        .join(", ");
+
       return {
         src: imageUrl,
-        alt: image.alt || "Obraz"
+        srcSet,
+        sizes:
+          config.sizes ||
+          "(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 1200px",
+        alt: image.alt || "Obraz",
       };
     }
 

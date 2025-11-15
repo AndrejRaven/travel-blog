@@ -22,6 +22,9 @@ import {
   getLatestYouTubeVideo,
   getYouTubeVideoById,
 } from "@/lib/youtube";
+import { buildAlternates, buildOpenGraph, buildAbsoluteUrl } from "@/lib/metadata";
+
+export const revalidate = 600;
 
 type Params = {
   params: Promise<{
@@ -85,9 +88,6 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
       ? `${siteUrl}/${primaryCategory.mainCategory.superCategory.slug.current}/${primaryCategory.mainCategory.slug.current}/${primaryCategory.slug.current}/${slug}`
       : `${siteUrl}/${superCategory}/${mainCategory}/${category}/${slug}`;
 
-  // URL aktualnej strony (może być różny od canonical jeśli użytkownik wszedł przez inną kategorię)
-  const postUrl = `${siteUrl}/${superCategory}/${mainCategory}/${category}/${slug}`;
-
   // SEO Title - użyj seoTitle lub fallback do title
   const seoTitle = post.seo?.seoTitle || post.title;
   const fullTitle = seoTitle
@@ -119,10 +119,6 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   // Canonical URL - zawsze wskazuje na główną kategorię
   const canonicalUrl = post.seo?.canonicalUrl || canonicalPostUrl;
 
-  // Keywords
-  const keywords =
-    post.seo?.seoKeywords || post.categories?.map((cat) => cat.name) || [];
-
   // Robots
   const robots = [];
   if (post.seo?.noIndex) robots.push("noindex");
@@ -152,37 +148,28 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
     }
   }
 
+  const alternates = buildAlternates(canonicalUrl);
+  const openGraph = buildOpenGraph({
+    title: ogTitle,
+    description: ogDescription,
+    path: canonicalUrl,
+    image: secureOgImageUrl
+      ? { url: secureOgImageUrl, alt: ogTitle, width: 1200, height: 630 }
+      : undefined,
+  });
+
   const metadata: Metadata = {
     title: fullTitle,
     description: seoDescription,
-    keywords: keywords.length > 0 ? keywords.join(", ") : undefined,
     authors: [{ name: siteName }],
     creator: siteName,
     publisher: siteName,
     robots: robots.join(", "),
-    alternates: {
-      canonical: canonicalUrl,
-    },
+    alternates,
     openGraph: {
+      ...openGraph,
       type: "article",
-      title: ogTitle,
-      description: ogDescription,
-      url: postUrl,
-      siteName,
-      locale: "pl_PL",
-      ...(secureOgImageUrl && {
-        images: [
-          {
-            url: secureOgImageUrl,
-            width: 1200,
-            height: 630,
-            alt: ogTitle,
-          },
-        ],
-      }),
-      ...(post.publishedAt && {
-        publishedTime: post.publishedAt,
-      }),
+      ...(post.publishedAt && { publishedTime: post.publishedAt }),
     },
     twitter: {
       card: "summary_large_image",
@@ -193,6 +180,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
       }),
     },
     other: {
+      "og:url": buildAbsoluteUrl(canonicalUrl),
       "article:author": siteName,
       "article:section": post.categories?.[0]?.name || "Blog",
       ...(post.publishedAt && {
@@ -220,6 +208,7 @@ export default async function PostPage({ params }: Params) {
   const { superCategory, mainCategory, category, slug } = await params;
   const post = await getPostBySlug(slug);
   const siteUrl = SITE_CONFIG.url;
+  const postUrl = `${siteUrl}/${superCategory}/${mainCategory}/${category}/${slug}`;
 
   if (!post) {
     return (
@@ -649,7 +638,7 @@ export default async function PostPage({ params }: Params) {
       <PostPageClient
         post={postWithProcessedComponents}
         tableOfContentsItems={tableOfContentsItems}
-        postUrl={`${siteUrl}/${superCategory}/${mainCategory}/${category}/${slug}`}
+        postUrl={postUrl}
         ogTitle={ogTitle}
         ogDescription={ogDescription}
         ogImageUrl={ogImageUrl}

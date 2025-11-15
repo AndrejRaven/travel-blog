@@ -18,13 +18,32 @@ import { safeJsonLd } from "@/lib/json-ld-utils";
 import {
   generateCollectionPageSchema,
   generateItemListSchema,
+  generateBreadcrumbListSchema,
   type ArticleItem,
+  type BreadcrumbItem,
 } from "@/lib/schema-org";
+import { buildAlternates, buildOpenGraph, buildAbsoluteUrl } from "@/lib/metadata";
+import Breadcrumbs from "@/components/shared/Breadcrumbs";
+
+export const revalidate = 600;
 
 export async function generateMetadata() {
+  const title = "Wszystkie artykuły - Nasz Blog";
+  const description = "Przeglądaj wszystkie artykuły ze wszystkich kategorii";
+  const canonicalPath = "/wszystkie-artykuly";
+
   return {
-    title: "Wszystkie artykuły - Nasz Blog",
-    description: "Przeglądaj wszystkie artykuły ze wszystkich kategorii",
+    title,
+    description,
+    alternates: buildAlternates(canonicalPath),
+    openGraph: buildOpenGraph({
+      title,
+      description,
+      path: canonicalPath,
+    }),
+    other: {
+      "og:url": buildAbsoluteUrl(canonicalPath),
+    },
   };
 }
 
@@ -126,8 +145,29 @@ export default async function WszystkieArtykulyPage() {
         })
       : null;
 
+  const breadcrumbItems: BreadcrumbItem[] = [
+    {
+      name: "Strona główna",
+      url: siteUrl,
+      position: 1,
+    },
+    {
+      name: "Wszystkie artykuły",
+      url: allArticlesUrl,
+      position: 2,
+    },
+  ];
+
+  const breadcrumbJsonLd = generateBreadcrumbListSchema(breadcrumbItems);
+
   return (
     <>
+      {safeJsonLd(breadcrumbJsonLd) && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbJsonLd)! }}
+        />
+      )}
       {safeJsonLd(collectionPageJsonLd) && (
         <script
           type="application/ld+json"
@@ -144,6 +184,13 @@ export default async function WszystkieArtykulyPage() {
       <PageHeader
         title="Wszystkie artykuły"
         subtitle="Przeglądaj wszystkie artykuły ze wszystkich kategorii"
+      />
+      <Breadcrumbs
+        className="mb-8"
+        items={[
+          { label: "Strona główna", href: "/" },
+          { label: "Wszystkie artykuły" },
+        ]}
       />
 
       {/* Opis wprowadzający */}

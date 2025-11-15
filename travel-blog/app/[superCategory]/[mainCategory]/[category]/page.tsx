@@ -6,7 +6,7 @@ import PageHeader from "@/components/shared/PageHeader";
 import BackToHome from "@/components/shared/BackToHome";
 import InfoCard from "@/components/shared/InfoCard";
 import CategoryArticles from "@/components/sections/CategoryArticles";
-import Link from "@/components/ui/Link";
+import Breadcrumbs from "@/components/shared/Breadcrumbs";
 import { Category, ArticleForList } from "@/lib/sanity";
 import { SITE_CONFIG } from "@/lib/config";
 import { safeJsonLd } from "@/lib/json-ld-utils";
@@ -18,6 +18,9 @@ import {
   type ArticleItem,
 } from "@/lib/schema-org";
 import { getPostUrl } from "@/lib/utils";
+import { buildAlternates, buildOpenGraph, buildAbsoluteUrl } from "@/lib/metadata";
+
+export const revalidate = 600;
 
 type SubcategoryPageProps = {
   params: Promise<{
@@ -63,10 +66,26 @@ export async function generateMetadata({ params }: SubcategoryPageProps) {
     };
   }
 
+  const superCatSlug =
+    category.mainCategory?.superCategory?.slug.current || "";
+  const mainCatSlug = category.mainCategory?.slug.current || "";
+  const canonicalPath = `/${superCatSlug}/${mainCatSlug}/${category.slug.current}`;
+
   return {
     title: `${category.name} - ${category.mainCategory?.name || "Kategoria"} - Nasz Blog`,
     description:
       category.description || `Wszystkie posty z podkategorii ${category.name}`,
+    alternates: buildAlternates(canonicalPath),
+    openGraph: buildOpenGraph({
+      title: category.name,
+      description:
+        category.description ||
+        `Wszystkie posty z podkategorii ${category.name}`,
+      path: canonicalPath,
+    }),
+    other: {
+      "og:url": buildAbsoluteUrl(canonicalPath),
+    },
   };
 }
 
@@ -165,6 +184,19 @@ export default async function SubcategoryPage({
         })
       : null;
 
+  const breadcrumbNavItems = [
+    { label: "Strona główna", href: "/" },
+    {
+      label: category.mainCategory?.superCategory?.name || "Kategoria",
+      href: `/${superCategory}`,
+    },
+    {
+      label: category.mainCategory?.name || "Kategoria",
+      href: `/${superCategory}/${mainCategory}`,
+    },
+    { label: category.name },
+  ];
+
   return (
     <>
       {safeJsonLd(collectionPageJsonLd) && (
@@ -194,39 +226,7 @@ export default async function SubcategoryPage({
         }
       />
 
-      {/* Breadcrumb */}
-      <nav className="mb-8 text-sm text-gray-600 dark:text-gray-400">
-        <ol className="flex items-center space-x-2">
-          <li>
-            <Link
-              href="/"
-              className="hover:text-gray-900 dark:hover:text-gray-100"
-            >
-              Strona główna
-            </Link>
-          </li>
-          <li>/</li>
-          <li>
-            <Link
-              href={`/${superCategory}`}
-              className="hover:text-gray-900 dark:hover:text-gray-100"
-            >
-              {category.mainCategory?.superCategory?.name || "Kategoria"}
-            </Link>
-          </li>
-          <li>/</li>
-          <li>
-            <Link
-              href={`/${superCategory}/${mainCategory}`}
-              className="hover:text-gray-900 dark:hover:text-gray-100"
-            >
-              {category.mainCategory?.name || "Kategoria"}
-            </Link>
-          </li>
-          <li>/</li>
-          <li className="text-gray-900 dark:text-gray-100">{category.name}</li>
-        </ol>
-      </nav>
+      <Breadcrumbs className="mb-8" items={breadcrumbNavItems} />
 
       {posts.length === 0 ? (
         <div className="max-w-2xl mx-auto">

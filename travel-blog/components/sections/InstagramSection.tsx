@@ -159,6 +159,8 @@ export default function InstagramSection({ data }: Props) {
                                 {...imageProps}
                                 alt={imageProps.alt || "Instagram post"}
                                 className={`object-cover transition-all duration-500 group-hover:scale-105 transform-gpu will-change-transform w-full h-full`}
+                                loading="lazy"
+                                decoding="async"
                                 itemProp="contentUrl"
                               />
                             );

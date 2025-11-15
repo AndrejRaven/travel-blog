@@ -14,6 +14,8 @@ import ScrollToTop from "@/components/ui/ScrollToTop";
 import TopLoadingBar from "@/components/ui/TopLoadingBar";
 import NotificationProvider from "@/components/providers/NotificationProvider";
 import { ToastContainer } from "@/components/ui/Toast";
+import { SITE_CONFIG } from "@/lib/config";
+import { buildAlternates, buildOpenGraph } from "@/lib/metadata";
 import "./globals.css";
 
 // Font główny - Inter - doskonały do czytania
@@ -37,10 +39,27 @@ const sourceCodePro = Source_Code_Pro({
   display: "swap",
 });
 
+const defaultTitle = SITE_CONFIG.name;
+const defaultDescription = SITE_CONFIG.description;
+
 export const metadata: Metadata = {
-  title: "Blog Agnieszki i Andreja",
-  description:
-    "Witamy na naszym blogu! Tutaj znajdziesz nasze najnowsze wyprawy i informacje o naszych przygodach.",
+  metadataBase: new URL(SITE_CONFIG.url),
+  title: {
+    default: defaultTitle,
+    template: `%s | ${defaultTitle}`,
+  },
+  description: defaultDescription,
+  alternates: buildAlternates("/"),
+  openGraph: buildOpenGraph({
+    title: defaultTitle,
+    description: defaultDescription,
+    path: "/",
+  }),
+  twitter: {
+    card: "summary_large_image",
+    title: defaultTitle,
+    description: defaultDescription,
+  },
 };
 
 export default async function RootLayout({

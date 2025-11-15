@@ -411,6 +411,7 @@ export function getImageUrl(
 
   try {
     const imageBuilder = getBuilder().image(image);
+    imageBuilder.auto('format');
     
     // Zastosuj crop i hotspot jeśli są dostępne
     if (image.crop && image.asset?.metadata?.dimensions) {
@@ -437,9 +438,7 @@ export function getImageUrl(
       imageBuilder.height(options.height);
     }
     
-    if (options?.quality) {
-      imageBuilder.quality(options.quality);
-    }
+    imageBuilder.quality(options?.quality ?? 75);
     
     if (options?.format) {
       imageBuilder.format(options.format);

@@ -18,6 +18,9 @@ import {
   type ArticleItem,
 } from "@/lib/schema-org";
 import { getPostUrl } from "@/lib/utils";
+import { buildAlternates, buildOpenGraph, buildAbsoluteUrl } from "@/lib/metadata";
+
+export const revalidate = 600;
 
 type SuperCategoryPageProps = {
   params: Promise<{
@@ -58,11 +61,24 @@ export async function generateMetadata({ params }: SuperCategoryPageProps) {
     };
   }
 
+  const canonicalPath = `/${superCategory.slug.current}`;
+
   return {
     title: `${superCategory.name} - Nasz Blog`,
     description:
       superCategory.description ||
       `Wszystkie posty z kategorii ${superCategory.name}`,
+    alternates: buildAlternates(canonicalPath),
+    openGraph: buildOpenGraph({
+      title: superCategory.name,
+      description:
+        superCategory.description ||
+        `Wszystkie posty z kategorii ${superCategory.name}`,
+      path: canonicalPath,
+    }),
+    other: {
+      "og:url": buildAbsoluteUrl(canonicalPath),
+    },
   };
 }
 

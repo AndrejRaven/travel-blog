@@ -1,7 +1,7 @@
 import React from "react";
 import { Metadata } from "next";
 import { getHomepageData } from "@/lib/queries/functions";
-import HomePageClient from "@/components/pages/HomePageClient";
+import HomePageContent from "@/components/pages/HomePageContent";
 import { SITE_CONFIG } from "@/lib/config";
 import { getImageUrl, SanityImage } from "@/lib/sanity";
 import { safeJsonLd } from "@/lib/json-ld-utils";
@@ -9,12 +9,15 @@ import {
   generateOrganizationSchema,
   generateWebSiteSchema,
   generatePersonSchema,
+  generateBreadcrumbListSchema,
+  type BreadcrumbItem,
 } from "@/lib/schema-org";
 import {
   getLatestYouTubeVideo,
   getYouTubeVideoById,
 } from "@/lib/youtube";
 import { PostComponent } from "@/lib/component-types";
+import { buildAlternates, buildOpenGraph, buildAbsoluteUrl } from "@/lib/metadata";
 
 // Funkcja pomocnicza do walidacji i upewnienia się że URL jest absolutny
 function ensureAbsoluteUrl(
@@ -110,8 +113,6 @@ export async function generateMetadata(): Promise<Metadata> {
     : ogImageUrlRaw;
 
   // Keywords
-  const keywords = homepageData.seo?.seoKeywords || [];
-
   // Robots
   const robots = [];
   if (homepageData.seo?.noIndex) robots.push("noindex");
@@ -120,36 +121,25 @@ export async function generateMetadata(): Promise<Metadata> {
 
   // Canonical URL
   const canonicalUrl = homepageData.seo?.canonicalUrl || siteUrl;
+  const alternates = buildAlternates(canonicalUrl);
+  const openGraph = buildOpenGraph({
+    title: ogTitle,
+    description: ogDescription,
+    path: canonicalUrl,
+    image: secureOgImageUrl
+      ? { url: secureOgImageUrl, alt: ogTitle, width: 1200, height: 630 }
+      : undefined,
+  });
 
   const metadata: Metadata = {
     title: fullTitle,
     description: seoDescription,
-    keywords: keywords.length > 0 ? keywords.join(", ") : undefined,
     authors: [{ name: siteName }],
     creator: siteName,
     publisher: siteName,
     robots: robots.join(", "),
-    alternates: {
-      canonical: canonicalUrl,
-    },
-    openGraph: {
-      type: "website",
-      title: ogTitle,
-      description: ogDescription,
-      url: siteUrl,
-      siteName,
-      locale: "pl_PL",
-      ...(secureOgImageUrl && {
-        images: [
-          {
-            url: secureOgImageUrl,
-            width: 1200,
-            height: 630,
-            alt: ogTitle,
-          },
-        ],
-      }),
-    },
+    alternates,
+    openGraph,
     twitter: {
       card: "summary_large_image",
       title: ogTitle,
@@ -159,6 +149,7 @@ export async function generateMetadata(): Promise<Metadata> {
       }),
     },
     other: {
+      "og:url": buildAbsoluteUrl(canonicalUrl),
       ...(secureOgImageUrl && {
         "og:image:secure_url": secureOgImageUrl,
       }),
@@ -167,6 +158,8 @@ export async function generateMetadata(): Promise<Metadata> {
 
   return metadata;
 }
+
+export const revalidate = 300;
 
 export default async function Home() {
   // Pobierz dane homepage z Sanity na serwerze
@@ -301,6 +294,16 @@ export default async function Home() {
     ),
   };
 
+  const breadcrumbItems: BreadcrumbItem[] = [
+    {
+      name: "Strona główna",
+      url: siteUrl,
+      position: 1,
+    },
+  ];
+
+  const breadcrumbJsonLd = generateBreadcrumbListSchema(breadcrumbItems);
+
   return (
     <>
       {safeJsonLd(websiteJsonLd) && (
@@ -321,9 +324,15 @@ export default async function Home() {
           dangerouslySetInnerHTML={{ __html: safeJsonLd(personJsonLd)! }}
         />
       )}
-      <HomePageClient
+      {safeJsonLd(breadcrumbJsonLd) && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbJsonLd)! }}
+        />
+      )}
+      <HomePageContent
         homepageData={
-          processedHomepageData as Parameters<typeof HomePageClient>[0]["homepageData"]
+          processedHomepageData as Parameters<typeof HomePageContent>[0]["homepageData"]
         }
       />
     </>

@@ -141,6 +141,8 @@ export default function EmbedYoutube({
               className="absolute inset-0 w-full h-full"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
               itemProp="embedUrl"
             />
           </div>
@@ -179,6 +181,8 @@ export default function EmbedYoutube({
             className="absolute inset-0 w-full h-full"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowFullScreen
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
             itemProp="embedUrl"
           />
         </div>

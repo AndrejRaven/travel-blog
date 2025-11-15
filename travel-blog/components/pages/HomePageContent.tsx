@@ -1,8 +1,4 @@
-"use client";
-
-import React from "react";
 import ComponentRenderer from "@/components/ui/ComponentRenderer";
-import Popup from "@/components/ui/Popup";
 import {
   PostComponent,
   AboutUs as AboutUsType,
@@ -19,8 +15,12 @@ import AboutUs from "@/components/sections/AboutUs";
 import YouTubeChannel from "@/components/sections/YouTubeChannel";
 import SupportSection from "@/components/sections/SupportSection";
 import CategoriesSection from "@/components/sections/CategoriesSection";
-import InstagramSection from "@/components/sections/InstagramSection";
-import Newsletter from "@/components/sections/Newsletter";
+import Breadcrumbs from "@/components/shared/Breadcrumbs";
+import {
+  ClientPopup,
+  ClientInstagramSection,
+  ClientNewsletterSection,
+} from "@/components/pages/HomePageClientSections";
 
 interface HomepageData {
   _id: string;
@@ -47,21 +47,31 @@ interface HomepageData {
   };
 }
 
-interface HomePageClientProps {
+interface HomePageContentProps {
   homepageData: HomepageData;
 }
 
-export default function HomePageClient({ homepageData }: HomePageClientProps) {
-  // Użyj prostego state zamiast useAnimation - animacje od razu
-  const [isLoaded, setIsLoaded] = React.useState(false);
-  const [isInView, setIsInView] = React.useState(false);
-  const containerRef = React.useRef<HTMLDivElement>(null);
+const DEFAULT_ANIMATION_STATE = {
+  isLoaded: true,
+  isInView: true,
+  containerRef: undefined,
+} as const;
 
-  // Uruchom animacje od razu po zamontowaniu komponentu
-  React.useEffect(() => {
-    setIsInView(true);
-    setIsLoaded(true);
-  }, []);
+export default function HomePageContent({ homepageData }: HomePageContentProps) {
+  const mainComponents = Array.isArray(homepageData.mainComponents)
+    ? homepageData.mainComponents
+    : [];
+  const asideComponents = Array.isArray(homepageData.asideComponents)
+    ? homepageData.asideComponents
+    : [];
+  const additionalComponents = Array.isArray(
+    homepageData.additionalComponents
+  )
+    ? homepageData.additionalComponents
+    : [];
+
+  const hasMainComponents = mainComponents.length > 0;
+  const hasAsideComponents = asideComponents.length > 0;
 
   // Funkcja do renderowania komponentów aside
   const renderAsideComponent = (component: PostComponent, index: number) => {
@@ -99,14 +109,23 @@ export default function HomePageClient({ homepageData }: HomePageClientProps) {
         return <CategoriesSection key={`main-${index}`} data={data} />;
       }
       case "instagramSection": {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { _type, _key, ...data } = component as InstagramSectionType;
-        return <InstagramSection key={`main-${index}`} data={data} />;
+        const { _key, ...data } = component as InstagramSectionType & {
+          _key?: string;
+        };
+        return (
+          <ClientInstagramSection
+            key={_key || `main-${index}`}
+            data={data}
+          />
+        );
       }
       case "newsletter": {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { _type, _key, ...data } = component as NewsletterType;
-        return <Newsletter key={`main-${index}`} data={data} />;
+        const { _key, ...data } = component as NewsletterType & {
+          _key?: string;
+        };
+        return (
+          <ClientNewsletterSection key={_key || `main-${index}`} data={data} />
+        );
       }
       default:
         // Dla pozostałych komponentów używaj ComponentRenderer
@@ -115,9 +134,7 @@ export default function HomePageClient({ homepageData }: HomePageClientProps) {
             key={`main-${index}`}
             component={component}
             animationProps={{
-              isLoaded,
-              isInView,
-              containerRef: containerRef as React.RefObject<HTMLDivElement>,
+              ...DEFAULT_ANIMATION_STATE,
             }}
           />
         );
@@ -126,6 +143,19 @@ export default function HomePageClient({ homepageData }: HomePageClientProps) {
 
   return (
     <div className="min-h-screen font-sans text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900">
+      {homepageData.pageSettings?.showBreadcrumbs && (
+        <div className="mx-auto max-w-7xl px-6 pt-6">
+          <Breadcrumbs
+            items={[
+              { label: "Strona główna", href: "/" },
+              {
+                label:
+                  homepageData.seo?.seoTitle || "Najnowsze artykuły i inspiracje",
+              },
+            ]}
+          />
+        </div>
+      )}
       {/* HERO COMPONENTS */}
       {homepageData.heroComponents &&
         homepageData.heroComponents.length > 0 && (
@@ -137,17 +167,12 @@ export default function HomePageClient({ homepageData }: HomePageClientProps) {
         )}
 
       {/* MAIN CONTENT WITH ASIDE */}
-      <div
-        ref={containerRef}
-        data-main-content
-        className="mx-auto max-w-7xl px-6 py-4"
-      >
+      <div data-main-content className="mx-auto max-w-7xl px-6 py-4">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* MAIN CONTENT - 75% */}
           <div className="lg:col-span-3">
-            {homepageData.mainComponents &&
-            homepageData.mainComponents.length > 0 ? (
-              homepageData.mainComponents.map((component, index) =>
+            {hasMainComponents ? (
+              mainComponents.map((component, index) =>
                 renderMainComponent(component, index)
               )
             ) : (
@@ -159,9 +184,8 @@ export default function HomePageClient({ homepageData }: HomePageClientProps) {
 
           {/* ASIDE - 25% */}
           <aside className="lg:col-span-1 space-y-6">
-            {homepageData.asideComponents &&
-            homepageData.asideComponents.length > 0 ? (
-              homepageData.asideComponents.map((component, index) =>
+            {hasAsideComponents ? (
+              asideComponents.map((component, index) =>
                 renderAsideComponent(component, index)
               )
             ) : (
@@ -174,20 +198,19 @@ export default function HomePageClient({ homepageData }: HomePageClientProps) {
       </div>
 
       {/* ADDITIONAL COMPONENTS */}
-      {homepageData.additionalComponents &&
-        homepageData.additionalComponents.length > 0 && (
-          <div className="additional-components">
-            {homepageData.additionalComponents.map((component, index) => (
-              <ComponentRenderer
-                key={`additional-${index}`}
-                component={component}
-              />
-            ))}
-          </div>
-        )}
+      {additionalComponents.length > 0 && (
+        <div className="additional-components">
+          {additionalComponents.map((component, index) => (
+            <ComponentRenderer
+              key={`additional-${index}`}
+              component={component}
+            />
+          ))}
+        </div>
+      )}
 
       {/* POPUP DEMO - pojawia się po przewinięciu 60% strony, cooldown 60 minut */}
-      <Popup scrollThreshold={60} cooldownMinutes={60} />
+      <ClientPopup scrollThreshold={60} cooldownMinutes={60} />
     </div>
   );
 }

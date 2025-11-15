@@ -79,6 +79,8 @@ export default function YouTubeChannel({ data }: Props) {
                       {...imageProps}
                       className="w-full h-full rounded-full object-cover"
                       alt={imageProps.alt}
+                      loading="lazy"
+                      decoding="async"
                     />
                   );
                 })()

@@ -92,6 +92,8 @@ export default function AboutUs({ data }: Props) {
                   {...imageProps}
                   alt={imageAlt}
                   className="object-cover transition-transform duration-300 hover:scale-105 w-full h-full"
+                  loading="lazy"
+                  decoding="async"
                 />
               );
             })()

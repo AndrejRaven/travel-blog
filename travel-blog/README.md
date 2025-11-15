@@ -38,6 +38,20 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Audyty SEO
+
+Po wdrożeniu zmian odpal skrypt łączący lint i Lighthouse (kategoria SEO):
+
+```bash
+# w jednym terminalu
+npm run dev
+
+# w drugim terminalu
+npm run seo:check
+```
+
+Polecenie zakłada, że lokalny serwer działa na `http://localhost:3000`. Wynik Lighthouse pomoże szybko wychwycić regresje CWV i metadanych.
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:
