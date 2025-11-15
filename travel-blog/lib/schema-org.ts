@@ -863,6 +863,84 @@ export function generateVideoObjectSchema(options: {
 }
 
 /**
+ * Generuje Schema.org ImageGallery dla galerii obrazów
+ */
+export function generateImageGallerySchema(options: {
+  name?: string;
+  description?: string;
+  images: Array<{
+    url: string;
+    alt?: string;
+    width?: number;
+    height?: number;
+  }>;
+  url?: string;
+}): object {
+  const baseUrl = SITE_CONFIG.url;
+
+  const schema: {
+    "@context": string;
+    "@type": string;
+    name?: string;
+    description?: string;
+    image?: Array<{
+      "@type": string;
+      url: string;
+      caption?: string;
+      width?: number;
+      height?: number;
+    }>;
+    url?: string;
+  } = {
+    "@context": "https://schema.org",
+    "@type": "ImageGallery",
+  };
+
+  if (options.name) {
+    schema.name = options.name;
+  }
+
+  if (options.description) {
+    schema.description = options.description;
+  }
+
+  if (options.images && options.images.length > 0) {
+    schema.image = options.images.map((img) => {
+      const imageSchema: {
+        "@type": string;
+        url: string;
+        caption?: string;
+        width?: number;
+        height?: number;
+      } = {
+        "@type": "ImageObject",
+        url: ensureAbsoluteUrl(img.url, baseUrl) || img.url,
+      };
+
+      if (img.alt) {
+        imageSchema.caption = img.alt;
+      }
+
+      if (img.width) {
+        imageSchema.width = img.width;
+      }
+
+      if (img.height) {
+        imageSchema.height = img.height;
+      }
+
+      return imageSchema;
+    });
+  }
+
+  if (options.url) {
+    schema.url = ensureAbsoluteUrl(options.url, baseUrl) || options.url;
+  }
+
+  return schema;
+}
+
+/**
  * Generuje Schema.org WebPage
  */
 export function generateWebPageSchema(options: {

@@ -15,6 +15,7 @@ import {
   generateOrganizationSchema,
   generatePersonSchema,
   generateVideoObjectSchema,
+  generateImageGallerySchema,
   type BreadcrumbItem,
 } from "@/lib/schema-org";
 import {
@@ -128,6 +129,29 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   if (post.seo?.noFollow) robots.push("nofollow");
   if (robots.length === 0) robots.push("index", "follow");
 
+  // Znajdź pierwszy komponent embedYoutube dla Open Graph video
+  const embedYoutubeComponent = post.components?.find(
+    (comp) => comp._type === "embedYoutube"
+  ) as {
+    videoId?: string;
+    useLatestVideo?: boolean;
+  } | undefined;
+
+  // Pobierz videoId dla og:video
+  let videoIdForOg: string | null = null;
+  if (embedYoutubeComponent) {
+    if (embedYoutubeComponent.useLatestVideo || embedYoutubeComponent.videoId === "latest") {
+      try {
+        const latestVideo = await getLatestYouTubeVideo();
+        videoIdForOg = latestVideo?.id || null;
+      } catch (error) {
+        console.error("Error fetching latest video for OG:", error);
+      }
+    } else if (embedYoutubeComponent.videoId && embedYoutubeComponent.videoId !== "latest") {
+      videoIdForOg = embedYoutubeComponent.videoId;
+    }
+  }
+
   const metadata: Metadata = {
     title: fullTitle,
     description: seoDescription,
@@ -176,6 +200,15 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
       }),
       ...(secureOgImageUrl && {
         "og:image:secure_url": secureOgImageUrl,
+      }),
+      // Open Graph video dla embedYoutube
+      ...(videoIdForOg && {
+        "og:video": `https://www.youtube.com/embed/${videoIdForOg}`,
+        "og:video:url": `https://www.youtube.com/embed/${videoIdForOg}`,
+        "og:video:secure_url": `https://www.youtube.com/embed/${videoIdForOg}`,
+        "og:video:type": "text/html",
+        "og:video:width": "1280",
+        "og:video:height": "720",
       }),
     },
   };
@@ -461,6 +494,8 @@ export default async function PostPage({ params }: Params) {
 
   // VideoObject dla osadzonych filmów YouTube w komponentach
   const videoObjects: object[] = [];
+  // ImageGallery dla komponentów ImageCollage
+  const imageGalleryObjects: object[] = [];
   // Przetwarzanie komponentów embedYoutube - pobieranie publishedAt dla SSR
   const processedComponents = post.components ? await Promise.all(
     post.components.map(async (component) => {
@@ -514,6 +549,47 @@ export default async function PostPage({ params }: Params) {
           publishedAt,
         };
       }
+      
+      // Przetwarzanie komponentów ImageCollage dla structured data
+      if (component._type === "imageCollage") {
+        const imageCollage = component as {
+          images?: Array<{
+            asset?: {
+              url?: string;
+              metadata?: {
+                dimensions?: {
+                  width?: number;
+                  height?: number;
+                };
+              };
+            };
+            alt?: string;
+          }>;
+        };
+        
+        if (imageCollage.images && imageCollage.images.length > 0) {
+          const galleryImages = imageCollage.images
+            .filter((img) => img.asset?.url)
+            .map((img) => ({
+              url: img.asset!.url!,
+              alt: img.alt || `Zdjęcie z galerii`,
+              width: img.asset?.metadata?.dimensions?.width,
+              height: img.asset?.metadata?.dimensions?.height,
+            }));
+          
+          if (galleryImages.length > 0) {
+            const imageGalleryJsonLd = generateImageGallerySchema({
+              name: `Galeria zdjęć - ${post.title}`,
+              description: `Galeria zdjęć z artykułu: ${post.title}`,
+              images: galleryImages,
+              url: canonicalUrl,
+            });
+            
+            imageGalleryObjects.push(imageGalleryJsonLd);
+          }
+        }
+      }
+      
       return component;
     })
   ) : undefined;
@@ -555,6 +631,16 @@ export default async function PostPage({ params }: Params) {
         return jsonLd ? (
           <script
             key={`video-${index}`}
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: jsonLd }}
+          />
+        ) : null;
+      })}
+      {imageGalleryObjects.map((imageGalleryJsonLd, index) => {
+        const jsonLd = safeJsonLd(imageGalleryJsonLd);
+        return jsonLd ? (
+          <script
+            key={`imageGallery-${index}`}
             type="application/ld+json"
             dangerouslySetInnerHTML={{ __html: jsonLd }}
           />

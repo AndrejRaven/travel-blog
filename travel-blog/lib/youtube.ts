@@ -26,7 +26,7 @@ const YOUTUBE_API_URL = '/api/youtube';
 export async function getLatestYouTubeVideo(): Promise<YouTubeVideo | null> {
   try {
     const response = await fetch(YOUTUBE_RSS_URL, {
-      next: { revalidate: 0 }, // Pobieraj przy każdym odświeżeniu
+      next: { revalidate: 3600 }, // Cache na 1 godzinę (3600 sekund)
     });
 
     if (!response.ok) {
@@ -236,7 +236,7 @@ export async function getYouTubeVideoById(
 ): Promise<string | null> {
   try {
     const response = await fetch(YOUTUBE_RSS_URL, {
-      next: { revalidate: 0 }, // Pobieraj przy każdym odświeżeniu
+      next: { revalidate: 3600 }, // Cache na 1 godzinę (3600 sekund)
     });
 
     if (!response.ok) {
