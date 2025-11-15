@@ -2,6 +2,8 @@ import { MetadataRoute } from 'next';
 import { SITE_CONFIG } from '@/lib/config';
 import { fetchGroq } from '@/lib/sanity';
 import { QUERIES } from '@/lib/queries';
+import { getPostUrl } from '@/lib/utils';
+import type { Post } from '@/lib/sanity';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = SITE_CONFIG.url;
@@ -71,36 +73,42 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
     // Pobierz wszystkie posty z datami publikacji
     const postsWithDates = await fetchGroq<Array<{
-      slug: { current: string };
+      slug?: { current: string };
       publishedAt?: string;
       seo?: {
         noIndex?: boolean;
       };
       categories?: Array<{
-        slug: { current: string };
+        slug?: { current: string };
         mainCategory?: {
-          slug: { current: string };
+          slug?: { current: string };
           superCategory?: {
-            slug: { current: string };
+            slug?: { current: string };
           };
         };
       }>;
     }>>(
       `*[_type == "post" && defined(slug.current)] {
-        "slug": slug.current,
+        slug,
         publishedAt,
         seo {
           noIndex
         },
         "categories": categories[]-> {
-          "slug": slug.current,
+          slug {
+            current
+          },
           "mainCategory": mainCategory-> {
-            "slug": slug.current,
+            slug {
+              current
+            },
             "superCategory": superCategory-> {
-              "slug": slug.current
+              slug {
+                current
+              }
             }
           }
-        }[0]
+        }
       }`,
       {},
       'POSTS'
@@ -144,26 +152,33 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     });
 
     // Dodaj posty (pomijając te z noIndex)
+    let postsAdded = 0;
+    let postsSkipped = 0;
     postsWithDates.forEach((post) => {
       // Pomiń posty oznaczone jako noIndex
       if (post.seo?.noIndex) {
+        postsSkipped++;
         return;
       }
 
-      const category = post.categories?.[0];
-      const superCatSlug = category?.mainCategory?.superCategory?.slug.current;
-      const mainCatSlug = category?.mainCategory?.slug.current;
-      const catSlug = category?.slug.current;
-      
-      if (superCatSlug && mainCatSlug && catSlug) {
+      const postUrl = getPostUrl(post as Post);
+      if (postUrl && postUrl !== "#") {
         entries.push({
-          url: `${baseUrl}/${superCatSlug}/${mainCatSlug}/${catSlug}/${post.slug.current}`,
+          url: `${baseUrl}${postUrl}`,
           lastModified: post.publishedAt ? new Date(post.publishedAt) : now,
           changeFrequency: 'monthly',
           priority: 0.9,
         });
+        postsAdded++;
+      } else {
+        postsSkipped++;
       }
     });
+
+    // Debug logging
+    console.log(`[Sitemap] Total posts fetched: ${postsWithDates.length}`);
+    console.log(`[Sitemap] Posts added to sitemap: ${postsAdded}`);
+    console.log(`[Sitemap] Posts skipped: ${postsSkipped}`);
 
   } catch (error) {
     console.error('Error generating sitemap:', error);
