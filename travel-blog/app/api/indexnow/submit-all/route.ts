@@ -8,7 +8,7 @@
  * GET /api/indexnow/submit-all - Sprawdza ile postów zostanie wysłanych
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { submitToIndexNow } from '@/lib/indexnow';
 import { SITE_CONFIG } from '@/lib/config';
 import { fetchGroq } from '@/lib/sanity';
@@ -104,7 +104,7 @@ export async function GET() {
   }
 }
 
-export async function POST(request: NextRequest) {
+export async function POST() {
   try {
     // Pobierz wszystkie posty
     const posts = await getAllPublishedPosts();

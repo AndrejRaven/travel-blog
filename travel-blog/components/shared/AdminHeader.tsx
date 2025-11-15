@@ -3,7 +3,7 @@
 import { useRouter, usePathname } from "next/navigation";
 import Button from "@/components/ui/Button";
 import Link from "@/components/ui/Link";
-import { LogOut, User, LayoutDashboard, MessageSquare } from "lucide-react";
+import { LogOut, User, LayoutDashboard, MessageSquare, Search } from "lucide-react";
 import { AdminUser } from "@/lib/auth";
 
 interface AdminHeaderProps {
@@ -70,6 +70,17 @@ export default function AdminHeader({ user }: AdminHeaderProps) {
             >
               <MessageSquare className="w-4 h-4 inline sm:mr-1.5" />
               <span className="hidden sm:inline">Komentarze</span>
+            </Link>
+            <Link
+              href="/admin/seo"
+              className={`px-2 sm:px-3 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap ${
+                isActive("/admin/seo")
+                  ? "bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300"
+                  : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+              }`}
+            >
+              <Search className="w-4 h-4 inline sm:mr-1.5" />
+              <span className="hidden sm:inline">SEO</span>
             </Link>
           </nav>
 
