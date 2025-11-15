@@ -1,13 +1,5 @@
 import type { NextConfig } from "next";
 
-const canonicalHost =
-  process.env.NEXT_PUBLIC_SITE_URL
-    ? new URL(process.env.NEXT_PUBLIC_SITE_URL).host.replace(/\/$/, "")
-    : "vlogizdrogi.pl";
-
-const apexHost = canonicalHost.replace(/^www\./, "");
-const wwwHost = `www.${apexHost}`;
-
 const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
@@ -18,21 +10,6 @@ const nextConfig: NextConfig = {
         pathname: '/images/**',
       },
     ],
-  },
-  async redirects() {
-    return [
-      {
-        source: "/:path*",
-        has: [
-          {
-            type: "host",
-            value: wwwHost,
-          },
-        ],
-        destination: `https://${apexHost}/:path*`,
-        permanent: true,
-      },
-    ];
   },
   async headers() {
     return [
