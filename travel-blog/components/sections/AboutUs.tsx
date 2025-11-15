@@ -1,46 +1,14 @@
-"use client";
-
-import React from "react";
 import Image from "next/image";
 import Button from "@/components/ui/Button";
-import AnimatedSection from "@/components/shared/AnimatedSection";
 import SectionContainer from "@/components/shared/SectionContainer";
-import { useResponsiveImage } from "@/lib/render-utils";
 import { AboutUsData } from "@/lib/component-types";
+import { getSanityImageProps } from "@/lib/sanity-image";
 
-type Props = {
+interface Props {
   data: AboutUsData;
-};
+}
 
 export default function AboutUs({ data }: Props) {
-  // Wszystkie hooki muszą być przed wczesnymi returnami
-  // Animacje z opóźnieniem po załadowaniu strony
-  const [isLoaded, setIsLoaded] = React.useState(false);
-  const [isInView, setIsInView] = React.useState(false);
-  const containerRef = React.useRef<HTMLDivElement>(null);
-
-  // Użyj useResponsiveImage dla optymalizacji obrazka
-  const { getOptimizedImageProps } = useResponsiveImage({
-    width: 600,
-    height: 600,
-    quality: 95,
-    format: "webp",
-    fit: "fillmax",
-  });
-
-  // Uruchom animacje po załadowaniu komponentu
-  React.useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsInView(true);
-      setTimeout(() => {
-        setIsLoaded(true);
-      }, 100);
-    }, 200);
-
-    return () => clearTimeout(timer);
-  }, []);
-
-  // Zabezpieczenie na wypadek gdyby data był undefined
   if (!data) {
     console.error("AboutUs: Missing data", { data });
     return null;
@@ -51,95 +19,54 @@ export default function AboutUs({ data }: Props) {
     title,
     image,
     imageAlt,
-    description,
+    description = [],
     contactHref,
     contactText,
   } = data;
 
-  // Zabezpieczenie na wypadek gdyby container był undefined
   if (!container) {
     console.error("AboutUs: Missing container data", { container });
     return null;
   }
 
+  const heroImageProps = getSanityImageProps(image, {
+    quality: 85,
+    fit: "fillmax",
+  });
+
   return (
     <SectionContainer config={container}>
-      <AnimatedSection
-        id="o-nas"
-        className="rounded-xl my-8 border border-gray-200 dark:border-gray-700 p-6 bg-white dark:bg-gray-800"
-        isLoaded={isLoaded}
-        isInView={isInView}
-        containerRef={containerRef}
-      >
-        <h2 className="text-xl font-serif font-semibold text-gray-900 dark:text-gray-100 mb-4">
+      <div className="rounded-xl my-8 border border-gray-200 dark:border-gray-700 p-6 bg-white dark:bg-gray-800 space-y-5">
+        <h2 className="text-xl font-serif font-semibold text-gray-900 dark:text-gray-100">
           {title}
         </h2>
 
-        {/* ZDJĘCIE */}
-        <AnimatedSection
-          animationType="image"
-          animationDelay="medium"
-          className="relative w-full aspect-square overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 mb-4"
-          isLoaded={isLoaded}
-          isInView={isInView}
-        >
-          {image?.asset ? (
-            (() => {
-              const imageProps = getOptimizedImageProps(image);
-              return (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  {...imageProps}
-                  alt={imageAlt}
-                  className="object-cover transition-transform duration-300 hover:scale-105 w-full h-full"
-                  loading="lazy"
-                  decoding="async"
-                />
-              );
-            })()
-          ) : (
-            <Image
-              src="/demo-images/demo-asset.png"
-              alt={imageAlt}
-              fill
-              className="object-cover transition-transform duration-300 hover:scale-105"
-            />
-          )}
-        </AnimatedSection>
+        <div className="relative w-full aspect-square overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+          <Image
+            src={heroImageProps.src}
+            alt={imageAlt || "O nas"}
+            fill
+            className="object-cover transition-transform duration-300 hover:scale-105"
+            sizes="(max-width: 768px) 100vw, 50vw"
+          />
+        </div>
 
-        {/* OPIS */}
-        <div className="space-y-3 mb-4">
+        <div className="space-y-3">
           {description.map((paragraph, index) => (
-            <AnimatedSection
-              key={index}
-              animationType="text"
-              animationDelay={
-                index === 0 ? "long" : index === 1 ? "longer" : "longest"
-              }
-              className="text-sm text-gray-600 dark:text-gray-300"
-              isLoaded={isLoaded}
-              isInView={isInView}
-            >
+            <p key={index} className="text-sm text-gray-600 dark:text-gray-300">
               {paragraph}
-            </AnimatedSection>
+            </p>
           ))}
         </div>
 
-        <AnimatedSection
-          animationType="button"
-          animationDelay="longest"
-          isLoaded={isLoaded}
-          isInView={isInView}
+        <Button
+          href={contactHref}
+          variant="outline"
+          className="w-full text-xs px-3 py-2 transition-all duration-300 hover:scale-105 hover:shadow-lg"
         >
-          <Button
-            href={contactHref}
-            variant="outline"
-            className="w-full text-xs px-3 py-2 transition-all duration-300 hover:scale-105 hover:shadow-lg"
-          >
-            {contactText}
-          </Button>
-        </AnimatedSection>
-      </AnimatedSection>
+          {contactText}
+        </Button>
+      </div>
     </SectionContainer>
   );
 }

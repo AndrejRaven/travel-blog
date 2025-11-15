@@ -6,12 +6,9 @@ import Image from "next/image";
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
 import { ImageCollageData } from "@/lib/component-types";
 import { ANIMATION_PRESETS } from "@/lib/animations";
-import {
-  useResponsiveImage,
-  getAnimationClass,
-  getImageClasses,
-} from "@/lib/render-utils";
-import SectionContainer from "@/components/shared/SectionContainer";
+import { getAnimationClass, getImageClasses } from "@/lib/render-utils";
+import { useResponsiveImage } from "@/lib/render-hooks";
+import ClientSectionContainer from "@/components/shared/ClientSectionContainer";
 
 type Props = {
   data: ImageCollageData;
@@ -150,7 +147,7 @@ export default function ImageCollage({ data }: Props) {
   if (!mainImageProps) return null;
 
   return (
-    <SectionContainer config={container}>
+    <ClientSectionContainer config={container}>
       <div
         className={`w-full ${getAnimationClass({
           type: "text",
@@ -328,6 +325,6 @@ export default function ImageCollage({ data }: Props) {
           </div>,
           document.body
         )}
-    </SectionContainer>
+    </ClientSectionContainer>
   );
 }

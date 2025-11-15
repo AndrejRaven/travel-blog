@@ -2,7 +2,7 @@
 
 import React, { useState, useRef } from "react";
 import Image from "next/image";
-import { useResponsiveImage } from "@/lib/render-utils";
+import { useResponsiveImage } from "@/lib/render-hooks";
 import { ANIMATION_CLASSES, HOVER_EFFECTS } from "@/lib/animations";
 import { SanityImage } from "@/lib/sanity";
 

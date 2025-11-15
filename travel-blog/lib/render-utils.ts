@@ -1,34 +1,4 @@
-/**
- * Wspólne funkcje renderowania dla komponentów sekcji
- * Eliminuje duplikację kodu między komponentami
- */
-
-import { useState, useEffect } from "react";
-import imageUrlBuilder from '@sanity/image-url';
-import { projectId, dataset, SanityImage } from "./sanity";
 import { ANIMATION_PRESETS, ANIMATION_CLASSES, HOVER_EFFECTS } from "./animations";
-
-// Konfiguracja dla image-url builder
-// projectId i dataset są walidowane w sanity.ts, więc tutaj używamy non-null assertion
-const builder = imageUrlBuilder({
-  projectId: projectId!,
-  dataset: dataset!,
-});
-
-// Funkcja urlFor dla użycia w komponentach
-const urlFor = (source: SanityImage) => builder.image(source);
-
-// Typy dla konfiguracji obrazków
-export interface ImageConfig {
-  width?: number;
-  height?: number;
-  quality?: number;
-  format?: "webp" | "jpg" | "png";
-  fit?: "fillmax" | "fill" | "crop" | "scale";
-  mobileWidth?: number;
-  srcSetWidths?: number[];
-  sizes?: string;
-}
 
 // Typy dla konfiguracji animacji
 export interface AnimationConfig {
@@ -46,98 +16,6 @@ export interface ButtonConfig {
   external?: boolean;
   className?: string;
 }
-
-/**
- * Hook do obsługi responsywnych obrazków z optymalizacją Sanity
- */
-export const useResponsiveImage = (config: ImageConfig = {}) => {
-  const [isMobile, setIsMobile] = useState(false);
-  const [isHydrated, setIsHydrated] = useState(false);
-
-  useEffect(() => {
-    setIsHydrated(true);
-    const checkIsMobile = () => setIsMobile(window.innerWidth < 1024);
-    checkIsMobile();
-    window.addEventListener("resize", checkIsMobile);
-    return () => window.removeEventListener("resize", checkIsMobile);
-  }, []);
-
-  const getOptimizedImageProps = (
-    image: SanityImage | { src: string; alt?: string } | null | undefined,
-    fallback?: { src: string; alt: string }
-  ) => {
-    if (!image) {
-      return fallback || { src: "/demo-images/demo-asset.png", alt: "Obraz" };
-    }
-    
-    // Fallback image
-    if ('src' in image && typeof image.src === 'string') {
-      return {
-        src: image.src,
-        alt: image.alt || "Obraz"
-      };
-    }
-
-    // SanityImage - optymalizacja (bez hooka wewnątrz funkcji)
-    if ("asset" in image && image.asset?.url) {
-      const width = isMobile
-        ? config.mobileWidth || config.width || 800
-        : config.width || 1200;
-
-      const buildVariant = (variantWidth: number) =>
-        urlFor(image)
-          .width(variantWidth)
-          .quality(config.quality || 95)
-          .format(config.format || "webp")
-          .fit(config.fit || "fillmax")
-          .auto("format")
-          .url();
-
-      const imageUrl = buildVariant(width);
-      const srcSetWidths = config.srcSetWidths || [480, 768, 1024, 1440];
-      const srcSet = srcSetWidths
-        .map((variantWidth) => `${buildVariant(variantWidth)} ${variantWidth}w`)
-        .join(", ");
-
-      return {
-        src: imageUrl,
-        srcSet,
-        sizes:
-          config.sizes ||
-          "(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 1200px",
-        alt: image.alt || "Obraz",
-      };
-    }
-
-    // Fallback jeśli brak obrazu
-    if (fallback) {
-      return fallback;
-    }
-
-    // Ostatni fallback - demo image
-    return {
-      src: "/demo-images/demo-asset.png",
-      alt: "Obraz"
-    };
-  };
-
-  const getCurrentImage = (
-    desktopImage?: SanityImage | { src: string; alt?: string } | null,
-    mobileImage?: SanityImage | { src: string; alt?: string } | null,
-    fallback?: { src: string; alt: string }
-  ) => {
-    // Jeśli nie jest jeszcze zhydrowany, zawsze używaj desktop image
-    if (!isHydrated) {
-      return desktopImage || fallback || { src: "/demo-images/demo-asset.png", alt: "Obraz" };
-    }
-    
-    if (isMobile && mobileImage) return mobileImage;
-    if (desktopImage) return desktopImage;
-    return fallback || { src: "/demo-images/demo-asset.png", alt: "Obraz" };
-  };
-
-  return { isMobile, isHydrated, getOptimizedImageProps, getCurrentImage };
-};
 
 /**
  * Generuje klasy animacji na podstawie konfiguracji
@@ -253,28 +131,6 @@ export const getImageFallback = (alt: string = "Obraz"): { src: string; alt: str
   src: "/demo-images/demo-asset.png",
   alt
 });
-
-/**
- * Hook do obsługi scroll indicator
- */
-export const useScrollIndicator = () => {
-  const [showScrollButton, setShowScrollButton] = useState(true);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      if (window.scrollY > 100) {
-        setShowScrollButton(false);
-      }
-    };
-
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  const hideScrollButton = () => setShowScrollButton(false);
-
-  return { showScrollButton, hideScrollButton };
-};
 
 /**
  * Generuje klasy dla modal/overlay

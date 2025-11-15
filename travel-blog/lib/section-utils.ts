@@ -3,8 +3,6 @@
  * Eliminuje duplikację kodu między różnymi sekcjami
  */
 
-import { useState, useEffect } from "react";
-import { SanityImage } from "./sanity";
 
 // Typy dla konfiguracji kontenerów
 export interface ContainerConfig {
@@ -257,50 +255,4 @@ export const getContainerClasses = (config: ContainerConfig): string => {
   classes.push("mx-auto");
 
   return classes.join(" ");
-};
-
-/**
- * Hook do obsługi responsywnych obrazków
- */
-export const useResponsiveImage = () => {
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    const checkIsMobile = () => setIsMobile(window.innerWidth < 1024);
-    checkIsMobile();
-    window.addEventListener("resize", checkIsMobile);
-    return () => window.removeEventListener("resize", checkIsMobile);
-  }, []);
-
-  const hasValidImage = (image?: { src: string; alt?: string } | SanityImage | null): boolean => {
-    if (!image) return false;
-    return Boolean(('src' in image && image.src?.trim()) || ('asset' in image && image.asset?.url));
-  };
-
-  const getCurrentImage = (
-    desktopImage?: { src: string; alt?: string } | SanityImage | null,
-    mobileImage?: { src: string; alt?: string } | SanityImage | null,
-    fallback?: { src: string; alt: string }
-  ) => {
-    if (isMobile && hasValidImage(mobileImage)) return mobileImage;
-    if (hasValidImage(desktopImage)) return desktopImage;
-    if (fallback) return fallback;
-    return { src: "/demo-images/demo-asset.png", alt: "Obrazek" };
-  };
-
-  const getOptimizedImageProps = (image?: { src: string; alt?: string } | SanityImage) => {
-    if (!image) return null;
-    
-    if ('src' in image && typeof image.src === 'string') {
-      return { src: image.src, alt: image.alt || "Obraz" };
-    }
-    
-    if ('asset' in image && image.asset?.url) {
-      return { isSanityImage: true, asset: image.asset, alt: "Obraz" };
-    }
-    
-    return null;
-  };
-
-  return { isMobile, getCurrentImage, getOptimizedImageProps };
 };

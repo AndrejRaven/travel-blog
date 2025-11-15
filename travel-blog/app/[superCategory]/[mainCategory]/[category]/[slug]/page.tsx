@@ -4,6 +4,8 @@ import {
 } from "@/lib/queries/functions";
 import { getImageUrl } from "@/lib/sanity";
 import PostPageClient from "@/components/pages/PostPageClient";
+import ComponentRenderer from "@/components/ui/ComponentRenderer";
+import { PostComponent } from "@/lib/component-types";
 import { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getPrimaryCategory, getCanonicalPath } from "@/lib/utils";
@@ -589,6 +591,14 @@ export default async function PostPage({ params }: Params) {
     components: processedComponents,
   };
 
+  const renderedComponents = processedComponents?.length
+    ? processedComponents.map((component) => (
+        <div key={component._key} className="relative">
+          <ComponentRenderer component={component as PostComponent} />
+        </div>
+      ))
+    : undefined;
+
   return (
     <>
       {safeJsonLd(blogPostingJsonLd) && (
@@ -642,6 +652,7 @@ export default async function PostPage({ params }: Params) {
         ogTitle={ogTitle}
         ogDescription={ogDescription}
         ogImageUrl={ogImageUrl}
+        renderedComponents={renderedComponents}
       />
     </>
   );

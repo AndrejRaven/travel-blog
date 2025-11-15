@@ -167,7 +167,11 @@ export default function HomePageContent({ homepageData }: HomePageContentProps) 
         )}
 
       {/* MAIN CONTENT WITH ASIDE */}
-      <div data-main-content className="mx-auto max-w-7xl px-6 py-4">
+      <div
+        id="main-content"
+        data-main-content
+        className="mx-auto max-w-7xl px-6 py-4"
+      >
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* MAIN CONTENT - 75% */}
           <div className="lg:col-span-3">

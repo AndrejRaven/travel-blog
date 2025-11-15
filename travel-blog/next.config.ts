@@ -2,12 +2,20 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   images: {
+    deviceSizes: [640, 768, 1024, 1280, 1440, 1920],
+    imageSizes: [160, 320, 480, 640],
     remotePatterns: [
       {
         protocol: 'https',
         hostname: 'cdn.sanity.io',
         port: '',
         pathname: '/images/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'img.youtube.com',
+        port: '',
+        pathname: '/vi/**',
       },
     ],
   },

@@ -1,4 +1,7 @@
+"use client";
+
 import React from "react";
+import { useAnimation } from "@/lib/useAnimation";
 import { ANIMATION_PRESETS } from "@/lib/animations";
 import {
   ContainerConfig,
@@ -22,11 +25,7 @@ interface SectionContainerProps {
   itemType?: string;
 }
 
-/**
- * Wspólny kontener dla wszystkich sekcji
- * Eliminuje duplikację kodu między komponentami sekcji
- */
-export default function SectionContainer({
+export default function ClientSectionContainer({
   config,
   children,
   className = "",
@@ -35,11 +34,12 @@ export default function SectionContainer({
   itemScope,
   itemType,
 }: SectionContainerProps) {
+  const { isLoaded, isInView, containerRef } = useAnimation();
+
   const sectionId = config.contentTitle
     ? generateSectionId(config.contentTitle)
     : undefined;
 
-  // Zewnętrzny kontener - tylko zewnętrzne rzeczy (szerokość, marginesy)
   const outerContainerClasses = [
     "w-full",
     getMaxWidthClass(config.maxWidth),
@@ -47,7 +47,6 @@ export default function SectionContainer({
     "mx-auto",
   ];
 
-  // Wewnętrzny kontener - wszystkie style wizualne + innerMargin
   const innerContainerClasses = [getPaddingClass(config.padding)];
 
   if (config.innerMargin && config.innerMargin !== "none") {
@@ -66,12 +65,15 @@ export default function SectionContainer({
     innerContainerClasses.push(getShadowClass(config.shadow));
   }
 
-  const animationClass = ANIMATION_PRESETS.text(true, "none");
+  const animationClass = ANIMATION_PRESETS.text(isLoaded && isInView, "none");
 
   return (
     <div
       id={sectionId}
-      className={`${outerContainerClasses.join(" ")} ${animationClass} ${className || ""} relative`}
+      ref={containerRef}
+      className={`${outerContainerClasses.join(" ")} ${animationClass} ${
+        className || ""
+      } relative`}
       role={role}
       aria-labelledby={ariaLabelledBy}
       itemScope={itemScope}
@@ -81,3 +83,4 @@ export default function SectionContainer({
     </div>
   );
 }
+

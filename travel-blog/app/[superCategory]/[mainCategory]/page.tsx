@@ -22,6 +22,7 @@ import { getPostUrl } from "@/lib/utils";
 import { buildAlternates, buildOpenGraph, buildAbsoluteUrl } from "@/lib/metadata";
 
 export const revalidate = 600;
+export const dynamic = "force-static";
 
 type MainCategoryPageProps = {
   params: Promise<{

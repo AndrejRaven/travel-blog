@@ -16,7 +16,7 @@ import {
   getLatestYouTubeVideo,
   getYouTubeVideoById,
 } from "@/lib/youtube";
-import { PostComponent } from "@/lib/component-types";
+import { PostComponent, EmbedYoutube as EmbedYoutubeComponent } from "@/lib/component-types";
 import { buildAlternates, buildOpenGraph, buildAbsoluteUrl } from "@/lib/metadata";
 
 // Funkcja pomocnicza do walidacji i upewnienia się że URL jest absolutny
@@ -160,6 +160,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export const revalidate = 300;
+export const dynamic = "force-static";
 
 export default async function Home() {
   // Pobierz dane homepage z Sanity na serwerze
@@ -247,28 +248,30 @@ export default async function Home() {
     return Promise.all(
       components.map(async (component) => {
         if (component._type === "embedYoutube") {
-          const embedYoutube = component as {
-            videoId?: string;
-            useLatestVideo?: boolean;
+          const embedYoutube = component as EmbedYoutubeComponent & {
+            publishedAt?: string | null;
           };
 
-          // Pobierz publishedAt dla komponentu (SSR)
           let publishedAt: string | null = null;
+          let resolvedVideoId: string | undefined = embedYoutube.videoId;
+
           try {
             if (embedYoutube.useLatestVideo || embedYoutube.videoId === "latest") {
               const latestVideo = await getLatestYouTubeVideo();
-              publishedAt = latestVideo?.publishedAt || null;
+              if (latestVideo?.id) {
+                resolvedVideoId = latestVideo.id;
+                publishedAt = latestVideo.publishedAt || null;
+              }
             } else if (embedYoutube.videoId && embedYoutube.videoId !== "latest") {
               publishedAt = await getYouTubeVideoById(embedYoutube.videoId);
             }
           } catch (error) {
-            console.error("Error fetching YouTube video publishedAt:", error);
-            // Nie przerywamy renderowania, jeśli nie udało się pobrać daty
+            console.error("Error fetching YouTube video data:", error);
           }
 
-          // Dodaj publishedAt do komponentu
           return {
             ...component,
+            videoId: resolvedVideoId,
             publishedAt,
           };
         }

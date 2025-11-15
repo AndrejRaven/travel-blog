@@ -1,132 +1,107 @@
-"use client";
-
-import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Button from "@/components/ui/Button";
-import AnimatedSection from "@/components/shared/AnimatedSection";
 import SectionContainer from "@/components/shared/SectionContainer";
-import { useAnimation } from "@/lib/useAnimation";
 import { SupportSectionData } from "@/lib/component-types";
+import { getAnimationClass } from "@/lib/render-utils";
 import { sanitizeSvg } from "@/lib/svg-sanitizer";
 
-type Props = {
+interface Props {
   data: SupportSectionData;
-};
+}
 
-export default function SupportSection({ data }: Props) {
-  // Wszystkie hooki muszą być przed wczesnymi returnami
-  const { isLoaded, isInView, containerRef } = useAnimation();
-  const [sanitizedSvgs, setSanitizedSvgs] = useState<Record<string, string>>({});
-
-  // Sanitizuj SVG po stronie klienta
-  useEffect(() => {
-    if (!data?.supportOptions) return;
-    
-    const sanitizeAllSvgs = async () => {
-      const sanitized: Record<string, string> = {};
-      for (const option of data.supportOptions) {
-        if (option.iconSvg) {
-          sanitized[option.id] = await sanitizeSvg(option.iconSvg);
-        }
-      }
-      setSanitizedSvgs(sanitized);
-    };
-    sanitizeAllSvgs();
-  }, [data?.supportOptions]);
-
-  // Zabezpieczenie na wypadek gdyby data był undefined
+export default async function SupportSection({ data }: Props) {
   if (!data) {
     console.error("SupportSection: Missing data", { data });
     return null;
   }
 
-  const { container, title, description, supportOptions, thankYouMessage } =
-    data;
+  const { container, title, description, supportOptions, thankYouMessage } = data;
 
-  // Zabezpieczenie na wypadek gdyby container był undefined
   if (!container) {
     console.error("SupportSection: Missing container data", { container });
     return null;
   }
 
+  const sanitizedSvgs: Record<string, string> = {};
+  await Promise.all(
+    supportOptions.map(async (option) => {
+      if (option.iconSvg) {
+        sanitizedSvgs[option.id] = await sanitizeSvg(option.iconSvg);
+      }
+    })
+  );
+
   return (
     <SectionContainer config={container}>
-      <section
-        ref={containerRef}
-        className="rounded-xl border border-gray-200 dark:border-gray-700 p-6 bg-white dark:bg-gray-800"
-      >
-        <AnimatedSection
-          animationType="sectionHeader"
-          className="text-lg font-serif font-semibold text-gray-900 dark:text-gray-100 mb-4"
-          isLoaded={isLoaded}
-          isInView={isInView}
+      <section className="rounded-xl border border-gray-200 dark:border-gray-700 p-6 bg-white dark:bg-gray-800 space-y-4">
+        <h2
+          className={`text-lg font-serif font-semibold text-gray-900 dark:text-gray-100 ${getAnimationClass({
+            type: "sectionHeader",
+            delay: "none",
+            isInView: true,
+            isLoaded: true,
+          })}`}
         >
           {title}
-        </AnimatedSection>
+        </h2>
 
-        <div className="space-y-4">
-          <AnimatedSection
-            animationType="text"
-            animationDelay="short"
-            className="text-xs text-gray-600 dark:text-gray-300"
-            isLoaded={isLoaded}
-            isInView={isInView}
-          >
-            {description}
-          </AnimatedSection>
+        <p className="text-xs text-gray-600 dark:text-gray-300">
+          {description}
+        </p>
 
+        <div className="space-y-3">
           {supportOptions.map((option, index) => (
-            <AnimatedSection
+            <Button
               key={option.id}
-              animationType="text"
-              animationDelay={
-                index === 0 ? "medium" : index === 1 ? "long" : "longer"
-              }
-              isLoaded={isLoaded}
-              isInView={isInView}
+              href={option.href}
+              variant={option.variant || "outline"}
+              external
+              className={`w-full text-xs px-3 py-2 flex items-center justify-center space-x-2 transition-all duration-300 hover:scale-105 hover:shadow-lg ${getAnimationClass({
+                type: "text",
+                delay: index < 2 ? "short" : index < 4 ? "medium" : "long",
+                isInView: true,
+                isLoaded: true,
+              })}`}
             >
-              <Button
-                href={option.href}
-                variant={option.variant || "outline"}
-                external
-                className="w-full text-xs px-3 py-2 flex items-center justify-center space-x-2 transition-all duration-300 hover:scale-105 hover:shadow-lg"
-              >
-                {option.icon ? (
-                  (() => {
-                    const iconUrl =
-                      typeof option.icon === "string"
-                        ? option.icon
-                        : option.icon.asset?.url;
-                    return iconUrl ? (
-                      <Image
-                        src={iconUrl}
-                        alt={option.name}
-                        width={16}
-                        height={16}
-                        className={`w-4 h-4 ${
-                          option.invertOnDark === true ? "dark:invert" : ""
-                        }`}
-                      />
-                    ) : null;
-                  })()
-                ) : option.iconSvg ? (
-                  <div dangerouslySetInnerHTML={{ __html: sanitizedSvgs[option.id] || option.iconSvg }} />
-                ) : null}
-                <span>{option.name}</span>
-              </Button>
-            </AnimatedSection>
-          ))}
+              {(() => {
+                const iconUrl =
+                  typeof option.icon === "string"
+                    ? option.icon
+                    : option.icon?.asset?.url;
 
-          <AnimatedSection
-            animationType="text"
-            animationDelay="longest"
-            className="text-xs text-gray-500 dark:text-gray-400 text-center"
-            isLoaded={isLoaded}
-            isInView={isInView}
-          >
-            {thankYouMessage}
-          </AnimatedSection>
+                if (iconUrl) {
+                  return (
+                    <Image
+                      src={iconUrl}
+                      alt={option.name}
+                      width={16}
+                      height={16}
+                      className={option.invertOnDark === true ? "dark:invert" : ""}
+                    />
+                  );
+                }
+
+                if (option.iconSvg) {
+                  return (
+                    <span
+                      className="w-4 h-4 flex items-center justify-center"
+                      dangerouslySetInnerHTML={{
+                        __html: sanitizedSvgs[option.id] || option.iconSvg,
+                      }}
+                    />
+                  );
+                }
+
+                return null;
+              })()}
+              <span>{option.name}</span>
+            </Button>
+          ))}
         </div>
+
+        <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
+          {thankYouMessage}
+        </p>
       </section>
     </SectionContainer>
   );

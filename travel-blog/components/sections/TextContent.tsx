@@ -1,5 +1,3 @@
-"use client";
-
 import React from "react";
 import RichText from "@/components/ui/RichText";
 import { TextContentData } from "@/lib/component-types";

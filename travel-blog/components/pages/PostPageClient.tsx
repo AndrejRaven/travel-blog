@@ -1,14 +1,13 @@
 "use client";
 
 import React, { useState } from "react";
-import ComponentRenderer from "@/components/ui/ComponentRenderer";
 import TableOfContents from "@/components/ui/TableOfContents";
 import CategoryBadge from "@/components/ui/CategoryBadge";
 import CommentsSection from "@/components/ui/CommentsSection";
 import ShareButtons from "@/components/ui/ShareButtons";
 import ResponsiveImage from "@/components/shared/ResponsiveImage";
 import { Post } from "@/lib/sanity";
-import { PostComponent } from "@/lib/component-types";
+import type { ReactNode } from "react";
 import { useAnimation, ANIMATION_PRESETS } from "@/lib/useAnimation";
 import { useComments } from "@/lib/useComments";
 import { getPostUrl } from "@/lib/utils";
@@ -24,6 +23,7 @@ interface PostPageClientProps {
   ogTitle?: string;
   ogDescription?: string;
   ogImageUrl?: string;
+  renderedComponents?: ReactNode;
 }
 
 export default function PostPageClient({
@@ -33,6 +33,7 @@ export default function PostPageClient({
   ogTitle,
   ogDescription,
   ogImageUrl,
+  renderedComponents,
 }: PostPageClientProps) {
   const [isTocOpen, setIsTocOpen] = useState(false);
 
@@ -172,16 +173,8 @@ export default function PostPageClient({
         </div>
       )}
       {/* Komponenty */}
-      {post.components && post.components.length > 0 ? (
-        <div className="relative">
-          {post.components.map((component) => {
-            return (
-              <div key={component._key} className={`relative`}>
-                <ComponentRenderer component={component as PostComponent} />
-              </div>
-            );
-          })}
-        </div>
+      {renderedComponents ? (
+        <div className="relative">{renderedComponents}</div>
       ) : (
         <div className="mx-auto max-w-3xl px-6 py-10">
           <p className="text-gray-600 dark:text-gray-400 font-sans">

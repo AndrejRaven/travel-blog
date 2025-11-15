@@ -1,36 +1,22 @@
-"use client";
-
 import React from "react";
 import Image from "next/image";
 import Button from "@/components/ui/Button";
 import RichText from "@/components/ui/RichText";
+import SectionContainer from "@/components/shared/SectionContainer";
 import { HeroBannerData } from "@/lib/component-types";
 import {
   getBackgroundColorClass,
   getBorderRadiusClass,
   getHeightClass,
 } from "@/lib/section-utils";
-import {
-  useResponsiveImage,
-  getAnimationClass,
-  getTextAlignmentClasses,
-} from "@/lib/render-utils";
-import SectionContainer from "@/components/shared/SectionContainer";
+import { getAnimationClass, getTextAlignmentClasses } from "@/lib/render-utils";
+import { getSanityImageProps } from "@/lib/sanity-image";
 
 type Props = {
   data: HeroBannerData;
 };
 
 export default function HeroBanner({ data }: Props) {
-  // Wszystkie hooki muszą być przed wczesnymi returnami
-  const { getCurrentImage, getOptimizedImageProps } = useResponsiveImage({
-    width: 1600,
-    mobileWidth: 800,
-    quality: 95,
-    format: "webp",
-    fit: "fillmax",
-  });
-
   const { container, layout } = data;
 
   if (!container || !layout) {
@@ -38,13 +24,23 @@ export default function HeroBanner({ data }: Props) {
     return null;
   }
 
-  const selectedImage = getCurrentImage(data.image, data.mobileImage);
-  const imageProps = getOptimizedImageProps(selectedImage);
+  const heroImage = data.image || data.mobileImage;
+  const heroImageProps = getSanityImageProps(heroImage, {
+    quality: 90,
+    fit: "fillmax",
+  });
 
   // Mapowanie szerokości obrazka na   kolumny grid
   const imageColumnMap = { 25: 3, 50: 6, 75: 9 } as const;
   const imageColumns = imageColumnMap[layout.imageWidth] || 6;
   const textColumns = 12 - imageColumns;
+
+  const columnClassMap: Record<number, string> = {
+    3: "lg:col-span-3",
+    4: "lg:col-span-4",
+    6: "lg:col-span-6",
+    9: "lg:col-span-9",
+  };
 
   // Klasy pozycjonowania
   const imageOrder =
@@ -66,7 +62,9 @@ export default function HeroBanner({ data }: Props) {
       >
         {/* Tekst */}
         <div
-          className={`${mobileTextOrder} ${textOrder} lg:col-span-${textColumns} px-6 lg:px-12 py-8 lg:py-16 flex items-center`}
+          className={`${mobileTextOrder} ${textOrder} ${
+            columnClassMap[textColumns] || "lg:col-span-6"
+          } px-6 lg:px-12 py-8 lg:py-16 flex items-center`}
         >
           <div
             className={`${
@@ -106,21 +104,19 @@ export default function HeroBanner({ data }: Props) {
 
         {/* Obraz */}
         <div
-          className={`${mobileImageOrder} ${imageOrder} lg:col-span-${imageColumns} w-full aspect-[4/3] lg:aspect-auto lg:h-full overflow-hidden`}
+          className={`${mobileImageOrder} ${imageOrder} ${
+            columnClassMap[imageColumns] || "lg:col-span-6"
+          } w-full aspect-[4/3] lg:aspect-auto lg:h-full overflow-hidden`}
         >
           <div className="relative w-full h-full">
-            {imageProps?.src ? (
+            {heroImageProps.src ? (
               <Image
-                src={imageProps.src as string}
-                alt={
-                  selectedImage && "alt" in selectedImage
-                    ? selectedImage.alt || "Obraz"
-                    : "Obraz"
-                }
+                src={heroImageProps.src}
+                alt={heroImageProps.alt}
                 fill
                 className="object-cover"
                 priority
-                sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                sizes="(max-width: 768px) 100vw, (max-width: 1024px) 55vw, 40vw"
               />
             ) : (
               <div className="w-full h-full bg-gray-300 dark:bg-gray-700 animate-pulse" />

@@ -10,9 +10,9 @@ import "swiper/css";
 import { Instagram } from "lucide-react";
 import "swiper/css/pagination";
 import AnimatedSection from "@/components/shared/AnimatedSection";
-import SectionContainer from "@/components/shared/SectionContainer";
+import ClientSectionContainer from "@/components/shared/ClientSectionContainer";
 import { useAnimation } from "@/lib/useAnimation";
-import { useResponsiveImage } from "@/lib/render-utils";
+import { useResponsiveImage } from "@/lib/render-hooks";
 import { InstagramSectionData } from "@/lib/component-types";
 
 type Props = {
@@ -48,7 +48,7 @@ export default function InstagramSection({ data }: Props) {
   }
 
   return (
-    <SectionContainer config={container}>
+    <ClientSectionContainer config={container}>
       <AnimatedSection
         role="complementary"
         aria-labelledby="instagram-heading"
@@ -207,6 +207,6 @@ export default function InstagramSection({ data }: Props) {
           ></div>
         </div>
       </AnimatedSection>
-    </SectionContainer>
+    </ClientSectionContainer>
   );
 }

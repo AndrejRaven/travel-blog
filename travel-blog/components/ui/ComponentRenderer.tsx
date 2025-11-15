@@ -4,7 +4,7 @@ import BackgroundHeroBanner from "@/components/sections/BackgroundHeroBanner";
 import TextContent from "@/components/sections/TextContent";
 import ImageCollage from "@/components/sections/ImageCollage";
 import Articles from "@/components/sections/LatestArticles";
-import EmbedYoutubeClient from "@/components/ui/EmbedYoutubeClient";
+import EmbedYoutube from "@/components/sections/EmbedYoutube";
 import {
   PostComponent,
   Articles as ArticlesType,
@@ -165,15 +165,17 @@ const componentMap = {
       publishedAt?: string | null;
     };
     return (
-      <EmbedYoutubeClient
-        {...({
-          ...convertToComponentData(comp),
-          title: embedYoutube.title,
-          description: embedYoutube.description,
-          videoId: embedYoutube.videoId,
-          useLatestVideo: embedYoutube.useLatestVideo,
-          publishedAt: embedYoutube.publishedAt,
-        } as Parameters<typeof EmbedYoutubeClient>[0])}
+      <EmbedYoutube
+        {
+          ...({
+            ...convertToComponentData(comp),
+            title: embedYoutube.title,
+            description: embedYoutube.description,
+            videoId: embedYoutube.videoId,
+            useLatestVideo: embedYoutube.useLatestVideo,
+            publishedAt: embedYoutube.publishedAt,
+          } as Parameters<typeof EmbedYoutube>[0])
+        }
       />
     );
   },

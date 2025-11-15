@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Button from "@/components/ui/Button";
 import { Mail, Shield, UserX, Ban, Clock, CheckCircle } from "lucide-react";
-import SectionContainer from "@/components/shared/SectionContainer";
+import ClientSectionContainer from "@/components/shared/ClientSectionContainer";
 import { useAnimation } from "@/lib/useAnimation";
 import { getAnimationClass } from "@/lib/render-utils";
 import { NewsletterData, NewsletterCacheData } from "@/lib/component-types";
@@ -534,7 +534,7 @@ export default function Newsletter({ data }: Props) {
   );
 
   return (
-    <SectionContainer config={container}>
+    <ClientSectionContainer config={container}>
       <section
         ref={containerRef}
         className="mx-auto max-w-4xl px-6 py-6 bg-gray-50 dark:bg-gray-900"
@@ -588,6 +588,6 @@ export default function Newsletter({ data }: Props) {
           </div>
         )}
       </section>
-    </SectionContainer>
+    </ClientSectionContainer>
   );
 }
