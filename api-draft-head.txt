@@ -1,0 +1,24 @@
+HTTP/2 200 
+age: 50
+cache-control: public, max-age=0, must-revalidate
+content-security-policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://cdn.sanity.io https://img.youtube.com https:; font-src 'self' data:; connect-src 'self' https://cdn.sanity.io https://*.sanity.io https://connect.mailerlite.com https://*.vercel-insights.com; frame-src https://www.youtube.com https://youtube.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests
+content-type: text/html; charset=utf-8
+date: Sat, 15 Nov 2025 18:10:33 GMT
+etag: "yjrf66tixum0y"
+permissions-policy: autoplay=*, encrypted-media=*, fullscreen=*, accelerometer=*, gyroscope=*, clipboard-write=*, clipboard-read=*
+referrer-policy: strict-origin-when-cross-origin
+server: Vercel
+strict-transport-security: max-age=63072000; includeSubDomains; preload
+vary: rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch
+x-content-type-options: nosniff
+x-dns-prefetch-control: on
+x-frame-options: DENY
+x-matched-path: /[superCategory]/[mainCategory]
+x-nextjs-prerender: 1
+x-nextjs-stale-time: 300
+x-powered-by: Next.js
+x-vercel-cache: HIT
+x-vercel-id: cle1::iad1::pt8ns-1763230284115-45a8d1dbe56e
+x-xss-protection: 1; mode=block
+content-length: 28646
+
