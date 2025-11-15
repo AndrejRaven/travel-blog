@@ -1,0 +1,9 @@
+HTTP/2 307 
+cache-control: public, max-age=0, must-revalidate
+content-type: text/plain
+date: Sat, 15 Nov 2025 16:41:42 GMT
+location: https://www.vlogizdrogi.pl/
+server: Vercel
+strict-transport-security: max-age=63072000
+x-vercel-id: cle1::bmkpg-1763224902654-15080e810189
+
