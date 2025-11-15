@@ -151,6 +151,11 @@ function parseStructuredData(html: string): SEOAnalysisResult['structuredData'] 
           continue;
         }
         
+        // Sprawdź czy zawiera JSON-LD markery (@context lub @type)
+        if (!scriptContent.includes('@context') && !scriptContent.includes('@type')) {
+          continue;
+        }
+        
         // Sprawdź czy nie zawiera HTML tagów (może być w komentarzach)
         if (scriptContent.includes('<') && scriptContent.includes('>')) {
           // Spróbuj wyciągnąć JSON z komentarzy HTML
@@ -181,175 +186,96 @@ function parseStructuredData(html: string): SEOAnalysisResult['structuredData'] 
   // 2. Parsuj JSON-LD z React Server Components payload
   // Next.js renderuje JSON-LD w RSC payload jako escaped JSON w stringu
   // Format: self.__next_f.push([..., "..."]) gdzie w stringu jest "__html":"{\"@context\":..."
-  if (schemas.length === 0) {
-    // Szukaj wszystkich RSC payload chunks
-    const rscChunks = html.match(/self\.__next_f\.push\(\[[^\]]*,"([^"]*(?:\\.[^"]*)*)"\]\)/g);
-    
-    if (rscChunks) {
-      for (const chunk of rscChunks) {
-        try {
-          // Wyciągnij zawartość stringa z chunk
-          const stringMatch = chunk.match(/self\.__next_f\.push\(\[[^\]]*,"([^"]*(?:\\.[^"]*)*)"\]\)/);
-          if (!stringMatch) continue;
+  // Zawsze próbuj parsować RSC, nawet jeśli znaleziono już schematy w standardowych tagach
+  const rscChunks = html.match(/self\.__next_f\.push\(\[[^\]]*,"([^"]*(?:\\.[^"]*)*)"\]\)/g);
+  
+  if (rscChunks) {
+    for (const chunk of rscChunks) {
+      try {
+        // Wyciągnij zawartość stringa z chunk
+        const stringMatch = chunk.match(/self\.__next_f\.push\(\[[^\]]*,"([^"]*(?:\\.[^"]*)*)"\]\)/);
+        if (!stringMatch) continue;
+        
+        const payload = stringMatch[1];
+        
+        // Sprawdź czy zawiera "application/ld+json" lub "@context" lub "@type"
+        if (!payload.includes('application/ld+json') && 
+            !payload.includes('"@context"') && 
+            !payload.includes('"@type"')) {
+          continue;
+        }
+        
+        // Szukaj "__html":"{...}" gdzie ... to escaped JSON-LD
+        // Pattern: "__html":"{\"@context\":..." lub "__html":"{\"@type\":..."
+        // Poprawiony regex - szukaj "__html" z escaped JSON
+        const jsonLdPattern = /"__html":"((?:\\"|[^"])*\{[^"]*(?:\\"|[^"])*"@(?:context|type)")/;
+        const jsonLdMatch = payload.match(jsonLdPattern);
+        
+        if (jsonLdMatch && jsonLdMatch[1]) {
+          // Wyciągnij i unescape JSON
+          let jsonString = jsonLdMatch[1]
+            .replace(/\\"/g, '"')
+            .replace(/\\\\/g, '\\')
+            .replace(/\\n/g, '\n')
+            .replace(/\\r/g, '\r')
+            .replace(/\\t/g, '\t');
           
-          const payload = stringMatch[1];
-          
-          // Sprawdź czy zawiera "application/ld+json"
-          if (!payload.includes('application/ld+json')) {
-            continue;
-          }
-          
-          // Szukaj "__html":"{...}" gdzie ... to escaped JSON-LD
-          // Pattern: "__html":"{\"@context\":..." lub "__html":"{\"@type\":..."
-          const jsonLdPattern = /"__html":"(\\"|\\\\)*\{[^"]*(?:\\"|\\\\)*"@(?:context|type)"/;
-          const jsonLdMatch = payload.match(jsonLdPattern);
-          
-          if (!jsonLdMatch) {
-            // Spróbuj szukać bezpośrednio escaped JSON obiektów
-            const escapedJsonPattern = /(\\"|\\\\)*\{[^"]*(?:\\"|\\\\)*"@(?:context|type)"/;
-            const escapedMatch = payload.match(escapedJsonPattern);
-            if (escapedMatch) {
-              // Znajdź początek i koniec JSON obiektu
-              const jsonStart = payload.indexOf(escapedMatch[0]);
-              if (jsonStart === -1) continue;
+          // Znajdź pełny JSON obiekt
+          const jsonStart = jsonString.indexOf('{');
+          if (jsonStart !== -1) {
+            jsonString = jsonString.substring(jsonStart);
+            
+            // Znajdź koniec przez zliczanie nawiasów
+            let braceCount = 0;
+            let jsonEnd = -1;
+            let inString = false;
+            let escapeNext = false;
+            
+            for (let i = 0; i < jsonString.length; i++) {
+              const char = jsonString[i];
               
-              // Przeszukaj od początku JSON do końca
-              let jsonString = payload.substring(jsonStart);
+              if (escapeNext) {
+                escapeNext = false;
+                continue;
+              }
               
-              // Unescape cały string
-              jsonString = jsonString
-                .replace(/\\"/g, '"')
-                .replace(/\\\\/g, '\\')
-                .replace(/\\n/g, '\n')
-                .replace(/\\r/g, '\r')
-                .replace(/\\t/g, '\t');
+              if (char === '\\') {
+                escapeNext = true;
+                continue;
+              }
               
-              // Znajdź pełny JSON obiekt
-              const jsonObjStart = jsonString.indexOf('{');
-              if (jsonObjStart === -1) continue;
+              if (char === '"' && !escapeNext) {
+                inString = !inString;
+                continue;
+              }
               
-              jsonString = jsonString.substring(jsonObjStart);
-              
-              // Znajdź koniec przez zliczanie nawiasów
-              let braceCount = 0;
-              let jsonEnd = -1;
-              let inString = false;
-              let escapeNext = false;
-              
-              for (let i = 0; i < jsonString.length; i++) {
-                const char = jsonString[i];
-                
-                if (escapeNext) {
-                  escapeNext = false;
-                  continue;
-                }
-                
-                if (char === '\\') {
-                  escapeNext = true;
-                  continue;
-                }
-                
-                if (char === '"' && !escapeNext) {
-                  inString = !inString;
-                  continue;
-                }
-                
-                if (!inString) {
-                  if (char === '{') {
-                    braceCount++;
-                  } else if (char === '}') {
-                    braceCount--;
-                    if (braceCount === 0) {
-                      jsonEnd = i + 1;
-                      break;
-                    }
+              if (!inString) {
+                if (char === '{') {
+                  braceCount++;
+                } else if (char === '}') {
+                  braceCount--;
+                  if (braceCount === 0) {
+                    jsonEnd = i + 1;
+                    break;
                   }
                 }
               }
-              
-              if (jsonEnd > 0) {
-                const fullJson = jsonString.substring(0, jsonEnd);
-                try {
-                  const parsed = JSON.parse(fullJson);
-                  processSchema(parsed, schemas, types);
-                } catch {
-                  // Ignoruj błędy parsowania
-                }
-              }
             }
-            continue;
-          }
-          
-          // Jeśli znaleziono "__html", wyciągnij JSON
-          const htmlContentMatch = jsonLdMatch[0].match(/"__html":"(.*)"/);
-          if (htmlContentMatch) {
-            let jsonString = htmlContentMatch[1];
             
-            // Unescape JSON
-            jsonString = jsonString
-              .replace(/\\"/g, '"')
-              .replace(/\\\\/g, '\\')
-              .replace(/\\n/g, '\n')
-              .replace(/\\r/g, '\r')
-              .replace(/\\t/g, '\t');
-            
-            // Znajdź pełny JSON obiekt
-            const jsonStart = jsonString.indexOf('{');
-            if (jsonStart !== -1) {
-              jsonString = jsonString.substring(jsonStart);
-              
-              // Znajdź koniec przez zliczanie nawiasów
-              let braceCount = 0;
-              let jsonEnd = -1;
-              let inString = false;
-              let escapeNext = false;
-              
-              for (let i = 0; i < jsonString.length; i++) {
-                const char = jsonString[i];
-                
-                if (escapeNext) {
-                  escapeNext = false;
-                  continue;
-                }
-                
-                if (char === '\\') {
-                  escapeNext = true;
-                  continue;
-                }
-                
-                if (char === '"' && !escapeNext) {
-                  inString = !inString;
-                  continue;
-                }
-                
-                if (!inString) {
-                  if (char === '{') {
-                    braceCount++;
-                  } else if (char === '}') {
-                    braceCount--;
-                    if (braceCount === 0) {
-                      jsonEnd = i + 1;
-                      break;
-                    }
-                  }
-                }
-              }
-              
-              if (jsonEnd > 0) {
-                const fullJson = jsonString.substring(0, jsonEnd);
-                try {
-                  const parsed = JSON.parse(fullJson);
-                  processSchema(parsed, schemas, types);
-                } catch {
-                  // Ignoruj błędy parsowania
-                }
+            if (jsonEnd > 0) {
+              const fullJson = jsonString.substring(0, jsonEnd);
+              try {
+                const parsed = JSON.parse(fullJson);
+                processSchema(parsed, schemas, types);
+              } catch {
+                // Ignoruj błędy parsowania
               }
             }
           }
-        } catch (error) {
-          if (process.env.NODE_ENV === 'development') {
-            console.debug('Error parsing RSC JSON-LD:', error);
-          }
+        }
+      } catch (error) {
+        if (process.env.NODE_ENV === 'development') {
+          console.debug('Error parsing RSC JSON-LD:', error);
         }
       }
     }
