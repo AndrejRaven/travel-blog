@@ -161,7 +161,7 @@ const componentMap = {
     );
   },
   embedYoutube: (comp: PostComponent) => {
-    const embedYoutube = comp as EmbedYoutubeType;
+    const embedYoutube = comp as EmbedYoutubeType & { publishedAt?: string | null };
     return (
       <EmbedYoutube
         {...({
@@ -170,6 +170,7 @@ const componentMap = {
           description: embedYoutube.description,
           videoId: embedYoutube.videoId,
           useLatestVideo: embedYoutube.useLatestVideo,
+          publishedAt: embedYoutube.publishedAt,
         } as Parameters<typeof EmbedYoutube>[0])}
       />
     );

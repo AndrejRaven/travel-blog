@@ -228,6 +228,65 @@ export async function getYouTubeChannelInfo(): Promise<YouTubeChannelInfo | null
 }
 
 /**
+ * Pobiera datę publikacji dla konkretnego videoId z RSS feed (server-side)
+ * Zwraca publishedAt jeśli film jest w RSS feed, w przeciwnym razie null
+ */
+export async function getYouTubeVideoById(
+  videoId: string
+): Promise<string | null> {
+  try {
+    const response = await fetch(YOUTUBE_RSS_URL, {
+      next: { revalidate: 0 }, // Pobieraj przy każdym odświeżeniu
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const xmlText = await response.text();
+
+    // Parsowanie XML za pomocą regex (działa w Node.js)
+    const entries = xmlText.match(/<entry>[\s\S]*?<\/entry>/g) || [];
+
+    // Szukaj filmu o podanym ID
+    for (const entry of entries) {
+      const videoIdMatch = entry.match(/<yt:videoId>([^<]+)<\/yt:videoId>/);
+      const linkMatch = entry.match(/<link[^>]*href="([^"]*)"[^>]*>/);
+
+      if (!videoIdMatch && !linkMatch) continue;
+
+      let entryVideoId: string | null = null;
+
+      // Spróbuj wyciągnąć ID z yt:videoId
+      if (videoIdMatch) {
+        entryVideoId = videoIdMatch[1];
+      }
+
+      // Jeśli nie ma yt:videoId, spróbuj wyciągnąć z URL
+      if (!entryVideoId && linkMatch) {
+        const videoUrl = linkMatch[1];
+        entryVideoId = videoUrl.split("v=")[1]?.split("&")[0] || null;
+      }
+
+      if (!entryVideoId) continue;
+
+      // Jeśli znaleziono film o podanym ID, zwróć datę publikacji
+      if (entryVideoId === videoId) {
+        const publishedMatch = entry.match(/<published>([^<]+)<\/published>/);
+        const publishedAt = publishedMatch?.[1] || "";
+        return publishedAt || null;
+      }
+    }
+
+    // Film nie został znaleziony w RSS feed
+    return null;
+  } catch (error) {
+    console.error("Error fetching YouTube video by ID:", error);
+    return null;
+  }
+}
+
+/**
  * Pobiera datę publikacji dla konkretnego videoId z RSS feed (client-side)
  * Zwraca publishedAt jeśli film jest w RSS feed, w przeciwnym razie null
  */

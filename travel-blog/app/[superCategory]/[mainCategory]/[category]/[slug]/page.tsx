@@ -17,6 +17,10 @@ import {
   generateVideoObjectSchema,
   type BreadcrumbItem,
 } from "@/lib/schema-org";
+import {
+  getLatestYouTubeVideo,
+  getYouTubeVideoById,
+} from "@/lib/youtube";
 
 type Params = {
   params: Promise<{
@@ -457,14 +461,18 @@ export default async function PostPage({ params }: Params) {
 
   // VideoObject dla osadzonych filmów YouTube w komponentach
   const videoObjects: object[] = [];
-  if (post.components) {
-    for (const component of post.components) {
+  // Przetwarzanie komponentów embedYoutube - pobieranie publishedAt dla SSR
+  const processedComponents = post.components ? await Promise.all(
+    post.components.map(async (component) => {
       if (component._type === "embedYoutube") {
         const embedYoutube = component as {
           videoId?: string;
           title?: string;
           description?: string;
+          useLatestVideo?: boolean;
         };
+        
+        // Pobierz publishedAt dla JSON-LD
         if (embedYoutube.videoId) {
           const videoId = embedYoutube.videoId;
           const videoTitle = embedYoutube.title || post.title;
@@ -485,9 +493,36 @@ export default async function PostPage({ params }: Params) {
 
           videoObjects.push(videoJsonLd);
         }
+
+        // Pobierz publishedAt dla komponentu (SSR)
+        let publishedAt: string | null = null;
+        try {
+          if (embedYoutube.useLatestVideo || embedYoutube.videoId === "latest") {
+            const latestVideo = await getLatestYouTubeVideo();
+            publishedAt = latestVideo?.publishedAt || null;
+          } else if (embedYoutube.videoId && embedYoutube.videoId !== "latest") {
+            publishedAt = await getYouTubeVideoById(embedYoutube.videoId);
+          }
+        } catch (error) {
+          console.error("Error fetching YouTube video publishedAt:", error);
+          // Nie przerywamy renderowania, jeśli nie udało się pobrać daty
+        }
+
+        // Dodaj publishedAt do komponentu
+        return {
+          ...component,
+          publishedAt,
+        };
       }
-    }
-  }
+      return component;
+    })
+  ) : undefined;
+
+  // Utwórz zaktualizowany obiekt post z przetworzonymi komponentami
+  const postWithProcessedComponents = {
+    ...post,
+    components: processedComponents,
+  };
 
   return (
     <>
@@ -526,7 +561,7 @@ export default async function PostPage({ params }: Params) {
         ) : null;
       })}
       <PostPageClient
-        post={post}
+        post={postWithProcessedComponents}
         tableOfContentsItems={tableOfContentsItems}
         postUrl={`${siteUrl}/${superCategory}/${mainCategory}/${category}/${slug}`}
         ogTitle={ogTitle}

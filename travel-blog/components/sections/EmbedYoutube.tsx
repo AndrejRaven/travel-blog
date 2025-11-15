@@ -15,14 +15,15 @@ export default function EmbedYoutube({
   videoId,
   useLatestVideo = false,
   container,
+  publishedAt: initialPublishedAt,
 }: EmbedYoutubeData) {
   // Wszystkie hooki muszą być przed wczesnymi returnami
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // Rozwiąż videoId - jeśli to "latest" lub useLatestVideo jest true, pobierz najnowszy film
   const [resolvedVideoId, setResolvedVideoId] = useState(videoId);
-  // Data publikacji filmu dla SEO (uploadDate)
-  const [publishedAt, setPublishedAt] = useState<string | null>(null);
+  // Data publikacji filmu dla SEO (uploadDate) - użyj wartości z props jeśli dostępna
+  const [publishedAt, setPublishedAt] = useState<string | null>(initialPublishedAt || null);
 
   useEffect(() => {
     const fetchVideoData = async () => {
@@ -34,7 +35,8 @@ export default function EmbedYoutube({
           const latestVideo = await getLatestYouTubeVideoClient();
           if (latestVideo) {
             setResolvedVideoId(latestVideo.id);
-            setPublishedAt(latestVideo.publishedAt || null);
+            // Użyj publishedAt z serwera jeśli dostępne, w przeciwnym razie z klienta
+            setPublishedAt(initialPublishedAt || latestVideo.publishedAt || null);
           } else {
             setError("Nie udało się pobrać najnowszego filmu");
           }
@@ -49,13 +51,15 @@ export default function EmbedYoutube({
           setIsLoading(false);
         }
       } else if (videoId && videoId !== "latest") {
-        // Dla zwykłego videoId, spróbuj pobrać datę publikacji z RSS feed
-        try {
-          const publishedDate = await getYouTubeVideoByIdClient(videoId);
-          setPublishedAt(publishedDate);
-        } catch (error) {
-          console.error("❌ Error fetching video date:", error);
-          // Nie ustawiamy błędu, bo brak daty nie jest krytyczny
+        // Dla zwykłego videoId, spróbuj pobrać datę publikacji z RSS feed tylko jeśli nie ma z serwera
+        if (!initialPublishedAt) {
+          try {
+            const publishedDate = await getYouTubeVideoByIdClient(videoId);
+            setPublishedAt(publishedDate);
+          } catch (error) {
+            console.error("❌ Error fetching video date:", error);
+            // Nie ustawiamy błędu, bo brak daty nie jest krytyczny
+          }
         }
       }
     };
@@ -63,7 +67,7 @@ export default function EmbedYoutube({
     if (container) {
       fetchVideoData();
     }
-  }, [videoId, useLatestVideo, container]);
+  }, [videoId, useLatestVideo, container, initialPublishedAt]);
 
   // Zabezpieczenie na wypadek gdyby container był undefined
   if (!container) {

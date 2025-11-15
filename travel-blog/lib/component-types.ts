@@ -145,7 +145,9 @@ export type EmbedYoutube = {
   useLatestVideo?: boolean;
 };
 
-export type EmbedYoutubeData = ComponentData<EmbedYoutube>;
+export type EmbedYoutubeData = ComponentData<EmbedYoutube> & {
+  publishedAt?: string | null;
+};
 
 export type Articles = {
   _type: 'articles';

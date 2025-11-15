@@ -10,6 +10,11 @@ import {
   generateWebSiteSchema,
   generatePersonSchema,
 } from "@/lib/schema-org";
+import {
+  getLatestYouTubeVideo,
+  getYouTubeVideoById,
+} from "@/lib/youtube";
+import { PostComponent } from "@/lib/component-types";
 
 // Funkcja pomocnicza do walidacji i upewnienia się że URL jest absolutny
 function ensureAbsoluteUrl(
@@ -240,6 +245,62 @@ export default async function Home() {
         })
       : null;
 
+  // Funkcja pomocnicza do przetwarzania komponentów embedYoutube
+  const processEmbedYoutubeComponents = async (
+    components: PostComponent[] | undefined
+  ): Promise<PostComponent[] | undefined> => {
+    if (!components) return undefined;
+
+    return Promise.all(
+      components.map(async (component) => {
+        if (component._type === "embedYoutube") {
+          const embedYoutube = component as {
+            videoId?: string;
+            useLatestVideo?: boolean;
+          };
+
+          // Pobierz publishedAt dla komponentu (SSR)
+          let publishedAt: string | null = null;
+          try {
+            if (embedYoutube.useLatestVideo || embedYoutube.videoId === "latest") {
+              const latestVideo = await getLatestYouTubeVideo();
+              publishedAt = latestVideo?.publishedAt || null;
+            } else if (embedYoutube.videoId && embedYoutube.videoId !== "latest") {
+              publishedAt = await getYouTubeVideoById(embedYoutube.videoId);
+            }
+          } catch (error) {
+            console.error("Error fetching YouTube video publishedAt:", error);
+            // Nie przerywamy renderowania, jeśli nie udało się pobrać daty
+          }
+
+          // Dodaj publishedAt do komponentu
+          return {
+            ...component,
+            publishedAt,
+          };
+        }
+        return component;
+      })
+    );
+  };
+
+  // Przetwarzanie wszystkich komponentów embedYoutube
+  const processedHomepageData = {
+    ...homepageData,
+    heroComponents: await processEmbedYoutubeComponents(
+      (homepageData as { heroComponents?: PostComponent[] }).heroComponents
+    ),
+    mainComponents: await processEmbedYoutubeComponents(
+      (homepageData as { mainComponents?: PostComponent[] }).mainComponents
+    ),
+    asideComponents: await processEmbedYoutubeComponents(
+      (homepageData as { asideComponents?: PostComponent[] }).asideComponents
+    ),
+    additionalComponents: await processEmbedYoutubeComponents(
+      (homepageData as { additionalComponents?: PostComponent[] }).additionalComponents
+    ),
+  };
+
   return (
     <>
       {safeJsonLd(websiteJsonLd) && (
@@ -262,7 +323,7 @@ export default async function Home() {
       )}
       <HomePageClient
         homepageData={
-          homepageData as Parameters<typeof HomePageClient>[0]["homepageData"]
+          processedHomepageData as Parameters<typeof HomePageClient>[0]["homepageData"]
         }
       />
     </>
