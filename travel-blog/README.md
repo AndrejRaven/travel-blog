@@ -52,6 +52,20 @@ npm run seo:check
 
 Polecenie zakłada, że lokalny serwer działa na `http://localhost:3000`. Wynik Lighthouse pomoże szybko wychwycić regresje CWV i metadanych.
 
+## Environment variables
+
+Utwórz plik `.env.local` i dodaj wymagane klucze (również w panelu hostingu):
+
+```bash
+RESEND_API_KEY=re_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+CONTACT_RECIPIENT=poczta@vlogizdrogi.pl
+```
+
+- `RESEND_API_KEY` — prywatny klucz API z Resend (zakładka API keys).
+- `CONTACT_RECIPIENT` — adres docelowy, na który trafiają zgłoszenia z formularza kontaktowego.
+
+Po zmianie zmiennych środowiskowych zrestartuj serwer deweloperski.
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:

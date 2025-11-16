@@ -20,6 +20,7 @@ export default function KontaktClient() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const analytics = useAnalytics();
 
@@ -53,20 +54,54 @@ export default function KontaktClient() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSubmitError(null);
+
+    if (!formData.subject) {
+      setSubmitError("Wybierz temat wiadomości przed wysłaniem.");
+      return;
+    }
+
     setIsSubmitting(true);
 
-    // Symulacja wysłania formularza
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    try {
+      const response = await fetch("/api/kontakt", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: formData.name.trim(),
+          email: formData.email.trim(),
+          subject: formData.subject,
+          message: formData.message.trim(),
+        }),
+      });
 
-    setIsSubmitted(true);
-    setIsSubmitting(false);
-    setFormData({ name: "", email: "", subject: "", message: "" });
-    
-    // Śledzenie wysłania formularza kontaktowego
-    analytics.trackEvent("contact_form_submit", {
-      subject: formData.subject,
-    });
-    analytics.trackConversion("contact_form", 1);
+      const result = await response.json().catch(() => null);
+
+      if (!response.ok || !result?.success) {
+        throw new Error(
+          result?.message || "Nie udało się wysłać wiadomości. Spróbuj ponownie."
+        );
+      }
+
+      setIsSubmitted(true);
+      setFormData({ name: "", email: "", subject: "", message: "" });
+
+      // Śledzenie wysłania formularza kontaktowego
+      analytics.trackEvent("contact_form_submit", {
+        subject: formData.subject,
+      });
+      analytics.trackConversion("contact_form", 1);
+    } catch (error) {
+      if (error instanceof Error) {
+        setSubmitError(error.message);
+      } else {
+        setSubmitError("Nie udało się wysłać wiadomości. Spróbuj ponownie.");
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleChange = (
@@ -264,6 +299,12 @@ export default function KontaktClient() {
                 .
               </p>
             </InfoCard>
+
+            {submitError && (
+              <InfoCard variant="red" className="p-4 text-sm">
+                {submitError}
+              </InfoCard>
+            )}
 
             <Button
               type="submit"

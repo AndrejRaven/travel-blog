@@ -94,5 +94,9 @@ export const rateLimitConfigs = {
     maxRequests: 3,
     windowMs: 60 * 60 * 1000, // 1 godzina
   },
+  contact: {
+    maxRequests: 3,
+    windowMs: 10 * 60 * 1000, // 10 minut
+  },
 } as const;
 
