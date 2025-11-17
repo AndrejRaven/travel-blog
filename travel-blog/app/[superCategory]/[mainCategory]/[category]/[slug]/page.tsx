@@ -497,47 +497,53 @@ export default async function PostPage({ params }: Params) {
           title?: string;
           description?: string;
           useLatestVideo?: boolean;
+          videoPublishedAt?: string | null;
         };
-        
-        // Pobierz publishedAt dla JSON-LD
-        if (embedYoutube.videoId) {
-          const videoId = embedYoutube.videoId;
+
+        let resolvedVideoId: string | undefined = embedYoutube.videoId;
+        let publishedAt: string | null = embedYoutube.videoPublishedAt || null;
+
+        try {
+          if (embedYoutube.useLatestVideo || embedYoutube.videoId === "latest") {
+            const latestVideo = await getLatestYouTubeVideo();
+            if (latestVideo?.id) {
+              resolvedVideoId = latestVideo.id;
+              if (!publishedAt) {
+                publishedAt = latestVideo.publishedAt || null;
+              }
+            }
+          } else if (
+            embedYoutube.videoId &&
+            embedYoutube.videoId !== "latest" &&
+            !publishedAt
+          ) {
+            publishedAt = await getYouTubeVideoById(embedYoutube.videoId);
+          }
+        } catch (error) {
+          console.error("Error fetching YouTube video publishedAt:", error);
+        }
+
+        if (resolvedVideoId) {
           const videoTitle = embedYoutube.title || post.title;
           const videoDescription =
-            embedYoutube.description ||
-            post.subtitle ||
-            post.seo?.seoDescription;
+            embedYoutube.description || post.subtitle || post.seo?.seoDescription;
 
           const videoJsonLd = generateVideoObjectSchema({
             name: videoTitle,
             description: videoDescription,
-            thumbnailUrl: `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`,
-            embedUrl: `https://www.youtube.com/embed/${videoId}`,
-            contentUrl: `https://www.youtube.com/watch?v=${videoId}`,
-            url: `https://www.youtube.com/watch?v=${videoId}`,
-            uploadDate: post.publishedAt,
+            thumbnailUrl: `https://img.youtube.com/vi/${resolvedVideoId}/maxresdefault.jpg`,
+            embedUrl: `https://www.youtube.com/embed/${resolvedVideoId}`,
+            contentUrl: `https://www.youtube.com/watch?v=${resolvedVideoId}`,
+            url: `https://www.youtube.com/watch?v=${resolvedVideoId}`,
+            uploadDate: publishedAt || post.publishedAt,
           });
 
           videoObjects.push(videoJsonLd);
         }
 
-        // Pobierz publishedAt dla komponentu (SSR)
-        let publishedAt: string | null = null;
-        try {
-          if (embedYoutube.useLatestVideo || embedYoutube.videoId === "latest") {
-            const latestVideo = await getLatestYouTubeVideo();
-            publishedAt = latestVideo?.publishedAt || null;
-          } else if (embedYoutube.videoId && embedYoutube.videoId !== "latest") {
-            publishedAt = await getYouTubeVideoById(embedYoutube.videoId);
-          }
-        } catch (error) {
-          console.error("Error fetching YouTube video publishedAt:", error);
-          // Nie przerywamy renderowania, jeśli nie udało się pobrać daty
-        }
-
-        // Dodaj publishedAt do komponentu
         return {
           ...component,
+          videoId: resolvedVideoId,
           publishedAt,
         };
       }

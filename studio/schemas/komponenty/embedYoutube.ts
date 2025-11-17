@@ -43,6 +43,14 @@ export default defineType({
       initialValue: false,
       group: 'content',
     },
+    {
+      name: 'videoPublishedAt',
+      title: 'Data publikacji filmu',
+      type: 'datetime',
+      description:
+        'Uzupełnij ręcznie, jeśli YouTube RSS nie zwraca daty publikacji (np. dla starszych filmów).',
+      group: 'content',
+    },
   ],
   groups: [
     {

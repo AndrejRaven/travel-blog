@@ -259,9 +259,10 @@ export default async function Home() {
         if (component._type === "embedYoutube") {
           const embedYoutube = component as EmbedYoutubeComponent & {
             publishedAt?: string | null;
+            videoPublishedAt?: string | null;
           };
 
-          let publishedAt: string | null = null;
+          let publishedAt: string | null = embedYoutube.videoPublishedAt || null;
           let resolvedVideoId: string | undefined = embedYoutube.videoId;
 
           try {
@@ -269,9 +270,15 @@ export default async function Home() {
               const latestVideo = await getLatestYouTubeVideo();
               if (latestVideo?.id) {
                 resolvedVideoId = latestVideo.id;
-                publishedAt = latestVideo.publishedAt || null;
+                if (!publishedAt) {
+                  publishedAt = latestVideo.publishedAt || null;
+                }
               }
-            } else if (embedYoutube.videoId && embedYoutube.videoId !== "latest") {
+            } else if (
+              embedYoutube.videoId &&
+              embedYoutube.videoId !== "latest" &&
+              !publishedAt
+            ) {
               publishedAt = await getYouTubeVideoById(embedYoutube.videoId);
             }
           } catch (error) {

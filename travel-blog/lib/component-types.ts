@@ -143,6 +143,7 @@ export type EmbedYoutube = {
   description?: string;
   videoId: string;
   useLatestVideo?: boolean;
+  videoPublishedAt?: string | null;
 };
 
 export type EmbedYoutubeData = ComponentData<EmbedYoutube> & {

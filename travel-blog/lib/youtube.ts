@@ -17,7 +17,74 @@ export interface YouTubeChannelInfo {
 
 const YOUTUBE_CHANNEL_ID = "UCUUm2vkbs-W7KulrJZIpNDA";
 const YOUTUBE_RSS_URL = `https://www.youtube.com/feeds/videos.xml?channel_id=${YOUTUBE_CHANNEL_ID}`;
-const YOUTUBE_API_URL = '/api/youtube';
+const YOUTUBE_API_URL = "/api/youtube";
+
+function normalizeIsoDate(dateString?: string | null): string | null {
+  if (!dateString) {
+    return null;
+  }
+
+  const parsed = new Date(dateString);
+  if (Number.isNaN(parsed.getTime())) {
+    return null;
+  }
+
+  return parsed.toISOString();
+}
+
+async function fetchWatchPagePublishedDate(videoId: string): Promise<string | null> {
+  try {
+    const response = await fetch(`https://www.youtube.com/watch?v=${videoId}`, {
+      next: { revalidate: 3600 },
+      headers: {
+        "accept-language": "en-US,en;q=0.9",
+      },
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const html = await response.text();
+    const publishDateMatch = html.match(/"publishDate":"([^"]+)"/);
+    const uploadDateMatch = html.match(/"uploadDate":"([^"]+)"/);
+
+    const resolved =
+      normalizeIsoDate(publishDateMatch?.[1]) || normalizeIsoDate(uploadDateMatch?.[1]);
+
+    return resolved;
+  } catch (error) {
+    console.error("Error fetching YouTube watch page publish date:", error);
+    return null;
+  }
+}
+
+function entryContainsShort(entryTitle: string, videoUrl: string | null): boolean {
+  const normalizedTitle = entryTitle.toLowerCase();
+  return (
+    normalizedTitle.includes("#shorts") ||
+    normalizedTitle.includes("shorts") ||
+    entryTitle.includes("#Shorts") ||
+    (videoUrl?.includes("/shorts/") ?? false)
+  );
+}
+
+async function resolvePublishedDateFromEntry(
+  entry: string,
+  videoId: string
+): Promise<string | null> {
+  const publishedMatch = entry.match(/<published>([^<]+)<\/published>/);
+  const updatedMatch = entry.match(/<updated>([^<]+)<\/updated>/);
+
+  const resolved =
+    normalizeIsoDate(publishedMatch?.[1]) || normalizeIsoDate(updatedMatch?.[1]);
+
+  if (resolved) {
+    return resolved;
+  }
+
+  return fetchWatchPagePublishedDate(videoId);
+}
 
 /**
  * Pobiera najnowszy film z kanału YouTube poprzez RSS feed (server-side)
@@ -43,7 +110,6 @@ export async function getLatestYouTubeVideo(): Promise<YouTubeVideo | null> {
       const videoIdMatch = entry.match(/<yt:videoId>([^<]+)<\/yt:videoId>/);
       const titleMatch = entry.match(/<title>([^<]+)<\/title>/);
       const descriptionMatch = entry.match(/<media:description>([^<]+)<\/media:description>/);
-      const publishedMatch = entry.match(/<published>([^<]+)<\/published>/);
       const authorMatch = entry.match(/<author><name>([^<]+)<\/name><\/author>/);
       const linkMatch = entry.match(/<link[^>]*href="([^"]*)"[^>]*>/);
 
@@ -52,18 +118,16 @@ export async function getLatestYouTubeVideo(): Promise<YouTubeVideo | null> {
       const videoId = videoIdMatch[1];
       const title = titleMatch?.[1] || "Brak tytułu";
       const description = descriptionMatch?.[1] || "";
-      const publishedAt = publishedMatch?.[1] || "";
       const channelTitle = authorMatch?.[1] || "Vlogi z Drogi";
       const videoUrl = linkMatch?.[1] || `https://www.youtube.com/watch?v=${videoId}`;
 
       // Sprawdź czy to nie jest short (tytuł lub URL zawiera shorts)
-      const isShort = title.toLowerCase().includes('#shorts') || 
-                     title.toLowerCase().includes('shorts') ||
-                     title.includes('#Shorts') ||
-                     videoUrl.includes('/shorts/');
+      const isShort = entryContainsShort(title, videoUrl);
 
       // Jeśli to nie jest short, zwróć film
       if (!isShort) {
+        const publishedAt =
+          (await resolvePublishedDateFromEntry(entry, videoId)) || "";
         return {
           id: videoId,
           title,
@@ -80,6 +144,7 @@ export async function getLatestYouTubeVideo(): Promise<YouTubeVideo | null> {
     const titleMatch = xmlText.match(/<title>([^<]+)<\/title>/);
     const descriptionMatch = xmlText.match(/<media:description>([^<]+)<\/media:description>/);
     const publishedMatch = xmlText.match(/<published>([^<]+)<\/published>/);
+    const updatedMatch = xmlText.match(/<updated>([^<]+)<\/updated>/);
     const authorMatch = xmlText.match(/<author><name>([^<]+)<\/name><\/author>/);
 
     if (!videoIdMatch) {
@@ -89,7 +154,11 @@ export async function getLatestYouTubeVideo(): Promise<YouTubeVideo | null> {
     const videoId = videoIdMatch[1];
     const title = titleMatch?.[1] || "Brak tytułu";
     const description = descriptionMatch?.[1] || "";
-    const publishedAt = publishedMatch?.[1] || "";
+    const publishedAt =
+      normalizeIsoDate(publishedMatch?.[1]) ||
+      normalizeIsoDate(updatedMatch?.[1]) ||
+      (await fetchWatchPagePublishedDate(videoId)) ||
+      "";
     const channelTitle = authorMatch?.[1] || "Vlogi z Drogi";
 
     return {
@@ -186,10 +255,10 @@ export async function getLatestYouTubeVideoClient(): Promise<YouTubeVideo | null
     }
 
     // Wyciągnij inne dane
-    const title = firstEntry.querySelector("title")?.textContent || "Brak tytułu";
-    const description = firstEntry.querySelector("media\\:description, description")?.textContent || "";
-    const publishedAt = firstEntry.querySelector("published")?.textContent || "";
-    const channelTitle = firstEntry.querySelector("author name")?.textContent || "Vlogi z Drogi";
+      const title = firstEntry.querySelector("title")?.textContent || "Brak tytułu";
+      const description = firstEntry.querySelector("media\\:description, description")?.textContent || "";
+      const publishedAt = firstEntry.querySelector("published")?.textContent || "";
+      const channelTitle = firstEntry.querySelector("author name")?.textContent || "Vlogi z Drogi";
 
     return {
       id: videoId,
@@ -272,14 +341,12 @@ export async function getYouTubeVideoById(
 
       // Jeśli znaleziono film o podanym ID, zwróć datę publikacji
       if (entryVideoId === videoId) {
-        const publishedMatch = entry.match(/<published>([^<]+)<\/published>/);
-        const publishedAt = publishedMatch?.[1] || "";
-        return publishedAt || null;
+        return resolvePublishedDateFromEntry(entry, videoId);
       }
     }
 
-    // Film nie został znaleziony w RSS feed
-    return null;
+    // Film nie został znaleziony w RSS feed - spróbuj pobrać datę bezpośrednio z YouTube
+    return fetchWatchPagePublishedDate(videoId);
   } catch (error) {
     console.error("Error fetching YouTube video by ID:", error);
     return null;
