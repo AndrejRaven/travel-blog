@@ -2,23 +2,16 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://www.vlogizdrogi.pl
 const REPORT_ENDPOINT = "/api/csp-report";
 const REPORTING_GROUP = "csp-endpoint";
 
-const IS_PRODUCTION = process.env.NODE_ENV === "production";
-
 export const buildContentSecurityPolicy = () => {
   const scriptSrc = [
     "'self'",
     "https://cdn.sanity.io",
-    "'nonce-__CSP_NONCE__'",
-    "'strict-dynamic'",
     "https://vitals.vercel-insights.com",
+    "'unsafe-inline'",
+    "'unsafe-eval'",
   ];
 
-  const styleSrc = ["'self'", "'nonce-__CSP_NONCE__'"];
-
-  if (!IS_PRODUCTION) {
-    scriptSrc.push("'unsafe-inline'", "'unsafe-eval'");
-    styleSrc.push("'unsafe-inline'");
-  }
+  const styleSrc = ["'self'", "'unsafe-inline'"];
 
   return [
     "default-src 'self'",

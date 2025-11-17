@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Playfair_Display, Source_Code_Pro } from "next/font/google";
 import { Suspense } from "react";
 import Script from "next/script";
-import { draftMode, headers } from "next/headers";
+import { draftMode } from "next/headers";
 import { VisualEditing } from "next-sanity";
 import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
@@ -69,15 +69,12 @@ export default async function RootLayout({
 }>) {
   const draft = await draftMode();
   const isDraftMode = draft.isEnabled;
-  const nonce = (await headers()).get("x-csp-nonce") || undefined;
-
   return (
     <html lang="pl">
       <head>
         <Script
           src="/scripts/theme-init.js"
           strategy="beforeInteractive"
-          nonce={nonce}
         />
       </head>
       <body
