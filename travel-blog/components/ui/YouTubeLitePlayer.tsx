@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 
 interface Props {
@@ -10,11 +10,27 @@ interface Props {
 
 export default function YouTubeLitePlayer({ videoId, title }: Props) {
   const [isActive, setIsActive] = useState(false);
-  const thumbnail = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+
+  useEffect(() => {
+    if (!videoId) {
+      return;
+    }
+    console.info("[YouTubeLitePlayer] Ready", { videoId, title });
+  }, [videoId, title]);
 
   if (!videoId) {
+    if (process.env.NODE_ENV !== "production") {
+      console.warn("[YouTubeLitePlayer] Missing videoId, player will not render");
+    }
     return null;
   }
+
+  const thumbnail = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+
+  const handleActivate = () => {
+    console.info("[YouTubeLitePlayer] Play button clicked", { videoId });
+    setIsActive(true);
+  };
 
   return (
     <div className="relative aspect-video rounded-2xl overflow-hidden bg-black">
@@ -27,11 +43,22 @@ export default function YouTubeLitePlayer({ videoId, title }: Props) {
           allowFullScreen
           loading="lazy"
           referrerPolicy="no-referrer-when-downgrade"
+          onLoad={() =>
+            console.info("[YouTubeLitePlayer] iFrame loaded successfully", {
+              videoId,
+            })
+          }
+          onError={(event) =>
+            console.error("[YouTubeLitePlayer] iFrame failed to load", {
+              videoId,
+              error: event,
+            })
+          }
         />
       ) : (
         <button
           type="button"
-          onClick={() => setIsActive(true)}
+          onClick={handleActivate}
           className="absolute inset-0 w-full h-full"
           aria-label={`Odtwórz wideo ${title}`}
         >

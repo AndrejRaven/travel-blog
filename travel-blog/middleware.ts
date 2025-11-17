@@ -16,13 +16,22 @@ if (!JWT_SECRET) {
 
 const ADMIN_PATH = "/admin";
 const ADMIN_LOGIN_PATH = "/admin/login";
+const ENABLE_CROSS_ORIGIN_ISOLATION =
+  process.env.NEXT_PUBLIC_ENABLE_CROSS_ORIGIN_ISOLATION === "true" ||
+  process.env.ENABLE_COEP === "true";
 
 const withSecurityHeaders = (response: NextResponse, csp: string) => {
   response.headers.set("Content-Security-Policy", csp);
   response.headers.set("Permissions-Policy", permissionsPolicyHeader);
-  response.headers.set("Cross-Origin-Opener-Policy", "same-origin");
-  response.headers.set("Cross-Origin-Embedder-Policy", "credentialless");
-  response.headers.set("Cross-Origin-Resource-Policy", "same-origin");
+  if (ENABLE_CROSS_ORIGIN_ISOLATION) {
+    response.headers.set("Cross-Origin-Opener-Policy", "same-origin");
+    response.headers.set("Cross-Origin-Embedder-Policy", "credentialless");
+    response.headers.set("Cross-Origin-Resource-Policy", "same-origin");
+  } else {
+    response.headers.delete("Cross-Origin-Opener-Policy");
+    response.headers.delete("Cross-Origin-Embedder-Policy");
+    response.headers.delete("Cross-Origin-Resource-Policy");
+  }
   response.headers.set("Report-To", reportToHeader);
   response.headers.set("Reporting-Endpoints", reportingEndpointsHeader);
   response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");

@@ -1,6 +1,11 @@
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://www.vlogizdrogi.pl";
 const REPORT_ENDPOINT = "/api/csp-report";
 const REPORTING_GROUP = "csp-endpoint";
+const ENABLE_VERCEL_LIVE =
+  process.env.VERCEL === "1" || process.env.ENABLE_VERCEL_LIVE === "true";
+const ENABLE_VERCEL_ANALYTICS =
+  process.env.NEXT_PUBLIC_ENABLE_VERCEL_ANALYTICS === "true" ||
+  process.env.VERCEL === "1";
 
 export const buildContentSecurityPolicy = () => {
   const scriptSrc = [
@@ -12,6 +17,28 @@ export const buildContentSecurityPolicy = () => {
   ];
 
   const styleSrc = ["'self'", "'unsafe-inline'"];
+  const connectSrc = [
+    "'self'",
+    "https://cdn.sanity.io",
+    "https://*.sanity.io",
+    "https://connect.mailerlite.com",
+    "https://vitals.vercel-insights.com",
+    "https://www.youtube.com",
+    "https://*.youtube.com",
+    "https://*.googlevideo.com",
+    "https://i.ytimg.com",
+    "https://s.ytimg.com",
+  ];
+
+  if (ENABLE_VERCEL_LIVE) {
+    scriptSrc.push("https://vercel.live");
+    connectSrc.push("https://vercel.live");
+  }
+
+  if (ENABLE_VERCEL_ANALYTICS) {
+    scriptSrc.push("https://va.vercel-scripts.com");
+    connectSrc.push("https://va.vercel-scripts.com");
+  }
 
   return [
     "default-src 'self'",
@@ -19,11 +46,11 @@ export const buildContentSecurityPolicy = () => {
     "script-src-attr 'none'",
     `style-src ${styleSrc.join(" ")}`,
     "font-src 'self' data:",
-    "img-src 'self' data: blob: https://cdn.sanity.io https://img.youtube.com https://i.ytimg.com",
-    "connect-src 'self' https://cdn.sanity.io https://*.sanity.io https://connect.mailerlite.com https://vitals.vercel-insights.com",
-    "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com",
-    "child-src 'self' https://www.youtube.com https://www.youtube-nocookie.com",
-    "media-src 'self' https://www.youtube.com https://www.youtube-nocookie.com",
+    "img-src 'self' data: blob: https://cdn.sanity.io https://img.youtube.com https://i.ytimg.com https://s.ytimg.com https://yt3.ggpht.com",
+    `connect-src ${connectSrc.join(" ")}`,
+    "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://*.youtube.com",
+    "child-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://*.youtube.com",
+    "media-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://*.youtube.com https://*.googlevideo.com",
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",
@@ -37,16 +64,16 @@ export const buildContentSecurityPolicy = () => {
 };
 
 export const permissionsPolicyHeader = [
-  'accelerometer=()',
+  'accelerometer=(self "https://www.youtube.com")',
   'autoplay=(self "https://www.youtube.com")',
   'camera=()',
   'clipboard-read=()',
-  'clipboard-write=()',
+  'clipboard-write=(self "https://www.youtube.com")',
   'display-capture=()',
   'encrypted-media=(self "https://www.youtube.com")',
   'fullscreen=(self "https://www.youtube.com")',
   'geolocation=()',
-  'gyroscope=()',
+  'gyroscope=(self "https://www.youtube.com")',
   'magnetometer=()',
   'microphone=()',
   'payment=()',
