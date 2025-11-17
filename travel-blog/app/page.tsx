@@ -1,6 +1,6 @@
 import React from "react";
 import { Metadata } from "next";
-import { getHomepageData } from "@/lib/queries/functions";
+import { getHomepageData, getSiteConfig } from "@/lib/queries/functions";
 import HomePageContent from "@/components/pages/HomePageContent";
 import { SITE_CONFIG } from "@/lib/config";
 import { getImageUrl, SanityImage } from "@/lib/sanity";
@@ -49,19 +49,24 @@ function ensureAbsoluteUrl(
 
 // Generuj metadata dla strony głównej
 export async function generateMetadata(): Promise<Metadata> {
-  const homepageDataRaw = await getHomepageData();
-  const siteName = SITE_CONFIG.name;
+  const [homepageDataRaw, siteConfig] = await Promise.all([
+    getHomepageData(),
+    getSiteConfig(),
+  ]);
+  const siteName = siteConfig?.general?.siteName || SITE_CONFIG.name;
+  const siteDescription =
+    siteConfig?.general?.siteDescription || SITE_CONFIG.description;
   const siteUrl = SITE_CONFIG.url;
 
   // Jeśli nie ma danych, użyj domyślnych wartości
   if (!homepageDataRaw || typeof homepageDataRaw !== "object") {
     return {
       title: `${siteName} | Blog podróżniczy`,
-      description: SITE_CONFIG.description,
+      description: siteDescription,
       openGraph: {
         type: "website",
         title: siteName,
-        description: SITE_CONFIG.description,
+        description: siteDescription,
         url: siteUrl,
         siteName,
         locale: "pl_PL",
@@ -69,7 +74,7 @@ export async function generateMetadata(): Promise<Metadata> {
       twitter: {
         card: "summary_large_image",
         title: siteName,
-        description: SITE_CONFIG.description,
+        description: siteDescription,
       },
     };
   }
@@ -96,7 +101,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
   // SEO Description - użyj seoDescription lub fallback
   const seoDescription =
-    homepageData.seo?.seoDescription || SITE_CONFIG.description;
+    homepageData.seo?.seoDescription || siteDescription;
 
   // Open Graph
   const ogTitle = homepageData.seo?.ogTitle || siteName;
@@ -165,7 +170,10 @@ export const dynamic = "force-static";
 
 export default async function Home() {
   // Pobierz dane homepage z Sanity na serwerze
-  const homepageDataRaw = await getHomepageData();
+  const [homepageDataRaw, siteConfig] = await Promise.all([
+    getHomepageData(),
+    getSiteConfig(),
+  ]);
 
   // Obsługa błędów
   if (!homepageDataRaw || typeof homepageDataRaw !== "object") {
@@ -322,6 +330,7 @@ export default async function Home() {
         homepageData={
           processedHomepageData as Parameters<typeof HomePageContent>[0]["homepageData"]
         }
+        siteConfig={siteConfig}
       />
     </>
   );

@@ -5,19 +5,8 @@ import {
   reportToHeader,
 } from "./lib/security-headers";
 
-type ExperimentalConfigExtended = NextConfig["experimental"] & {
-  cspScriptNonce?: boolean;
-  cspStyleNonce?: boolean;
-};
-
-const experimentalConfig: ExperimentalConfigExtended = {
-  cspScriptNonce: true,
-  cspStyleNonce: true,
-};
-
 const nextConfig: NextConfig = {
   poweredByHeader: false,
-  experimental: experimentalConfig,
   images: {
     deviceSizes: [640, 768, 1024, 1280, 1440, 1920],
     imageSizes: [160, 320, 480, 640],

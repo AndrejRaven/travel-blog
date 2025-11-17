@@ -132,6 +132,7 @@ export const CACHE_STRATEGIES = {
   CATEGORIES: { revalidate: 3600 }, // 1h - rzadko zmieniane
   HEADER: { revalidate: 3600 },     // 1h - rzadko zmieniane (zwiększone z 30 min)
   COMPONENTS: { revalidate: 1800 },  // 30 min - komponenty strony (zwiększone z 10 min)
+  CONFIG: { revalidate: 3600 },      // 1h - ustawienia globalne
   STATIC: { revalidate: 86400 },    // 24h - dane statyczne
 } as const;
 
@@ -378,6 +379,43 @@ export type HeaderData = {
   };
 };
 
+export type SiteConfig = {
+  _id: string;
+  general?: {
+    siteName?: string;
+    siteDescription?: string;
+    contactEmail?: string;
+    contactPhone?: string;
+  };
+  social?: {
+    facebook?: string;
+    instagram?: string;
+    youtube?: string;
+    twitter?: string;
+  };
+  popup?: {
+    enabled?: boolean;
+    title?: string;
+    description?: string;
+    image?: SanityImage | null;
+    button?: {
+      label: string;
+      href: string;
+      variant?: 'primary' | 'secondary' | 'outline' | 'outlinewhite' | 'youtube' | 'danger';
+      external?: boolean;
+    } | null;
+    scrollThreshold?: number;
+    cooldownMinutes?: number;
+  };
+  globalBanners?: Array<{
+    key?: string;
+    isEnabled?: boolean;
+    title?: string;
+    message?: string;
+    variant?: 'info' | 'success' | 'warning' | 'error';
+  }>;
+};
+
 // Re-export functions from queries for backward compatibility
 export { 
   getHeaderData,
@@ -385,7 +423,8 @@ export {
   getSelectedArticles,
   getArticlesComponentData,
   getLatestPosts,
-  getSelectedPosts
+  getSelectedPosts,
+  getSiteConfig
 } from './queries/functions';
 
 // Funkcja do generowania URL obrazu z Sanity z obsługą crop i hotspot

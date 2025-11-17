@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { InstagramSectionData, NewsletterData } from "@/lib/component-types";
+import type { SiteConfig } from "@/lib/sanity";
 
 const LazyPopup = dynamic(() => import("@/components/ui/Popup"), {
   ssr: false,
@@ -52,22 +53,21 @@ const PlaceholderCard = ({ label }: { label: string }) => (
 );
 
 export function ClientPopup({
-  scrollThreshold,
-  cooldownMinutes,
+  popupConfig,
 }: {
-  scrollThreshold: number;
-  cooldownMinutes: number;
+  popupConfig?: SiteConfig["popup"];
 }) {
   const { ref, shouldRender } = useDeferredRender();
+  const isEnabled = popupConfig?.enabled !== false;
+  const hasContent = Boolean(popupConfig?.title || popupConfig?.description);
+  if (!popupConfig || !isEnabled || !hasContent) {
+    return null;
+  }
+
 
   return (
     <div ref={ref}>
-      {shouldRender ? (
-        <LazyPopup
-          scrollThreshold={scrollThreshold}
-          cooldownMinutes={cooldownMinutes}
-        />
-      ) : null}
+      {shouldRender ? <LazyPopup popupData={popupConfig} /> : null}
     </div>
   );
 }

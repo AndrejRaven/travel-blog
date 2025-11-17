@@ -53,6 +53,12 @@ export default function PostPageClient({
       }).format(new Date(post.publishedAt))
     : null;
 
+  const resolvePostUrl = () =>
+    postUrl ||
+    (typeof window !== "undefined"
+      ? `${window.location.origin}${getPostUrl(post)}`
+      : getPostUrl(post));
+
   return (
     <main
       className={`relative transition-all duration-300 ${
@@ -95,10 +101,6 @@ export default function PostPageClient({
                 onLoad={() => imageAnimation.setIsLoaded(true)}
               />
             </div>
-            {/* Lewy gradient zaciemniający - tylko na desktop */}
-            <div className="hidden md:block absolute left-0 top-0 bottom-0 w-[5%] bg-gradient-to-r from-black/50 to-transparent pointer-events-none" />
-            {/* Prawy gradient zaciemniający - tylko na desktop */}
-            <div className="hidden md:block absolute right-0 top-0 bottom-0 w-[5%] bg-gradient-to-l from-black/50 to-transparent pointer-events-none" />
           </div>
         )}
 
@@ -172,6 +174,20 @@ export default function PostPageClient({
           </div>
         </div>
       )}
+
+      {/* Małe przyciski udostępniania na górze */}
+      <div className="mx-auto max-w-3xl px-6 pb-6 flex justify-center">
+        <ShareButtons
+          postTitle={post.title}
+          postUrl={resolvePostUrl()}
+          postDescription={post.subtitle}
+          ogTitle={ogTitle}
+          ogDescription={ogDescription}
+          ogImageUrl={ogImageUrl}
+          size="compact"
+          align="center"
+        />
+      </div>
       {/* Komponenty */}
       {renderedComponents ? (
         <div className="relative">{renderedComponents}</div>
@@ -206,24 +222,14 @@ export default function PostPageClient({
             </p>
           </div>
 
-          {(() => {
-            const finalUrl =
-              postUrl ||
-              (typeof window !== "undefined"
-                ? `${window.location.origin}${getPostUrl(post)}`
-                : getPostUrl(post));
-
-            return (
-              <ShareButtons
-                postTitle={post.title}
-                postUrl={finalUrl}
-                postDescription={post.subtitle}
-                ogTitle={ogTitle}
-                ogDescription={ogDescription}
-                ogImageUrl={ogImageUrl}
-              />
-            );
-          })()}
+          <ShareButtons
+            postTitle={post.title}
+            postUrl={resolvePostUrl()}
+            postDescription={post.subtitle}
+            ogTitle={ogTitle}
+            ogDescription={ogDescription}
+            ogImageUrl={ogImageUrl}
+          />
         </div>
       </section>
     </main>

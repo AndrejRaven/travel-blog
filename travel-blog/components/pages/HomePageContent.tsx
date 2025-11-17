@@ -8,7 +8,7 @@ import {
   InstagramSection as InstagramSectionType,
   Newsletter as NewsletterType,
 } from "@/lib/component-types";
-import { SanityImage } from "@/lib/sanity";
+import { SanityImage, SiteConfig } from "@/lib/sanity";
 
 // Import komponentów dla nowych typów
 import AboutUs from "@/components/sections/AboutUs";
@@ -49,6 +49,7 @@ interface HomepageData {
 
 interface HomePageContentProps {
   homepageData: HomepageData;
+  siteConfig?: SiteConfig | null;
 }
 
 const DEFAULT_ANIMATION_STATE = {
@@ -57,7 +58,10 @@ const DEFAULT_ANIMATION_STATE = {
   containerRef: undefined,
 } as const;
 
-export default function HomePageContent({ homepageData }: HomePageContentProps) {
+export default function HomePageContent({
+  homepageData,
+  siteConfig,
+}: HomePageContentProps) {
   const mainComponents = Array.isArray(homepageData.mainComponents)
     ? homepageData.mainComponents
     : [];
@@ -70,6 +74,7 @@ export default function HomePageContent({ homepageData }: HomePageContentProps) 
     ? homepageData.additionalComponents
     : [];
 
+  const popupConfig = siteConfig?.popup;
   const hasMainComponents = mainComponents.length > 0;
   const hasAsideComponents = asideComponents.length > 0;
 
@@ -213,8 +218,8 @@ export default function HomePageContent({ homepageData }: HomePageContentProps) 
         </div>
       )}
 
-      {/* POPUP DEMO - pojawia się po przewinięciu 60% strony, cooldown 60 minut */}
-      <ClientPopup scrollThreshold={60} cooldownMinutes={60} />
+      {/* POPUP - zarządzany z Sanity */}
+      <ClientPopup popupConfig={popupConfig} />
     </div>
   );
 }

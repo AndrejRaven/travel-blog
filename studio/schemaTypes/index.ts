@@ -6,6 +6,7 @@ import superCategory from "../schemas/strony/superCategory"
 import header from "../schemas/header/header"
 import button from "../schemas/elementy/button"
 import comment from "../schemas/comentaries/comentaries"
+import siteConfig from "../schemas/shared/siteConfig"
 import { schemaTypesComponents } from "./schemaTypesComponents"
 
 export const schemaTypes = [
@@ -17,5 +18,6 @@ export const schemaTypes = [
   header, 
   button,
   comment,
+  siteConfig,
   ...schemaTypesComponents
 ]

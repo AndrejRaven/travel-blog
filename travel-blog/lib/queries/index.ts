@@ -1,5 +1,57 @@
 // Wszystkie zapytania GROQ w jednym miejscu
 export const QUERIES = {
+  CONFIG: {
+    SITE: `*[_type == "siteConfig"][0] {
+      _id,
+      general {
+        siteName,
+        siteDescription,
+        contactEmail,
+        contactPhone
+      },
+      social {
+        facebook,
+        instagram,
+        youtube,
+        twitter
+      },
+      popup {
+        enabled,
+        title,
+        description,
+        scrollThreshold,
+        cooldownMinutes,
+        image {
+          asset-> {
+            _id,
+            url,
+            metadata {
+              dimensions {
+                width,
+                height
+              }
+            }
+          },
+          hotspot,
+          crop,
+          alt
+        },
+        button {
+          label,
+          href,
+          variant,
+          external
+        }
+      },
+      globalBanners[] {
+        key,
+        isEnabled,
+        title,
+        message,
+        variant
+      }
+    }`
+  },
   // Zapytania dla postów
   POST: {
     // Pobierz post po slug

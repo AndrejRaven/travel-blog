@@ -25,6 +25,7 @@ import {
 } from "@/lib/schema-org";
 import { buildAlternates, buildOpenGraph, buildAbsoluteUrl } from "@/lib/metadata";
 import Breadcrumbs from "@/components/shared/Breadcrumbs";
+import { ChevronRight } from "lucide-react";
 
 export const revalidate = 600;
 
@@ -233,9 +234,13 @@ export default async function WszystkieArtykulyPage() {
           {filteredSuperCategories.map((superCategory) => (
             <div key={superCategory._id} className="space-y-6">
               {/* Nagłówek superkategorii - klikalny */}
-              <Link href={`/${superCategory.slug.current}`} className="block">
-                <h2 className="text-2xl md:text-3xl font-serif font-bold text-gray-900 dark:text-gray-100 mb-2 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
-                  {superCategory.name}
+              <Link
+                href={`/${superCategory.slug.current}`}
+                className="group block rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-300"
+              >
+                <h2 className="inline-flex items-center gap-2 text-2xl md:text-3xl font-serif font-bold text-gray-900 dark:text-gray-100 transition-colors group-hover:text-blue-600 dark:group-hover:text-blue-300">
+                  <ChevronRight className="w-5 h-5 text-gray-400 dark:text-gray-500 transition-colors group-hover:text-blue-500 dark:group-hover:text-blue-300" />
+                  <span>{superCategory.name}</span>
                 </h2>
               </Link>
               {superCategory.description && (
@@ -251,14 +256,18 @@ export default async function WszystkieArtykulyPage() {
                     main.subcategories.some((sub) => sub.articles.length > 0)
                   )
                   .map((mainCategory) => (
-                    <div key={mainCategory._id} className="space-y-4">
+                    <div
+                      key={mainCategory._id}
+                      className="space-y-4 border-l border-gray-200 dark:border-gray-700 pl-4 md:pl-6"
+                    >
                       {/* Nagłówek mainCategory - klikalny */}
                       <Link
                         href={`/${superCategory.slug.current}/${mainCategory.slug.current}`}
-                        className="block"
+                        className="group block rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-300"
                       >
-                        <h3 className="text-xl md:text-2xl font-serif font-semibold text-gray-900 dark:text-gray-100 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
-                          {mainCategory.name}
+                        <h3 className="inline-flex items-center gap-2 text-xl md:text-2xl font-serif font-semibold text-gray-900 dark:text-gray-100 transition-colors group-hover:text-blue-600 dark:group-hover:text-blue-300">
+                          <ChevronRight className="w-4 h-4 text-gray-400 dark:text-gray-500 transition-colors group-hover:text-blue-500 dark:group-hover:text-blue-300" />
+                          <span>{mainCategory.name}</span>
                         </h3>
                       </Link>
                       {mainCategory.description && (
@@ -275,16 +284,23 @@ export default async function WszystkieArtykulyPage() {
                             const categoryUrl = `/${superCategory.slug.current}/${mainCategory.slug.current}/${subcategory.slug.current}`;
 
                             return (
-                              <div key={subcategory._id} className="space-y-2">
+                              <div
+                                key={subcategory._id}
+                                className="space-y-2 border-l border-gray-200 dark:border-gray-700 pl-4 md:pl-6"
+                              >
                                 {/* Nazwa podkategorii - klikalna */}
-                                <Link href={categoryUrl} className="block">
-                                  <h4 className="text-lg md:text-xl font-serif font-medium text-gray-900 dark:text-gray-100 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
-                                    {subcategory.name}
+                                <Link
+                                  href={categoryUrl}
+                                  className="group block rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-300"
+                                >
+                                  <h4 className="inline-flex items-center gap-2 text-lg md:text-xl font-serif font-medium text-gray-900 dark:text-gray-100 transition-colors group-hover:text-blue-600 dark:group-hover:text-blue-300">
+                                    <ChevronRight className="w-4 h-4 text-gray-400 dark:text-gray-500 transition-colors group-hover:text-blue-500 dark:group-hover:text-blue-300" />
+                                    <span>{subcategory.name}</span>
                                   </h4>
                                 </Link>
 
                                 {/* Lista artykułów */}
-                                <ul className="space-y-1.5">
+                                <ul className="space-y-1.5 border-l border-gray-200 dark:border-gray-700 pl-4 md:pl-6">
                                   {subcategory.articles.map((article) => {
                                     const postUrl = getPostUrl(article);
                                     return (
@@ -292,9 +308,10 @@ export default async function WszystkieArtykulyPage() {
                                         <Link
                                           href={postUrl}
                                           variant="underline"
-                                          className="text-sm md:text-base text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100"
+                                          className="group inline-flex items-center gap-2 text-sm md:text-base font-medium text-gray-800 dark:text-gray-100 transition-colors hover:text-blue-600 dark:hover:text-blue-300"
                                         >
-                                          {article.title}
+                                          <ChevronRight className="w-4 h-4 text-gray-400 dark:text-gray-500 transition-colors group-hover:text-blue-500 dark:group-hover:text-blue-300" />
+                                          <span>{article.title}</span>
                                         </Link>
                                       </li>
                                     );
@@ -307,12 +324,13 @@ export default async function WszystkieArtykulyPage() {
                                     <Link
                                       href={categoryUrl}
                                       variant="underline"
-                                      className="text-xs md:text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
+                                      className="group inline-flex items-center gap-2 text-xs md:text-sm font-semibold text-gray-800 dark:text-gray-100 transition-colors hover:text-blue-600 dark:hover:text-blue-300"
                                     >
-                                      Przeczytaj więcej artykułów w{" "}
-                                      {subcategory.name} (
-                                      {subcategory.totalArticlesCount - 5}{" "}
-                                      więcej)
+                                      <ChevronRight className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500 transition-colors group-hover:text-blue-500 dark:group-hover:text-blue-300" />
+                                      <span>
+                                        Przeczytaj więcej artykułów w {subcategory.name} (
+                                        {subcategory.totalArticlesCount - 5} więcej)
+                                      </span>
                                     </Link>
                                   </div>
                                 )}

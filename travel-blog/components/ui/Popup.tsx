@@ -4,39 +4,45 @@ import React, { useState, useEffect } from "react";
 import { X } from "lucide-react";
 import Image from "next/image";
 import Button from "./Button";
+import { getSanityImageProps } from "@/lib/sanity-image";
+import type { SiteConfig } from "@/lib/sanity";
+
+type PopupContent = NonNullable<SiteConfig["popup"]>;
 
 interface PopupProps {
+  popupData: PopupContent;
   onClose?: () => void;
-  scrollThreshold?: number; // Procent przewinięcia strony (0-100)
-  cooldownMinutes?: number; // Czas cooldown w minutach (domyślnie 60)
 }
 
-export default function Popup({
-  onClose,
-  scrollThreshold = 60,
-  cooldownMinutes = 60,
-}: PopupProps) {
+export default function Popup({ popupData, onClose }: PopupProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
   const [hasShown, setHasShown] = useState(false);
   const [shouldShow, setShouldShow] = useState(false);
+  const scrollThreshold = popupData.scrollThreshold ?? 60;
+  const cooldownMinutes = popupData.cooldownMinutes ?? 60;
+  const hasButton = popupData.button?.label && popupData.button?.href;
+  const imageProps = popupData.image
+    ? getSanityImageProps(popupData.image, {
+        width: 160,
+        height: 160,
+      })
+    : null;
 
-  // Testowe dane
-  const popupData = {
-    title: "Odwiedz nasz kanał na YouTube!",
-    description: "Seria o Azji sezon 2024/2025 - kompletny przewodnik",
-    channelImage: "/demo-images/demo-asset.png", // Używam istniejącego obrazka
-    button: {
-      label: "Obejrzyj kanał",
-      href: "https://www.youtube.com/@VlogizDrogiaa",
-      variant: "youtube" as const,
-      external: true,
-    },
-  };
+  const isEnabled = popupData.enabled ?? true;
+  const hasContent = Boolean(popupData?.title || popupData?.description);
+  const canRenderPopup = isEnabled && hasContent;
 
   // Sprawdź czy popup może być pokazany (z konfigurowalnym cooldown)
   useEffect(() => {
+    if (!canRenderPopup) {
+      setShouldShow(false);
+      return;
+    }
+
     const checkIfCanShow = () => {
+      if (typeof window === "undefined") return;
+
       const lastShown = localStorage.getItem("popup-last-shown");
       const now = Date.now();
       const cooldownMs = cooldownMinutes * 60 * 1000; // Konwertuj minuty na milisekundy
@@ -49,10 +55,10 @@ export default function Popup({
     };
 
     checkIfCanShow();
-  }, [cooldownMinutes]);
+  }, [cooldownMinutes, canRenderPopup]);
 
   useEffect(() => {
-    if (!shouldShow) return; // Nie pokazuj jeśli nie minął cooldown
+    if (!canRenderPopup || !shouldShow) return; // Nie pokazuj jeśli nie minął cooldown
 
     const handleScroll = () => {
       if (hasShown) return; // Nie pokazuj ponownie
@@ -80,7 +86,16 @@ export default function Popup({
     return () => {
       window.removeEventListener("scroll", handleScroll);
     };
-  }, [scrollThreshold, hasShown, shouldShow]);
+  }, [scrollThreshold, hasShown, shouldShow, canRenderPopup]);
+
+  useEffect(() => {
+    if (canRenderPopup) return;
+
+    setIsVisible(false);
+    setIsClosing(false);
+    setHasShown(false);
+    setShouldShow(false);
+  }, [canRenderPopup]);
 
   const handleClose = () => {
     setIsClosing(true);
@@ -96,7 +111,7 @@ export default function Popup({
     }
   };
 
-  if (!isVisible) return null;
+  if (!canRenderPopup || !isVisible) return null;
 
   return (
     <div
@@ -125,17 +140,19 @@ export default function Popup({
           </button>
 
           {/* Channel Image */}
-          <div className="mb-4 flex justify-center">
-            <div className="relative h-20 w-20 overflow-hidden rounded-full ring-4 ring-gray-200 dark:ring-gray-700">
-              <Image
-                src={popupData.channelImage}
-                alt="Kanał YouTube"
-                fill
-                className="object-cover"
-                sizes="80px"
-              />
+          {imageProps && (
+            <div className="mb-4 flex justify-center">
+              <div className="relative h-20 w-20 overflow-hidden rounded-full ring-4 ring-gray-200 dark:ring-gray-700">
+                <Image
+                  src={imageProps.src}
+                  alt={imageProps.alt}
+                  fill
+                  className="object-cover"
+                  sizes="80px"
+                />
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Title */}
           <h3 className="mb-2 text-center text-xl font-serif font-bold text-gray-900 dark:text-gray-100">
@@ -143,21 +160,25 @@ export default function Popup({
           </h3>
 
           {/* Description */}
-          <p className="mb-6 text-center text-sm leading-relaxed text-gray-600 dark:text-gray-300">
-            {popupData.description}
-          </p>
+          {popupData.description && (
+            <p className="mb-6 text-center text-sm leading-relaxed text-gray-600 dark:text-gray-300">
+              {popupData.description}
+            </p>
+          )}
 
           {/* Button */}
-          <div className="flex justify-center">
-            <Button
-              href={popupData.button.href}
-              variant={popupData.button.variant}
-              external={popupData.button.external}
-              className="w-full"
-            >
-              {popupData.button.label}
-            </Button>
-          </div>
+          {hasButton && (
+            <div className="flex justify-center">
+              <Button
+                href={popupData.button?.href}
+                variant={popupData.button?.variant}
+                external={popupData.button?.external}
+                className="w-full"
+              >
+                {popupData.button?.label}
+              </Button>
+            </div>
+          )}
         </div>
       </div>
     </div>

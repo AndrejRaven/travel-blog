@@ -45,6 +45,16 @@ export const deskStructure = (S: StructureBuilder) =>
             .filter('_type == "header"')
         ),
 
+      // USTAWIENIA GLOBALNE
+      S.listItem()
+        .title('Ustawienia')
+        .icon(() => '⚙️')
+        .child(
+          S.documentTypeList('siteConfig')
+            .title('Konfiguracja strony')
+            .filter('_type == "siteConfig"')
+        ),
+
       // KATEGORIE - Hierarchia 3-poziomowa
       S.listItem()
         .title('Kategorie')
@@ -102,7 +112,7 @@ export const deskStructure = (S: StructureBuilder) =>
       // DODATKOWE DOKUMENTY (tylko główne typy treści)
       ...S.documentTypeListItems().filter(
         (listItem) =>
-          !['homepage', 'post', 'header', 'superCategory', 'mainCategory', 'category', 'comment', 'button', 'richText', 'baseContainer'].includes(
+          !['homepage', 'post', 'header', 'superCategory', 'mainCategory', 'category', 'comment', 'button', 'richText', 'baseContainer', 'siteConfig'].includes(
             listItem.getId() || ''
           ) && !schemaTypesComponents.some((comp) => comp.name === listItem.getId())
       ),

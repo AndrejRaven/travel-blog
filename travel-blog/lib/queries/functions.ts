@@ -4,7 +4,8 @@ import type {
   Post, 
   HeaderData, 
   ArticleForList, 
-  Category
+  Category,
+  SiteConfig
 } from '@/lib/sanity';
 import { PostComponent, ArticlesData } from '@/lib/component-types';
 
@@ -32,6 +33,20 @@ function handleSanityError(error: unknown, context: string): never {
   }
   
   throw new Error(`${context}: ${message}`);
+}
+
+// ===== CONFIG FUNCTIONS =====
+
+export async function getSiteConfig(): Promise<SiteConfig | null> {
+  try {
+    return await fetchGroq<SiteConfig>(
+      QUERIES.CONFIG.SITE,
+      {},
+      'CONFIG'
+    );
+  } catch (error) {
+    handleSanityError(error, 'Error fetching site config');
+  }
 }
 
 // ===== POST FUNCTIONS =====

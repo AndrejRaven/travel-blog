@@ -10,6 +10,9 @@ interface ShareButtonsProps {
   ogTitle?: string;
   ogDescription?: string;
   ogImageUrl?: string;
+  size?: "default" | "compact";
+  align?: "start" | "center";
+  className?: string;
 }
 
 export default function ShareButtons({
@@ -18,6 +21,9 @@ export default function ShareButtons({
   postDescription,
   ogTitle,
   ogDescription,
+  size = "default",
+  align = "center",
+  className = "",
 }: ShareButtonsProps) {
   const [copySuccess, setCopySuccess] = useState(false);
   const [isClient, setIsClient] = useState(false);
@@ -134,41 +140,58 @@ export default function ShareButtons({
     return null;
   }
 
+  const isCompact = size === "compact";
+  const containerClasses = [
+    "flex items-center flex-wrap",
+    align === "start" ? "justify-start" : "justify-center",
+    isCompact ? "gap-2" : "gap-3",
+    className,
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  const buttonBaseClasses =
+    "rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 transition-all duration-200 ease-out flex items-center justify-center shadow-sm hover:shadow-md";
+  const buttonSizeClasses = isCompact ? "w-9 h-9" : "w-12 h-12";
+  const iconSizeClasses = isCompact ? "w-4 h-4" : "w-5 h-5";
+
+  const renderTooltip = (label: string) => (
+    <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-2 py-1 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap">
+      {label}
+    </div>
+  );
+
   return (
-    <div className="flex items-center justify-center gap-3 flex-wrap">
+    <div className={containerClasses}>
       {/* Facebook */}
       <div className="relative group">
         <button
           onClick={() => handleShare("facebook")}
-          className="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-blue-600 hover:text-white text-gray-600 dark:text-gray-400 transition-all duration-200 ease-out flex items-center justify-center shadow-sm hover:shadow-md"
+          className={`${buttonBaseClasses} ${buttonSizeClasses} hover:bg-blue-600 hover:text-white dark:hover:bg-blue-500 dark:hover:text-white`}
           aria-label="Udostępnij na Facebook"
         >
-          <Facebook className="w-5 h-5" />
+          <Facebook className={iconSizeClasses} />
         </button>
-        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap">
-          Facebook
-        </div>
+        {renderTooltip("Facebook")}
       </div>
 
       {/* Twitter/X */}
       <div className="relative group">
         <button
           onClick={() => handleShare("twitter")}
-          className="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-900 dark:hover:bg-white hover:text-white dark:hover:text-gray-900 text-gray-600 dark:text-gray-400 transition-all duration-200 ease-out flex items-center justify-center shadow-sm hover:shadow-md"
+          className={`${buttonBaseClasses} ${buttonSizeClasses} hover:bg-gray-900 dark:hover:bg-white hover:text-white dark:hover:text-gray-900`}
           aria-label="Udostępnij na X (Twitter)"
         >
-          <Twitter className="w-5 h-5" />
+          <Twitter className={iconSizeClasses} />
         </button>
-        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap">
-          X (Twitter)
-        </div>
+        {renderTooltip("X (Twitter)")}
       </div>
 
       {/* Native Share */}
       <div className="relative group">
         <button
           onClick={handleNativeShare}
-          className="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-600 hover:text-white text-gray-600 dark:text-gray-400 transition-all duration-200 ease-out flex items-center justify-center shadow-sm hover:shadow-md"
+          className={`${buttonBaseClasses} ${buttonSizeClasses} hover:bg-gray-600 hover:text-white dark:hover:bg-gray-300 dark:hover:text-gray-900`}
           aria-label={
             typeof navigator !== "undefined" &&
             typeof navigator.share === "function"
@@ -176,28 +199,25 @@ export default function ShareButtons({
               : "Kopiuj link"
           }
         >
-          <Share2 className="w-5 h-5" />
+          <Share2 className={iconSizeClasses} />
         </button>
-        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap">
-          {typeof navigator !== "undefined" &&
-          typeof navigator.share === "function"
+        {renderTooltip(
+          typeof navigator !== "undefined" && typeof navigator.share === "function"
             ? "Udostępnij"
-            : "Kopiuj link"}
-        </div>
+            : "Kopiuj link"
+        )}
       </div>
 
       {/* Copy Link */}
       <div className="relative group">
         <button
           onClick={handleCopyLink}
-          className="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-500 hover:text-white text-gray-600 dark:text-gray-400 transition-all duration-200 ease-out flex items-center justify-center shadow-sm hover:shadow-md"
+          className={`${buttonBaseClasses} ${buttonSizeClasses} hover:bg-gray-500 hover:text-white dark:hover:bg-gray-300 dark:hover:text-gray-900`}
           aria-label="Kopiuj link"
         >
-          <Copy className="w-5 h-5" />
+          <Copy className={iconSizeClasses} />
         </button>
-        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap">
-          Kopiuj link
-        </div>
+        {renderTooltip("Kopiuj link")}
       </div>
 
       {/* Copy success toast */}

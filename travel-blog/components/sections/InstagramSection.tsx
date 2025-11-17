@@ -22,6 +22,7 @@ type Props = {
 export default function InstagramSection({ data }: Props) {
   // Wszystkie hooki muszą być przed wczesnymi returnami
   const [activeSlide, setActiveSlide] = useState(0);
+  const [loadedSlides, setLoadedSlides] = useState<Record<string, boolean>>({});
   const { isLoaded, isInView, containerRef } = useAnimation();
 
   // Użyj useResponsiveImage dla optymalizacji obrazków Instagram
@@ -40,6 +41,18 @@ export default function InstagramSection({ data }: Props) {
   }
 
   const { container, title, subtitle, instagramUrl, buttonText, posts } = data;
+
+  const handleImageLoaded = (slideId: string) => {
+    setLoadedSlides((prev) => {
+      if (prev[slideId]) {
+        return prev;
+      }
+      return {
+        ...prev,
+        [slideId]: true,
+      };
+    });
+  };
 
   // Zabezpieczenie na wypadek gdyby container był undefined
   if (!container) {
@@ -129,6 +142,8 @@ export default function InstagramSection({ data }: Props) {
               {posts.map((post, idx) => {
                 const isActive = idx === activeSlide;
                 const caption = post.caption || "";
+                const slideId = post.id || `instagram-slide-${idx}`;
+                const isSlideLoaded = !!loadedSlides[slideId];
 
                 // Przygotuj dane obrazka dla useResponsiveImage
                 const imageData = post.imageUrl?.asset
@@ -140,7 +155,7 @@ export default function InstagramSection({ data }: Props) {
                   : null;
 
                 return (
-                  <SwiperSlide key={post.id}>
+                  <SwiperSlide key={slideId}>
                     <article
                       className={`relative group transition-all duration-500 rounded-2xl ease-out overflow-hidden ${
                         isActive ? "scale-100 z-10" : "scale-90 opacity-30"
@@ -149,6 +164,12 @@ export default function InstagramSection({ data }: Props) {
                       itemType="https://schema.org/ImageObject"
                     >
                       <div className="relative h-[250px] w-full">
+                        <div
+                          className={`pointer-events-none absolute inset-0 bg-gray-200 dark:bg-gray-700 animate-pulse transition-opacity duration-500 ${
+                            isSlideLoaded ? "opacity-0" : "opacity-100"
+                          }`}
+                          aria-hidden="true"
+                        />
                         {imageData ? (
                           (() => {
                             const imageProps =
@@ -158,10 +179,13 @@ export default function InstagramSection({ data }: Props) {
                               <img
                                 {...imageProps}
                                 alt={imageProps.alt || "Instagram post"}
-                                className={`object-cover transition-all duration-500 group-hover:scale-105 transform-gpu will-change-transform w-full h-full`}
+                                className={`object-cover transition-all duration-500 group-hover:scale-105 transform-gpu will-change-transform w-full h-full ${
+                                  isSlideLoaded ? "opacity-100 blur-0" : "opacity-0 blur-sm"
+                                }`}
                                 loading="lazy"
                                 decoding="async"
                                 itemProp="contentUrl"
+                                onLoad={() => handleImageLoaded(slideId)}
                               />
                             );
                           })()
@@ -170,8 +194,11 @@ export default function InstagramSection({ data }: Props) {
                             src="/demo-images/demo-asset.png"
                             alt={caption}
                             fill
-                            className={`object-cover transition-all duration-500 group-hover:scale-105 transform-gpu will-change-transform `}
+                            className={`object-cover transition-all duration-500 group-hover:scale-105 transform-gpu will-change-transform ${
+                              isSlideLoaded ? "opacity-100 blur-0" : "opacity-0 blur-sm"
+                            }`}
                             itemProp="contentUrl"
+                            onLoadingComplete={() => handleImageLoaded(slideId)}
                           />
                         )}
 
