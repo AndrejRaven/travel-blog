@@ -9,6 +9,7 @@ import CategoryArticles from "@/components/sections/CategoryArticles";
 import Breadcrumbs from "@/components/shared/Breadcrumbs";
 import { Category, ArticleForList } from "@/lib/sanity";
 import { SITE_CONFIG } from "@/lib/config";
+import JsonLdScript from "@/components/shared/JsonLdScript";
 import { safeJsonLd } from "@/lib/json-ld-utils";
 import {
   generateCollectionPageSchema,
@@ -198,26 +199,15 @@ export default async function SubcategoryPage({
     { label: category.name },
   ];
 
+  const collectionPageJsonLdString = safeJsonLd(collectionPageJsonLd);
+  const itemListJsonLdString = itemListJsonLd ? safeJsonLd(itemListJsonLd) : null;
+  const breadcrumbJsonLdString = safeJsonLd(breadcrumbJsonLd);
+
   return (
     <>
-      {safeJsonLd(collectionPageJsonLd) && (
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: safeJsonLd(collectionPageJsonLd)! }}
-        />
-      )}
-      {itemListJsonLd && safeJsonLd(itemListJsonLd) && (
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: safeJsonLd(itemListJsonLd)! }}
-        />
-      )}
-      {safeJsonLd(breadcrumbJsonLd) && (
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbJsonLd)! }}
-        />
-      )}
+      <JsonLdScript data={collectionPageJsonLdString} />
+      <JsonLdScript data={itemListJsonLdString} />
+      <JsonLdScript data={breadcrumbJsonLdString} />
       <PageLayout maxWidth="6xl">
       <PageHeader
         title={category.name}

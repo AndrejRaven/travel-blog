@@ -1,7 +1,7 @@
 // Konfiguracja strony - centralne miejsce dla wszystkich ustawień
 export const SITE_CONFIG = {
   name: process.env.NEXT_PUBLIC_SITE_NAME || "Vlogi Z Drogi",
-  url: process.env.NEXT_PUBLIC_SITE_URL || "https://vlogizdrogi.pl",
+  url: process.env.NEXT_PUBLIC_SITE_URL || "https://www.vlogizdrogi.pl",
   description: process.env.NEXT_PUBLIC_SITE_DESCRIPTION || "Blog podróżniczy",
   
   // Ustawienia autora/wydawcy

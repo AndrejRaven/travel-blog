@@ -1,4 +1,5 @@
 import SectionContainer from "@/components/shared/SectionContainer";
+import JsonLdScript from "@/components/shared/JsonLdScript";
 import { ArticlesData } from "@/lib/component-types";
 import { ArticleForList } from "@/lib/sanity";
 import { getSelectedPosts, getLatestPosts } from "@/lib/queries/functions";
@@ -87,12 +88,7 @@ export default async function Articles({ data }: Props) {
 
   return (
     <SectionContainer config={container} role="region" aria-labelledby={title}>
-      {jsonLd && (
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-        />
-      )}
+      <JsonLdScript data={jsonLd} />
       <LatestArticlesClient
         title={title}
         showViewAll={showViewAll}

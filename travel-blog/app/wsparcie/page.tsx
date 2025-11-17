@@ -2,6 +2,7 @@ import Button from "@/components/ui/Button";
 import PageLayout from "@/components/shared/PageLayout";
 import PageHeader from "@/components/shared/PageHeader";
 import InfoCard from "@/components/shared/InfoCard";
+import JsonLdScript from "@/components/shared/JsonLdScript";
 import BackToHome from "@/components/shared/BackToHome";
 import { SITE_CONFIG } from "@/lib/config";
 import { safeJsonLd } from "@/lib/json-ld-utils";
@@ -27,20 +28,13 @@ export default function Wsparcie() {
     paymentAccepted: ["Credit Card", "PayPal", "Bank Transfer"],
   });
 
+  const webPageJsonLdString = safeJsonLd(webPageJsonLd);
+  const organizationJsonLdString = safeJsonLd(organizationJsonLd);
+
   return (
     <>
-      {safeJsonLd(webPageJsonLd) && (
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: safeJsonLd(webPageJsonLd)! }}
-        />
-      )}
-      {safeJsonLd(organizationJsonLd) && (
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: safeJsonLd(organizationJsonLd)! }}
-        />
-      )}
+      <JsonLdScript data={webPageJsonLdString} />
+      <JsonLdScript data={organizationJsonLdString} />
       <PageLayout maxWidth="6xl">
       <PageHeader
         title="Wsparcie naszego bloga"

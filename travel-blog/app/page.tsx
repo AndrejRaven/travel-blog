@@ -4,6 +4,7 @@ import { getHomepageData } from "@/lib/queries/functions";
 import HomePageContent from "@/components/pages/HomePageContent";
 import { SITE_CONFIG } from "@/lib/config";
 import { getImageUrl, SanityImage } from "@/lib/sanity";
+import JsonLdScript from "@/components/shared/JsonLdScript";
 import { safeJsonLd } from "@/lib/json-ld-utils";
 import {
   generateOrganizationSchema,
@@ -306,33 +307,17 @@ export default async function Home() {
   ];
 
   const breadcrumbJsonLd = generateBreadcrumbListSchema(breadcrumbItems);
+  const websiteJsonLdString = safeJsonLd(websiteJsonLd);
+  const organizationJsonLdString = safeJsonLd(organizationJsonLd);
+  const personJsonLdString = personJsonLd ? safeJsonLd(personJsonLd) : null;
+  const breadcrumbJsonLdString = safeJsonLd(breadcrumbJsonLd);
 
   return (
     <>
-      {safeJsonLd(websiteJsonLd) && (
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: safeJsonLd(websiteJsonLd)! }}
-        />
-      )}
-      {safeJsonLd(organizationJsonLd) && (
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: safeJsonLd(organizationJsonLd)! }}
-        />
-      )}
-      {personJsonLd && safeJsonLd(personJsonLd) && (
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: safeJsonLd(personJsonLd)! }}
-        />
-      )}
-      {safeJsonLd(breadcrumbJsonLd) && (
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbJsonLd)! }}
-        />
-      )}
+      <JsonLdScript data={websiteJsonLdString} />
+      <JsonLdScript data={organizationJsonLdString} />
+      <JsonLdScript data={personJsonLdString} />
+      <JsonLdScript data={breadcrumbJsonLdString} />
       <HomePageContent
         homepageData={
           processedHomepageData as Parameters<typeof HomePageContent>[0]["homepageData"]

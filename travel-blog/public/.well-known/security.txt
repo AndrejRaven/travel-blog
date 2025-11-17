@@ -1,0 +1,8 @@
+# Security contact for vlogizdrogi.pl
+Contact: mailto:security@vlogizdrogi.pl
+Encryption: https://www.vlogizdrogi.pl/pgp/security.asc
+Encryption-Fingerprint:  E983 6472 73E7 38A8 63B2  D6F2 40EC 51AF 4E95 5A26
+Preferred-Languages: pl, en
+Policy: https://www.vlogizdrogi.pl/security-policy
+Acknowledgments: https://www.vlogizdrogi.pl/security/hall-of-fame
+Canonical: https://www.vlogizdrogi.pl/.well-known/security.txt

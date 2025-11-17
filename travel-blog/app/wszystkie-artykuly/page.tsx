@@ -14,6 +14,7 @@ import {
 } from "@/lib/sanity";
 import { getPostUrl } from "@/lib/utils";
 import { SITE_CONFIG } from "@/lib/config";
+import JsonLdScript from "@/components/shared/JsonLdScript";
 import { safeJsonLd } from "@/lib/json-ld-utils";
 import {
   generateCollectionPageSchema,
@@ -160,26 +161,15 @@ export default async function WszystkieArtykulyPage() {
 
   const breadcrumbJsonLd = generateBreadcrumbListSchema(breadcrumbItems);
 
+  const breadcrumbJsonLdString = safeJsonLd(breadcrumbJsonLd);
+  const collectionPageJsonLdString = safeJsonLd(collectionPageJsonLd);
+  const itemListJsonLdString = itemListJsonLd ? safeJsonLd(itemListJsonLd) : null;
+
   return (
     <>
-      {safeJsonLd(breadcrumbJsonLd) && (
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbJsonLd)! }}
-        />
-      )}
-      {safeJsonLd(collectionPageJsonLd) && (
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: safeJsonLd(collectionPageJsonLd)! }}
-        />
-      )}
-      {itemListJsonLd && safeJsonLd(itemListJsonLd) && (
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: safeJsonLd(itemListJsonLd)! }}
-        />
-      )}
+      <JsonLdScript data={breadcrumbJsonLdString} />
+      <JsonLdScript data={collectionPageJsonLdString} />
+      <JsonLdScript data={itemListJsonLdString} />
       <PageLayout maxWidth="6xl">
       <PageHeader
         title="Wszystkie artykuły"

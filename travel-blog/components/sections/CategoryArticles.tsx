@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "@/components/ui/Link";
 import CategoryBadge from "@/components/ui/CategoryBadge";
+import JsonLdScript from "@/components/shared/JsonLdScript";
 import { ArticleForList } from "@/lib/sanity";
 import { getPostUrl } from "@/lib/utils";
 import { getSanityImageProps } from "@/lib/sanity-image";
@@ -67,12 +68,7 @@ export default function CategoryArticles({
 
   return (
     <>
-      {jsonLd && (
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-        />
-      )}
+      <JsonLdScript data={jsonLd} />
       <div className="mb-12">
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-6">
           <h2 className="text-2xl md:text-3xl font-serif font-bold text-gray-900 dark:text-gray-100">

@@ -1,4 +1,5 @@
 import { SITE_CONFIG } from "@/lib/config";
+import JsonLdScript from "@/components/shared/JsonLdScript";
 import { safeJsonLd } from "@/lib/json-ld-utils";
 import {
   generateContactPageSchema,
@@ -58,26 +59,15 @@ export default function Kontakt() {
     },
   });
 
+  const contactPageJsonLdString = safeJsonLd(contactPageJsonLd);
+  const faqPageJsonLdString = safeJsonLd(faqPageJsonLd);
+  const organizationJsonLdString = safeJsonLd(organizationJsonLd);
+
   return (
     <>
-      {safeJsonLd(contactPageJsonLd) && (
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: safeJsonLd(contactPageJsonLd)! }}
-        />
-      )}
-      {safeJsonLd(faqPageJsonLd) && (
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: safeJsonLd(faqPageJsonLd)! }}
-        />
-      )}
-      {safeJsonLd(organizationJsonLd) && (
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: safeJsonLd(organizationJsonLd)! }}
-        />
-      )}
+      <JsonLdScript data={contactPageJsonLdString} />
+      <JsonLdScript data={faqPageJsonLdString} />
+      <JsonLdScript data={organizationJsonLdString} />
       <KontaktClient />
     </>
   );

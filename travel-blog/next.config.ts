@@ -1,82 +1,89 @@
 import type { NextConfig } from "next";
+import {
+  buildContentSecurityPolicy,
+  permissionsPolicyHeader,
+  reportToHeader,
+} from "./lib/security-headers";
+
+type ExperimentalConfigExtended = NextConfig["experimental"] & {
+  cspScriptNonce?: boolean;
+  cspStyleNonce?: boolean;
+};
+
+const experimentalConfig: ExperimentalConfigExtended = {
+  cspScriptNonce: true,
+  cspStyleNonce: true,
+};
 
 const nextConfig: NextConfig = {
+  poweredByHeader: false,
+  experimental: experimentalConfig,
   images: {
     deviceSizes: [640, 768, 1024, 1280, 1440, 1920],
     imageSizes: [160, 320, 480, 640],
     remotePatterns: [
       {
-        protocol: 'https',
-        hostname: 'cdn.sanity.io',
-        port: '',
-        pathname: '/images/**',
+        protocol: "https",
+        hostname: "cdn.sanity.io",
+        port: "",
+        pathname: "/images/**",
       },
       {
-        protocol: 'https',
-        hostname: 'img.youtube.com',
-        port: '',
-        pathname: '/vi/**',
+        protocol: "https",
+        hostname: "img.youtube.com",
+        port: "",
+        pathname: "/vi/**",
       },
     ],
   },
   async headers() {
     return [
       {
-        // Zastosuj nagłówki do wszystkich ścieżek
-        source: '/:path*',
+        source: "/:path*",
         headers: [
           {
-            key: 'X-DNS-Prefetch-Control',
-            value: 'on',
+            key: "X-DNS-Prefetch-Control",
+            value: "on",
           },
           {
-            key: 'Strict-Transport-Security',
-            value: 'max-age=63072000; includeSubDomains; preload',
+            key: "Strict-Transport-Security",
+            value: "max-age=63072000; includeSubDomains; preload",
           },
           {
-            key: 'X-Frame-Options',
-            value: 'DENY',
+            key: "X-Frame-Options",
+            value: "DENY",
           },
           {
-            key: 'X-Content-Type-Options',
-            value: 'nosniff',
+            key: "X-Content-Type-Options",
+            value: "nosniff",
           },
           {
-            key: 'X-XSS-Protection',
-            value: '1; mode=block',
+            key: "Referrer-Policy",
+            value: "strict-origin-when-cross-origin",
           },
           {
-            key: 'Referrer-Policy',
-            value: 'strict-origin-when-cross-origin',
+            key: "Cross-Origin-Opener-Policy",
+            value: "same-origin",
           },
           {
-            key: 'Content-Security-Policy',
-            value: [
-              "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval'", // unsafe-inline/unsafe-eval dla theme script - do poprawy
-              "style-src 'self' 'unsafe-inline'",
-              "img-src 'self' data: https://cdn.sanity.io https://img.youtube.com https:",
-              "font-src 'self' data:",
-              "connect-src 'self' https://cdn.sanity.io https://*.sanity.io https://connect.mailerlite.com https://*.vercel-insights.com",
-              "frame-src https://www.youtube.com https://youtube.com",
-              "object-src 'none'",
-              "base-uri 'self'",
-              "form-action 'self'",
-              "frame-ancestors 'none'",
-              "upgrade-insecure-requests",
-            ].join('; '),
+            key: "Cross-Origin-Embedder-Policy",
+            value: "credentialless",
           },
           {
-            key: 'Permissions-Policy',
-            value: [
-              'autoplay=*',
-              'encrypted-media=*',
-              'fullscreen=*',
-              'accelerometer=*',
-              'gyroscope=*',
-              'clipboard-write=*',
-              'clipboard-read=*',
-            ].join(', '),
+            key: "Cross-Origin-Resource-Policy",
+            value: "same-origin",
+          },
+          {
+            key: "Permissions-Policy",
+            value: permissionsPolicyHeader,
+          },
+          {
+            key: "Content-Security-Policy",
+            value: buildContentSecurityPolicy(),
+          },
+          {
+            key: "Report-To",
+            value: reportToHeader,
           },
         ],
       },

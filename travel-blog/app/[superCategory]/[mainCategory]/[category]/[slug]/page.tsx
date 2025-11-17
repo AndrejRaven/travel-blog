@@ -5,6 +5,7 @@ import {
 import { getImageUrl } from "@/lib/sanity";
 import PostPageClient from "@/components/pages/PostPageClient";
 import ComponentRenderer from "@/components/ui/ComponentRenderer";
+import JsonLdScript from "@/components/shared/JsonLdScript";
 import { PostComponent } from "@/lib/component-types";
 import { Metadata } from "next";
 import { redirect } from "next/navigation";
@@ -599,52 +600,29 @@ export default async function PostPage({ params }: Params) {
       ))
     : undefined;
 
+  const blogPostingJsonLdString = safeJsonLd(blogPostingJsonLd);
+  const breadcrumbJsonLdString = safeJsonLd(breadcrumbJsonLd);
+  const organizationJsonLdString = safeJsonLd(organizationJsonLd);
+  const personJsonLdString = personJsonLd ? safeJsonLd(personJsonLd) : null;
+  const videoJsonLdStrings = videoObjects
+    .map((videoJsonLd) => safeJsonLd(videoJsonLd))
+    .filter((jsonLd): jsonLd is string => Boolean(jsonLd));
+  const imageGalleryJsonLdStrings = imageGalleryObjects
+    .map((imageGalleryJsonLd) => safeJsonLd(imageGalleryJsonLd))
+    .filter((jsonLd): jsonLd is string => Boolean(jsonLd));
+
   return (
     <>
-      {safeJsonLd(blogPostingJsonLd) && (
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: safeJsonLd(blogPostingJsonLd)! }}
-        />
-      )}
-      {safeJsonLd(breadcrumbJsonLd) && (
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbJsonLd)! }}
-        />
-      )}
-      {safeJsonLd(organizationJsonLd) && (
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: safeJsonLd(organizationJsonLd)! }}
-        />
-      )}
-      {personJsonLd && safeJsonLd(personJsonLd) && (
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: safeJsonLd(personJsonLd)! }}
-        />
-      )}
-      {videoObjects.map((videoJsonLd, index) => {
-        const jsonLd = safeJsonLd(videoJsonLd);
-        return jsonLd ? (
-          <script
-            key={`video-${index}`}
-            type="application/ld+json"
-            dangerouslySetInnerHTML={{ __html: jsonLd }}
-          />
-        ) : null;
-      })}
-      {imageGalleryObjects.map((imageGalleryJsonLd, index) => {
-        const jsonLd = safeJsonLd(imageGalleryJsonLd);
-        return jsonLd ? (
-          <script
-            key={`imageGallery-${index}`}
-            type="application/ld+json"
-            dangerouslySetInnerHTML={{ __html: jsonLd }}
-          />
-        ) : null;
-      })}
+      <JsonLdScript data={blogPostingJsonLdString} />
+      <JsonLdScript data={breadcrumbJsonLdString} />
+      <JsonLdScript data={organizationJsonLdString} />
+      <JsonLdScript data={personJsonLdString} />
+      {videoJsonLdStrings.map((jsonLd, index) => (
+        <JsonLdScript key={`video-${index}`} data={jsonLd} />
+      ))}
+      {imageGalleryJsonLdStrings.map((jsonLd, index) => (
+        <JsonLdScript key={`imageGallery-${index}`} data={jsonLd} />
+      ))}
       <PostPageClient
         post={postWithProcessedComponents}
         tableOfContentsItems={tableOfContentsItems}
