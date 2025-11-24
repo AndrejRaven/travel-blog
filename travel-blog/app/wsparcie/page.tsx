@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Button from "@/components/ui/Button";
 import PageLayout from "@/components/shared/PageLayout";
 import PageHeader from "@/components/shared/PageHeader";
@@ -10,6 +11,14 @@ import {
   generateWebPageSchema,
   generateOrganizationSchema,
 } from "@/lib/schema-org";
+import { buildStaticPageMetadata } from "@/lib/metadata";
+
+export const metadata: Metadata = buildStaticPageMetadata({
+  path: "/wsparcie",
+  title: "Wsparcie | Vlogi Z Drogi",
+  description:
+    "Dowiedz się, jak możesz wesprzeć twórców bloga Vlogi Z Drogi i pomóc nam tworzyć nowe treści.",
+});
 
 export default function Wsparcie() {
   const siteUrl = SITE_CONFIG.url;

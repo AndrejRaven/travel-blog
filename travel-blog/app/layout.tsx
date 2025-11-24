@@ -16,7 +16,7 @@ import TopLoadingBar from "@/components/ui/TopLoadingBar";
 import NotificationProvider from "@/components/providers/NotificationProvider";
 import { ToastContainer } from "@/components/ui/Toast";
 import { SITE_CONFIG } from "@/lib/config";
-import { buildAlternates, buildOpenGraph } from "@/lib/metadata";
+import { buildAlternates, buildOpenGraph, buildAbsoluteUrl } from "@/lib/metadata";
 import "./globals.css";
 
 // Font główny - Inter - doskonały do czytania
@@ -60,6 +60,9 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: defaultTitle,
     description: defaultDescription,
+  },
+  other: {
+    "og:url": buildAbsoluteUrl("/"),
   },
 };
 

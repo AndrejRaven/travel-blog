@@ -1,7 +1,16 @@
+import type { Metadata } from "next";
 import PageLayout from "@/components/shared/PageLayout";
 import PageHeader from "@/components/shared/PageHeader";
 import InfoCard from "@/components/shared/InfoCard";
 import BackToHome from "@/components/shared/BackToHome";
+import { buildStaticPageMetadata } from "@/lib/metadata";
+
+export const metadata: Metadata = buildStaticPageMetadata({
+  path: "/polityka-prywatnosci",
+  title: "Polityka prywatności | Vlogi Z Drogi",
+  description:
+    "Dowiedz się, w jaki sposób chronimy Twoje dane osobowe na blogu Vlogi Z Drogi.",
+});
 
 export default function PolitykaPrywatnosci() {
   return (

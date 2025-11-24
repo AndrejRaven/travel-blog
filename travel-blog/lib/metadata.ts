@@ -66,3 +66,23 @@ export const buildOpenGraph = (params: {
   };
 };
 
+export const buildStaticPageMetadata = (params: {
+  path: string;
+  title: string;
+  description: string;
+}) => {
+  return {
+    title: params.title,
+    description: params.description,
+    alternates: buildAlternates(params.path),
+    openGraph: buildOpenGraph({
+      title: params.title,
+      description: params.description,
+      path: params.path,
+    }),
+    other: {
+      "og:url": buildAbsoluteUrl(params.path),
+    },
+  };
+};
+

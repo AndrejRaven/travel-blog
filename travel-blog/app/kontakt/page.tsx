@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { SITE_CONFIG } from "@/lib/config";
 import JsonLdScript from "@/components/shared/JsonLdScript";
 import { safeJsonLd } from "@/lib/json-ld-utils";
@@ -8,6 +9,13 @@ import {
   type FAQItem,
 } from "@/lib/schema-org";
 import KontaktClient from "./KontaktClient";
+import { buildStaticPageMetadata } from "@/lib/metadata";
+
+export const metadata: Metadata = buildStaticPageMetadata({
+  path: "/kontakt",
+  title: "Kontakt | Vlogi Z Drogi",
+  description: "Masz pytania? Skontaktuj się z zespołem Vlogi Z Drogi.",
+});
 
 export default function Kontakt() {
   const siteUrl = SITE_CONFIG.url;

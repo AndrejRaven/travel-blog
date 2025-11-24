@@ -86,6 +86,21 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  async redirects() {
+    return [
+      {
+        source: "/:path*",
+        has: [
+          {
+            type: "host",
+            value: "vlogizdrogi.pl",
+          },
+        ],
+        destination: "https://www.vlogizdrogi.pl/:path*",
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;
