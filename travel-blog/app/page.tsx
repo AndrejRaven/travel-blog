@@ -14,10 +14,10 @@ import {
   type BreadcrumbItem,
 } from "@/lib/schema-org";
 import {
-  getLatestYouTubeVideo,
-  getYouTubeVideoById,
+  createEmbedResolutionContext,
+  resolveEmbedYoutubeComponents,
 } from "@/lib/youtube";
-import { PostComponent, EmbedYoutube as EmbedYoutubeComponent } from "@/lib/component-types";
+import { PostComponent } from "@/lib/component-types";
 import { buildAlternates, buildOpenGraph, buildAbsoluteUrl } from "@/lib/metadata";
 
 // Funkcja pomocnicza do walidacji i upewnienia się że URL jest absolutny
@@ -248,68 +248,33 @@ export default async function Home() {
         })
       : null;
 
-  // Funkcja pomocnicza do przetwarzania komponentów embedYoutube
-  const processEmbedYoutubeComponents = async (
-    components: PostComponent[] | undefined
-  ): Promise<PostComponent[] | undefined> => {
-    if (!components) return undefined;
+  const heroComponents = (homepageData as { heroComponents?: PostComponent[] })
+    .heroComponents;
+  const mainComponents = (homepageData as { mainComponents?: PostComponent[] })
+    .mainComponents;
+  const asideComponents = (homepageData as {
+    asideComponents?: PostComponent[];
+  }).asideComponents;
+  const additionalComponents = (homepageData as {
+    additionalComponents?: PostComponent[];
+  }).additionalComponents;
 
-    return Promise.all(
-      components.map(async (component) => {
-        if (component._type === "embedYoutube") {
-          const embedYoutube = component as EmbedYoutubeComponent & {
-            publishedAt?: string | null;
-            videoPublishedAt?: string | null;
-          };
-
-          let publishedAt: string | null = embedYoutube.videoPublishedAt || null;
-          let resolvedVideoId: string | undefined = embedYoutube.videoId;
-
-          try {
-            if (embedYoutube.useLatestVideo || embedYoutube.videoId === "latest") {
-              const latestVideo = await getLatestYouTubeVideo();
-              if (latestVideo?.id) {
-                resolvedVideoId = latestVideo.id;
-                if (!publishedAt) {
-                  publishedAt = latestVideo.publishedAt || null;
-                }
-              }
-            } else if (
-              embedYoutube.videoId &&
-              embedYoutube.videoId !== "latest" &&
-              !publishedAt
-            ) {
-              publishedAt = await getYouTubeVideoById(embedYoutube.videoId);
-            }
-          } catch (error) {
-            console.error("Error fetching YouTube video data:", error);
-          }
-
-          return {
-            ...component,
-            videoId: resolvedVideoId,
-            publishedAt,
-          };
-        }
-        return component;
-      })
-    );
-  };
+  const embedContext = await createEmbedResolutionContext([
+    heroComponents,
+    mainComponents,
+    asideComponents,
+    additionalComponents,
+  ]);
 
   // Przetwarzanie wszystkich komponentów embedYoutube
   const processedHomepageData = {
     ...homepageData,
-    heroComponents: await processEmbedYoutubeComponents(
-      (homepageData as { heroComponents?: PostComponent[] }).heroComponents
-    ),
-    mainComponents: await processEmbedYoutubeComponents(
-      (homepageData as { mainComponents?: PostComponent[] }).mainComponents
-    ),
-    asideComponents: await processEmbedYoutubeComponents(
-      (homepageData as { asideComponents?: PostComponent[] }).asideComponents
-    ),
-    additionalComponents: await processEmbedYoutubeComponents(
-      (homepageData as { additionalComponents?: PostComponent[] }).additionalComponents
+    heroComponents: resolveEmbedYoutubeComponents(heroComponents, embedContext),
+    mainComponents: resolveEmbedYoutubeComponents(mainComponents, embedContext),
+    asideComponents: resolveEmbedYoutubeComponents(asideComponents, embedContext),
+    additionalComponents: resolveEmbedYoutubeComponents(
+      additionalComponents,
+      embedContext
     ),
   };
 

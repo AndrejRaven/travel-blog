@@ -30,8 +30,9 @@ export default function AboutUs({ data }: Props) {
   }
 
   const heroImageProps = getSanityImageProps(image, {
+    alt: imageAlt || title,
+    profile: "square",
     quality: 85,
-    fit: "fillmax",
   });
 
   return (

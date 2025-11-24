@@ -194,6 +194,13 @@ export default function ComponentRenderer({
   component,
   animationProps,
 }: Props) {
+  if (!component?.container) {
+    console.warn("ComponentRenderer: Missing container config", {
+      type: component._type,
+      component,
+    });
+    return null;
+  }
   // Renderuj komponent używając mapy
   const renderComponent =
     componentMap[component._type as keyof typeof componentMap];

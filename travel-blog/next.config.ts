@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import bundleAnalyzer from "@next/bundle-analyzer";
 import {
   buildContentSecurityPolicy,
   permissionsPolicyHeader,
@@ -9,11 +10,18 @@ const enableCrossOriginIsolation =
   process.env.NEXT_PUBLIC_ENABLE_CROSS_ORIGIN_ISOLATION === "true" ||
   process.env.ENABLE_COEP === "true";
 
+const withBundleAnalyzer = bundleAnalyzer({
+  enabled: process.env.ANALYZE === "true",
+});
+
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   images: {
     deviceSizes: [640, 768, 1024, 1280, 1440, 1920],
     imageSizes: [160, 320, 480, 640],
+    formats: ["image/webp", "image/avif"],
+    minimumCacheTTL: 60 * 60 * 24,
+    contentDispositionType: "inline",
     remotePatterns: [
       {
         protocol: "https",
@@ -103,4 +111,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default withBundleAnalyzer(nextConfig);

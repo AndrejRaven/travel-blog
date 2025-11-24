@@ -24,8 +24,8 @@ export default function Popup({ popupData, onClose }: PopupProps) {
   const hasButton = popupData.button?.label && popupData.button?.href;
   const imageProps = popupData.image
     ? getSanityImageProps(popupData.image, {
-        width: 160,
-        height: 160,
+        alt: popupData.title,
+        profile: "thumbnail",
       })
     : null;
 

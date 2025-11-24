@@ -1,4 +1,10 @@
-// YouTube API functions
+import { cache } from "react";
+import { unstable_cache } from "next/cache";
+import type {
+  PostComponent,
+  EmbedYoutube as EmbedYoutubeComponent,
+} from "./component-types";
+
 export interface YouTubeVideo {
   id: string;
   title: string;
@@ -17,7 +23,33 @@ export interface YouTubeChannelInfo {
 
 const YOUTUBE_CHANNEL_ID = "UCUUm2vkbs-W7KulrJZIpNDA";
 const YOUTUBE_RSS_URL = `https://www.youtube.com/feeds/videos.xml?channel_id=${YOUTUBE_CHANNEL_ID}`;
-const YOUTUBE_API_URL = "/api/youtube";
+const YOUTUBE_FEED_CACHE_KEY = ["youtube-rss-feed"];
+
+const fetchYouTubeFeed = unstable_cache(
+  async () => {
+    const response = await fetch(YOUTUBE_RSS_URL, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (compatible; NaszBlogBot/1.0)",
+        "accept-language": "en-US,en;q=0.9",
+      },
+      next: { revalidate: 3600 },
+    });
+
+    if (!response.ok) {
+      throw new Error(`YouTube RSS error: ${response.status}`);
+    }
+
+    return response.text();
+  },
+  YOUTUBE_FEED_CACHE_KEY,
+  { revalidate: 3600 }
+);
+
+const getFeedDocument = cache(async () => {
+  const xml = await fetchYouTubeFeed();
+  const entries = xml.match(/<entry>[\s\S]*?<\/entry>/g) || [];
+  return { xml, entries };
+});
 
 function normalizeIsoDate(dateString?: string | null): string | null {
   if (!dateString) {
@@ -92,34 +124,25 @@ async function resolvePublishedDateFromEntry(
  */
 export async function getLatestYouTubeVideo(): Promise<YouTubeVideo | null> {
   try {
-    const response = await fetch(YOUTUBE_RSS_URL, {
-      next: { revalidate: 3600 }, // Cache na 1 godzinę (3600 sekund)
-    });
+    const { xml, entries } = await getFeedDocument();
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const xmlText = await response.text();
-    
-    // Parsowanie XML za pomocą regex (działa w Node.js)
-    const entries = xmlText.match(/<entry>[\s\S]*?<\/entry>/g) || [];
-    
     // Szukaj pierwszego długiego filmu (nie short)
     for (const entry of entries) {
       const videoIdMatch = entry.match(/<yt:videoId>([^<]+)<\/yt:videoId>/);
-      const titleMatch = entry.match(/<title>([^<]+)<\/title>/);
-      const descriptionMatch = entry.match(/<media:description>([^<]+)<\/media:description>/);
-      const authorMatch = entry.match(/<author><name>([^<]+)<\/name><\/author>/);
-      const linkMatch = entry.match(/<link[^>]*href="([^"]*)"[^>]*>/);
-
       if (!videoIdMatch) continue;
 
       const videoId = videoIdMatch[1];
-      const title = titleMatch?.[1] || "Brak tytułu";
-      const description = descriptionMatch?.[1] || "";
-      const channelTitle = authorMatch?.[1] || "Vlogi z Drogi";
-      const videoUrl = linkMatch?.[1] || `https://www.youtube.com/watch?v=${videoId}`;
+      const title =
+        entry.match(/<title>([^<]+)<\/title>/)?.[1] || "Brak tytułu";
+      const description =
+        entry.match(/<media:description>([^<]+)<\/media:description>/)?.[1] ||
+        "";
+      const channelTitle =
+        entry.match(/<author><name>([^<]+)<\/name><\/author>/)?.[1] ||
+        "Vlogi z Drogi";
+      const videoUrl =
+        entry.match(/<link[^>]*href="([^"]*)"[^>]*>/)?.[1] ||
+        `https://www.youtube.com/watch?v=${videoId}`;
 
       // Sprawdź czy to nie jest short (tytuł lub URL zawiera shorts)
       const isShort = entryContainsShort(title, videoUrl);
@@ -140,133 +163,33 @@ export async function getLatestYouTubeVideo(): Promise<YouTubeVideo | null> {
     }
 
     // Jeśli nie znaleziono długiego filmu, zwróć pierwszy dostępny
-    const videoIdMatch = xmlText.match(/<yt:videoId>([^<]+)<\/yt:videoId>/);
-    const titleMatch = xmlText.match(/<title>([^<]+)<\/title>/);
-    const descriptionMatch = xmlText.match(/<media:description>([^<]+)<\/media:description>/);
-    const publishedMatch = xmlText.match(/<published>([^<]+)<\/published>/);
-    const updatedMatch = xmlText.match(/<updated>([^<]+)<\/updated>/);
-    const authorMatch = xmlText.match(/<author><name>([^<]+)<\/name><\/author>/);
+    const fallbackVideoId = xml.match(/<yt:videoId>([^<]+)<\/yt:videoId>/)?.[1];
+    const fallbackTitle = xml.match(/<title>([^<]+)<\/title>/)?.[1] || "Brak tytułu";
+    const fallbackDescription =
+      xml.match(/<media:description>([^<]+)<\/media:description>/)?.[1] || "";
+    const fallbackChannelTitle =
+      xml.match(/<author><name>([^<]+)<\/name><\/author>/)?.[1] ||
+      "Vlogi z Drogi";
+    const publishedMatch = xml.match(/<published>([^<]+)<\/published>/);
+    const updatedMatch = xml.match(/<updated>([^<]+)<\/updated>/);
 
-    if (!videoIdMatch) {
+    if (!fallbackVideoId) {
       throw new Error("No video ID found in RSS feed");
     }
 
-    const videoId = videoIdMatch[1];
-    const title = titleMatch?.[1] || "Brak tytułu";
-    const description = descriptionMatch?.[1] || "";
-    const publishedAt =
+    const fallbackPublishedAt =
       normalizeIsoDate(publishedMatch?.[1]) ||
       normalizeIsoDate(updatedMatch?.[1]) ||
-      (await fetchWatchPagePublishedDate(videoId)) ||
+      (await fetchWatchPagePublishedDate(fallbackVideoId)) ||
       "";
-    const channelTitle = authorMatch?.[1] || "Vlogi z Drogi";
 
     return {
-      id: videoId,
-      title,
-      description,
-      publishedAt,
-      thumbnailUrl: `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`,
-      channelTitle,
-    };
-  } catch (error) {
-    console.error("Error fetching latest YouTube video:", error);
-    return null;
-  }
-}
-
-/**
- * Pobiera najnowszy film z kanału YouTube poprzez RSS feed (client-side)
- * Filtruje długie filmy (nie shorts)
- */
-export async function getLatestYouTubeVideoClient(): Promise<YouTubeVideo | null> {
-  try {
-    const response = await fetch(YOUTUBE_API_URL);
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const xmlText = await response.text();
-    
-    // Parsowanie XML za pomocą DOMParser (działa w przeglądarce)
-    const parser = new DOMParser();
-    const xmlDoc = parser.parseFromString(xmlText, "text/xml");
-
-    // Pobierz wszystkie filmy
-    const entries = xmlDoc.querySelectorAll("entry");
-    
-    // Szukaj pierwszego długiego filmu (nie short)
-    for (const entry of entries) {
-      // Wyciągnij ID filmu z URL
-      const videoUrl = entry.querySelector("link")?.getAttribute("href");
-      if (!videoUrl) {
-        continue;
-      }
-
-      const videoId = videoUrl.split("v=")[1]?.split("&")[0];
-      if (!videoId) {
-        continue;
-      }
-
-      // Wyciągnij inne dane
-      const title = entry.querySelector("title")?.textContent || "Brak tytułu";
-      const description = entry.querySelector("media\\:description, description")?.textContent || "";
-      const publishedAt = entry.querySelector("published")?.textContent || "";
-      const channelTitle = entry.querySelector("author name")?.textContent || "Vlogi z Drogi";
-
-
-      // Sprawdź czy to nie jest short (tytuł lub URL zawiera shorts)
-      const isShort = title.toLowerCase().includes('#shorts') || 
-                     title.toLowerCase().includes('shorts') ||
-                     title.includes('#Shorts') ||
-                     videoUrl.includes('/shorts/');
-
-
-      // Jeśli to nie jest short, zwróć film
-      if (!isShort) {
-        return {
-          id: videoId,
-          title,
-          description,
-          publishedAt,
-          thumbnailUrl: `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`,
-          channelTitle,
-        };
-      } else {
-      }
-    }
-
-    // Jeśli nie znaleziono długiego filmu, zwróć pierwszy dostępny
-    const firstEntry = xmlDoc.querySelector("entry");
-    if (!firstEntry) {
-      throw new Error("No video entries found in RSS feed");
-    }
-
-    // Wyciągnij ID filmu z URL
-    const videoUrl = firstEntry.querySelector("link")?.getAttribute("href");
-    if (!videoUrl) {
-      throw new Error("No video URL found");
-    }
-
-    const videoId = videoUrl.split("v=")[1]?.split("&")[0];
-    if (!videoId) {
-      throw new Error("Could not extract video ID from URL");
-    }
-
-    // Wyciągnij inne dane
-      const title = firstEntry.querySelector("title")?.textContent || "Brak tytułu";
-      const description = firstEntry.querySelector("media\\:description, description")?.textContent || "";
-      const publishedAt = firstEntry.querySelector("published")?.textContent || "";
-      const channelTitle = firstEntry.querySelector("author name")?.textContent || "Vlogi z Drogi";
-
-    return {
-      id: videoId,
-      title,
-      description,
-      publishedAt,
-      thumbnailUrl: `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`,
-      channelTitle,
+      id: fallbackVideoId,
+      title: fallbackTitle,
+      description: fallbackDescription,
+      publishedAt: fallbackPublishedAt,
+      thumbnailUrl: `https://img.youtube.com/vi/${fallbackVideoId}/maxresdefault.jpg`,
+      channelTitle: fallbackChannelTitle,
     };
   } catch (error) {
     console.error("Error fetching latest YouTube video:", error);
@@ -304,18 +227,7 @@ export async function getYouTubeVideoById(
   videoId: string
 ): Promise<string | null> {
   try {
-    const response = await fetch(YOUTUBE_RSS_URL, {
-      next: { revalidate: 3600 }, // Cache na 1 godzinę (3600 sekund)
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const xmlText = await response.text();
-
-    // Parsowanie XML za pomocą regex (działa w Node.js)
-    const entries = xmlText.match(/<entry>[\s\S]*?<\/entry>/g) || [];
+    const { entries } = await getFeedDocument();
 
     // Szukaj filmu o podanym ID
     for (const entry of entries) {
@@ -353,64 +265,92 @@ export async function getYouTubeVideoById(
   }
 }
 
-/**
- * Pobiera datę publikacji dla konkretnego videoId z RSS feed (client-side)
- * Zwraca publishedAt jeśli film jest w RSS feed, w przeciwnym razie null
- */
-export async function getYouTubeVideoByIdClient(
-  videoId: string
-): Promise<string | null> {
-  try {
-    const response = await fetch(YOUTUBE_API_URL);
+export type EmbedResolutionContext = {
+  latestVideo: YouTubeVideo | null;
+  publishedAtById: Map<string, string | null>;
+};
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+export async function createEmbedResolutionContext(
+  componentGroups: Array<PostComponent[] | undefined>
+): Promise<EmbedResolutionContext> {
+  const embedComponents = componentGroups.flatMap((group) =>
+    (group ?? []).filter(
+      (component): component is EmbedYoutubeComponent =>
+        component._type === "embedYoutube"
+    )
+  );
 
-    const xmlText = await response.text();
-
-    // Parsowanie XML za pomocą DOMParser (działa w przeglądarce)
-    const parser = new DOMParser();
-    const xmlDoc = parser.parseFromString(xmlText, "text/xml");
-
-    // Pobierz wszystkie filmy
-    const entries = xmlDoc.querySelectorAll("entry");
-
-    // Szukaj filmu o podanym ID
-    for (const entry of entries) {
-      // Wyciągnij ID filmu z URL
-      const videoUrl = entry.querySelector("link")?.getAttribute("href");
-      if (!videoUrl) {
-        continue;
-      }
-
-      const entryVideoId = videoUrl.split("v=")[1]?.split("&")[0];
-      if (!entryVideoId) {
-        continue;
-      }
-
-      // Jeśli znaleziono film o podanym ID, zwróć datę publikacji
-      if (entryVideoId === videoId) {
-        const publishedAt = entry.querySelector("published")?.textContent || "";
-        return publishedAt || null;
-      }
-    }
-
-    // Film nie został znaleziony w RSS feed
-    return null;
-  } catch (error) {
-    console.error("Error fetching YouTube video by ID:", error);
-    return null;
+  if (embedComponents.length === 0) {
+    return {
+      latestVideo: null,
+      publishedAtById: new Map(),
+    };
   }
+
+  const requiresLatest = embedComponents.some(
+    (component) =>
+      component.useLatestVideo || component.videoId === "latest"
+  );
+
+  const latestVideo = requiresLatest ? await getLatestYouTubeVideo() : null;
+
+  const idsToResolve = new Set<string>();
+  embedComponents.forEach((component) => {
+    if (
+      component.videoId &&
+      component.videoId !== "latest" &&
+      !(component as { videoPublishedAt?: string | null }).videoPublishedAt
+    ) {
+      idsToResolve.add(component.videoId);
+    }
+  });
+
+  const publishedAtEntries = await Promise.all(
+    Array.from(idsToResolve).map(async (id) => {
+      const publishedAt = await getYouTubeVideoById(id);
+      return [id, publishedAt] as const;
+    })
+  );
+
+  return {
+    latestVideo,
+    publishedAtById: new Map(publishedAtEntries),
+  };
 }
 
-/**
- * Sprawdza czy videoId to "latest" i zwraca odpowiedni ID
- */
-export async function resolveVideoId(videoId: string): Promise<string> {
-  if (videoId === "latest") {
-    const latestVideo = await getLatestYouTubeVideo();
-    return latestVideo?.id || videoId;
+export function resolveEmbedYoutubeComponents(
+  components: PostComponent[] | undefined,
+  context: EmbedResolutionContext
+): PostComponent[] | undefined {
+  if (!components) {
+    return undefined;
   }
-  return videoId;
+
+  return components.map((component) => {
+    if (component._type !== "embedYoutube") {
+      return component;
+    }
+
+    const embed = component as EmbedYoutubeComponent & {
+      publishedAt?: string | null;
+      videoPublishedAt?: string | null;
+    };
+
+    let resolvedVideoId =
+      embed.videoId && embed.videoId !== "latest" ? embed.videoId : null;
+    let publishedAt = embed.videoPublishedAt || embed.publishedAt || null;
+
+    if (embed.useLatestVideo || embed.videoId === "latest") {
+      resolvedVideoId = context.latestVideo?.id ?? null;
+      publishedAt = publishedAt || context.latestVideo?.publishedAt || null;
+    } else if (resolvedVideoId && !publishedAt) {
+      publishedAt = context.publishedAtById.get(resolvedVideoId) || null;
+    }
+
+    return {
+      ...component,
+      ...(resolvedVideoId ? { videoId: resolvedVideoId } : {}),
+      publishedAt,
+    };
+  });
 }

@@ -22,8 +22,8 @@ import {
   type BreadcrumbItem,
 } from "@/lib/schema-org";
 import {
-  getLatestYouTubeVideo,
-  getYouTubeVideoById,
+  createEmbedResolutionContext,
+  resolveEmbedYoutubeComponents,
 } from "@/lib/youtube";
 import { buildAlternates, buildOpenGraph, buildAbsoluteUrl } from "@/lib/metadata";
 
@@ -128,29 +128,6 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   if (post.seo?.noFollow) robots.push("nofollow");
   if (robots.length === 0) robots.push("index", "follow");
 
-  // Znajdź pierwszy komponent embedYoutube dla Open Graph video
-  const embedYoutubeComponent = post.components?.find(
-    (comp) => comp._type === "embedYoutube"
-  ) as {
-    videoId?: string;
-    useLatestVideo?: boolean;
-  } | undefined;
-
-  // Pobierz videoId dla og:video
-  let videoIdForOg: string | null = null;
-  if (embedYoutubeComponent) {
-    if (embedYoutubeComponent.useLatestVideo || embedYoutubeComponent.videoId === "latest") {
-      try {
-        const latestVideo = await getLatestYouTubeVideo();
-        videoIdForOg = latestVideo?.id || null;
-      } catch (error) {
-        console.error("Error fetching latest video for OG:", error);
-      }
-    } else if (embedYoutubeComponent.videoId && embedYoutubeComponent.videoId !== "latest") {
-      videoIdForOg = embedYoutubeComponent.videoId;
-    }
-  }
-
   const alternates = buildAlternates(canonicalUrl);
   const openGraph = buildOpenGraph({
     title: ogTitle,
@@ -160,6 +137,27 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
       ? { url: secureOgImageUrl, alt: ogTitle, width: 1200, height: 630 }
       : undefined,
   });
+
+  const metadataComponents = Array.isArray(post.components)
+    ? (post.components as PostComponent[])
+    : [];
+  const metadataNormalizedComponents = metadataComponents.length
+    ? metadataComponents
+    : undefined;
+  const metadataEmbedContext = await createEmbedResolutionContext([
+    metadataNormalizedComponents,
+  ]);
+  const metadataProcessedComponents = resolveEmbedYoutubeComponents(
+    metadataNormalizedComponents,
+    metadataEmbedContext
+  );
+  const metadataEmbedComponent = metadataProcessedComponents?.find(
+    (comp) => comp._type === "embedYoutube"
+  ) as {
+    videoId?: string;
+  } | undefined;
+  const videoIdForOg =
+    metadataEmbedComponent?.videoId ?? metadataEmbedContext.latestVideo?.id ?? null;
 
   const metadata: Metadata = {
     title: fullTitle,
@@ -304,6 +302,16 @@ export default async function PostPage({ params }: Params) {
     );
   }
 
+  const rawComponents = Array.isArray(post.components)
+    ? (post.components as PostComponent[])
+    : [];
+  const normalizedComponents = rawComponents.length ? rawComponents : undefined;
+  const embedContext = await createEmbedResolutionContext([normalizedComponents]);
+  const processedComponents = resolveEmbedYoutubeComponents(
+    normalizedComponents,
+    embedContext
+  );
+
   // Generuj dane Open Graph dla przycisków udostępniania
   const seoDescription =
     post.seo?.seoDescription ||
@@ -326,7 +334,8 @@ export default async function PostPage({ params }: Params) {
 
   // Generuj spis treści na podstawie komponentów z tytułami treści
   const generateTableOfContents = () => {
-    if (!post.components) return [];
+    const sourceComponents = processedComponents ?? normalizedComponents;
+    if (!sourceComponents) return [];
 
     const generateId = (title: string) => {
       return (
@@ -340,7 +349,7 @@ export default async function PostPage({ params }: Params) {
       ); // Fallback jeśli pusty string
     };
 
-    return post.components
+    return sourceComponents
       .filter((component) => {
         const container = component.container as
           | { contentTitle?: string }
@@ -488,109 +497,82 @@ export default async function PostPage({ params }: Params) {
   const videoObjects: object[] = [];
   // ImageGallery dla komponentów ImageCollage
   const imageGalleryObjects: object[] = [];
-  // Przetwarzanie komponentów embedYoutube - pobieranie publishedAt dla SSR
-  const processedComponents = post.components ? await Promise.all(
-    post.components.map(async (component) => {
-      if (component._type === "embedYoutube") {
-        const embedYoutube = component as {
-          videoId?: string;
-          title?: string;
-          description?: string;
-          useLatestVideo?: boolean;
-          videoPublishedAt?: string | null;
-        };
 
-        let resolvedVideoId: string | undefined = embedYoutube.videoId;
-        let publishedAt: string | null = embedYoutube.videoPublishedAt || null;
+  processedComponents?.forEach((component) => {
+    if (component._type === "embedYoutube") {
+      const embedYoutube = component as {
+        videoId?: string;
+        title?: string;
+        description?: string;
+        publishedAt?: string | null;
+        videoPublishedAt?: string | null;
+      };
 
-        try {
-          if (embedYoutube.useLatestVideo || embedYoutube.videoId === "latest") {
-            const latestVideo = await getLatestYouTubeVideo();
-            if (latestVideo?.id) {
-              resolvedVideoId = latestVideo.id;
-              if (!publishedAt) {
-                publishedAt = latestVideo.publishedAt || null;
-              }
-            }
-          } else if (
-            embedYoutube.videoId &&
-            embedYoutube.videoId !== "latest" &&
-            !publishedAt
-          ) {
-            publishedAt = await getYouTubeVideoById(embedYoutube.videoId);
-          }
-        } catch (error) {
-          console.error("Error fetching YouTube video publishedAt:", error);
-        }
+      const resolvedVideoId = embedYoutube.videoId;
+      const publishedAt =
+        embedYoutube.publishedAt ||
+        embedYoutube.videoPublishedAt ||
+        post.publishedAt ||
+        null;
 
-        if (resolvedVideoId) {
-          const videoTitle = embedYoutube.title || post.title;
-          const videoDescription =
-            embedYoutube.description || post.subtitle || post.seo?.seoDescription;
+      if (resolvedVideoId) {
+        const videoTitle = embedYoutube.title || post.title;
+        const videoDescription =
+          embedYoutube.description || post.subtitle || post.seo?.seoDescription;
 
-          const videoJsonLd = generateVideoObjectSchema({
-            name: videoTitle,
-            description: videoDescription,
-            thumbnailUrl: `https://img.youtube.com/vi/${resolvedVideoId}/maxresdefault.jpg`,
-            embedUrl: `https://www.youtube.com/embed/${resolvedVideoId}`,
-            contentUrl: `https://www.youtube.com/watch?v=${resolvedVideoId}`,
-            url: `https://www.youtube.com/watch?v=${resolvedVideoId}`,
-            uploadDate: publishedAt || post.publishedAt,
-          });
+        const videoJsonLd = generateVideoObjectSchema({
+          name: videoTitle,
+          description: videoDescription,
+          thumbnailUrl: `https://img.youtube.com/vi/${resolvedVideoId}/maxresdefault.jpg`,
+          embedUrl: `https://www.youtube.com/embed/${resolvedVideoId}`,
+          contentUrl: `https://www.youtube.com/watch?v=${resolvedVideoId}`,
+          url: `https://www.youtube.com/watch?v=${resolvedVideoId}`,
+          uploadDate: publishedAt || post.publishedAt,
+        });
 
-          videoObjects.push(videoJsonLd);
-        }
-
-        return {
-          ...component,
-          videoId: resolvedVideoId,
-          publishedAt,
-        };
+        videoObjects.push(videoJsonLd);
       }
-      
-      // Przetwarzanie komponentów ImageCollage dla structured data
-      if (component._type === "imageCollage") {
-        const imageCollage = component as {
-          images?: Array<{
-            asset?: {
-              url?: string;
-              metadata?: {
-                dimensions?: {
-                  width?: number;
-                  height?: number;
-                };
+    }
+
+    if (component._type === "imageCollage") {
+      const imageCollage = component as {
+        images?: Array<{
+          asset?: {
+            url?: string;
+            metadata?: {
+              dimensions?: {
+                width?: number;
+                height?: number;
               };
             };
-            alt?: string;
-          }>;
-        };
-        
-        if (imageCollage.images && imageCollage.images.length > 0) {
-          const galleryImages = imageCollage.images
-            .filter((img) => img.asset?.url)
-            .map((img) => ({
-              url: img.asset!.url!,
-              alt: img.alt || `Zdjęcie z galerii`,
-              width: img.asset?.metadata?.dimensions?.width,
-              height: img.asset?.metadata?.dimensions?.height,
-            }));
-          
-          if (galleryImages.length > 0) {
-            const imageGalleryJsonLd = generateImageGallerySchema({
-              name: `Galeria zdjęć - ${post.title}`,
-              description: `Galeria zdjęć z artykułu: ${post.title}`,
-              images: galleryImages,
-              url: canonicalUrl,
-            });
-            
-            imageGalleryObjects.push(imageGalleryJsonLd);
-          }
+          };
+          alt?: string;
+        }>;
+      };
+
+      if (imageCollage.images && imageCollage.images.length > 0) {
+        const galleryImages = imageCollage.images
+          .filter((img) => img.asset?.url)
+          .map((img) => ({
+            url: img.asset!.url!,
+            alt: img.alt || `Zdjęcie z galerii`,
+            width: img.asset?.metadata?.dimensions?.width,
+            height: img.asset?.metadata?.dimensions?.height,
+          }));
+
+        if (galleryImages.length > 0) {
+          const imageGalleryJsonLd = generateImageGallerySchema({
+            name: `Galeria zdjęć - ${post.title}`,
+            description: `Galeria zdjęć z artykułu: ${post.title}`,
+            images: galleryImages,
+            url: canonicalUrl,
+          });
+
+          imageGalleryObjects.push(imageGalleryJsonLd);
         }
       }
-      
-      return component;
-    })
-  ) : undefined;
+    }
+  });
 
   // Utwórz zaktualizowany obiekt post z przetworzonymi komponentami
   const postWithProcessedComponents = {

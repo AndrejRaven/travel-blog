@@ -89,8 +89,9 @@ export default function CategoryArticles({
               const postUrl = getPostUrl(article);
               const coverImage = article.coverImage || article.coverMobileImage;
               const imageProps = getSanityImageProps(coverImage, {
+                alt: article.title,
+                profile: "card",
                 quality: 85,
-                fit: "fillmax",
               });
 
               const card = (

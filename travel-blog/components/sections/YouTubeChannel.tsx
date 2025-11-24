@@ -31,8 +31,9 @@ export default function YouTubeChannel({ data }: Props) {
   }
 
   const avatarProps = getSanityImageProps(channelImage, {
+    alt: channelName,
+    profile: "square",
     quality: 90,
-    fit: "fillmax",
   });
 
   return (

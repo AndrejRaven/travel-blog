@@ -20,13 +20,32 @@ export type SanityImageFit =
   | "min"
   | "max";
 
-type BuildOptions = {
+type BuildOptionsBase = {
   alt?: string;
   fit?: SanityImageFit;
   format?: "webp" | "jpg" | "png";
   quality?: number;
   width?: number;
   height?: number;
+};
+
+type ImageProfile =
+  | "hero"
+  | "feature"
+  | "card"
+  | "square"
+  | "thumbnail";
+
+const IMAGE_PROFILES: Record<ImageProfile, Omit<BuildOptionsBase, "alt">> = {
+  hero: { width: 1920, height: 1080, fit: "fillmax", quality: 85 },
+  feature: { width: 1440, height: 810, fit: "fillmax", quality: 80 },
+  card: { width: 960, height: 540, fit: "crop" },
+  square: { width: 800, height: 800, fit: "crop" },
+  thumbnail: { width: 480, height: 320, fit: "crop" },
+};
+
+type BuildOptions = BuildOptionsBase & {
+  profile?: ImageProfile;
 };
 
 const FALLBACK_IMAGE = {
@@ -49,9 +68,14 @@ const hasSanityAsset = (image: SanityImage | undefined | null): image is SanityI
   Boolean(image?.asset?.url);
 
 const buildSanityUrl = (image: SanityImage, options: BuildOptions = {}) => {
-  const { format, fit, quality, width, height } = { ...DEFAULT_OPTIONS, ...options };
+  const { profile, ...rest } = options;
+  const profileOptions = profile ? IMAGE_PROFILES[profile] ?? {} : {};
+  const mergedOptions = { ...DEFAULT_OPTIONS, ...profileOptions, ...rest };
+  const { format, fit, quality, width, height } = mergedOptions;
   const resolvedQuality = typeof quality === "number" ? quality : DEFAULT_OPTIONS.quality ?? 80;
-  let builder = urlFor(image).auto("format").quality(resolvedQuality);
+  let builder = urlFor(image)
+    .auto("format")
+    .quality(resolvedQuality);
 
   if (typeof width === "number") {
     builder = builder.width(width);
@@ -61,9 +85,8 @@ const buildSanityUrl = (image: SanityImage, options: BuildOptions = {}) => {
     builder = builder.height(height);
   }
 
-  if (format) {
-    builder = builder.format(format);
-  }
+  const resolvedFormat = format || "webp";
+  builder = builder.format(resolvedFormat);
 
   if (fit) {
     builder = builder.fit(fit);

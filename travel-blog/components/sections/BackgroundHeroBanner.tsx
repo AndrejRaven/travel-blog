@@ -31,8 +31,9 @@ export default function BackgroundHeroBanner({ data }: Props) {
 
   const heroImage = data.image || data.mobileImage;
   const heroImageProps = getSanityImageProps(heroImage, {
+    alt: container.contentTitle,
+    profile: "feature",
     quality: 90,
-    fit: "fillmax",
   });
   const overlayOpacity = Math.min((layout.overlayOpacity ?? 30) / 100, 0.85);
   const gradientStyle: CSSProperties = {

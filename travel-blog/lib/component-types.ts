@@ -325,21 +325,6 @@ export type NewsletterCacheData = {
   timestamp: number;
 };
 
-export type Slider = {
-  _type: 'slider';
-  _key: string;
-  container: BaseContainer;
-  title: string;
-  slides: Array<{
-    id: string;
-    imageUrl: string;
-    title: string;
-    caption: string;
-  }>;
-};
-
-export type SliderData = ComponentData<Slider>;
-
 export type SupportSection = {
   _type: 'supportSection';
   _key: string;
@@ -376,7 +361,7 @@ export type YouTubeChannel = {
 export type YouTubeChannelData = ComponentData<YouTubeChannel>;
 
 // Union type dla wszystkich komponentów
-export type PostComponent = HeroBanner | BackgroundHeroBanner | TextContent | ImageCollage | EmbedYoutube | Articles | AboutUs | CategoriesSection | SubcategoryList | MainCategoryList | InstagramSection | Newsletter | Slider | SupportSection | YouTubeChannel;
+export type PostComponent = HeroBanner | BackgroundHeroBanner | TextContent | ImageCollage | EmbedYoutube | Articles | AboutUs | CategoriesSection | SubcategoryList | MainCategoryList | InstagramSection | Newsletter | SupportSection | YouTubeChannel;
 
 // Type guard functions dla wszystkich komponentów
 export function isHeroBanner(component: PostComponent): component is HeroBanner {
@@ -425,10 +410,6 @@ export function isInstagramSection(component: PostComponent): component is Insta
 
 export function isNewsletter(component: PostComponent): component is Newsletter {
   return component._type === 'newsletter';
-}
-
-export function isSlider(component: PostComponent): component is Slider {
-  return component._type === 'slider';
 }
 
 export function isSupportSection(component: PostComponent): component is SupportSection {

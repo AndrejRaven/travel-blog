@@ -63,8 +63,9 @@ export default async function Articles({ data }: Props) {
   const articleCards: LatestArticlesCard[] = articles.map((article) => {
     const coverImage = article.coverImage || article.coverMobileImage;
     const imageProps = getSanityImageProps(coverImage, {
+      alt: article.title,
+      profile: "card",
       quality: 90,
-      fit: "fillmax",
     });
 
     return {

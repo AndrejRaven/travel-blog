@@ -26,8 +26,9 @@ export default function HeroBanner({ data }: Props) {
 
   const heroImage = data.image || data.mobileImage;
   const heroImageProps = getSanityImageProps(heroImage, {
+    alt: container.contentTitle,
+    profile: "hero",
     quality: 90,
-    fit: "fillmax",
   });
 
   // Mapowanie szerokości obrazka na   kolumny grid
