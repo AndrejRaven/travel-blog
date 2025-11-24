@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import Script from "next/script";
 import { draftMode } from "next/headers";
 import { VisualEditing } from "next-sanity";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
@@ -93,6 +94,7 @@ export default async function RootLayout({
                   <CookieBanner />
                   <ScrollToTop />
                   <ToastContainer />
+                  <SpeedInsights />
                   {/* Visual Editing - tylko gdy draft mode jest aktywny */}
                   {isDraftMode && <VisualEditing />}
                 </NotificationProvider>

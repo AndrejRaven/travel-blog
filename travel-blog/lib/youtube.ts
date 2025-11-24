@@ -92,17 +92,8 @@ async function resolvePublishedDateFromEntry(
  */
 export async function getLatestYouTubeVideo(): Promise<YouTubeVideo | null> {
   try {
-    console.log("[YouTube] Fetching latest video via RSS feed", {
-      url: YOUTUBE_RSS_URL,
-    });
     const response = await fetch(YOUTUBE_RSS_URL, {
       next: { revalidate: 3600 }, // Cache na 1 godzinę (3600 sekund)
-    });
-
-    console.log("[YouTube] RSS response", {
-      ok: response.ok,
-      status: response.status,
-      statusText: response.statusText,
     });
 
     if (!response.ok) {
@@ -313,15 +304,8 @@ export async function getYouTubeVideoById(
   videoId: string
 ): Promise<string | null> {
   try {
-    console.log("[YouTube] Fetching video by ID", { videoId });
     const response = await fetch(YOUTUBE_RSS_URL, {
       next: { revalidate: 3600 }, // Cache na 1 godzinę (3600 sekund)
-    });
-
-    console.log("[YouTube] Video by ID RSS response", {
-      ok: response.ok,
-      status: response.status,
-      statusText: response.statusText,
     });
 
     if (!response.ok) {

@@ -1,18 +1,24 @@
+import {
+  getSanityPreviewOrigins,
+  normalizeOrigin as normalizeOriginValue,
+} from "./origin-helpers";
+
+const FALLBACK_ORIGIN = "https://www.vlogizdrogi.pl";
 const PRIMARY_ORIGIN =
-  process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ||
-  "https://www.vlogizdrogi.pl";
+  normalizeOriginValue(process.env.NEXT_PUBLIC_SITE_URL) ||
+  normalizeOriginValue(FALLBACK_ORIGIN)!;
+const SANITY_PREVIEW_ORIGINS = getSanityPreviewOrigins();
 
-const normalizeOrigin = (origin?: string | null) =>
-  origin?.replace(/\/$/, "") || null;
-
-export const ALLOWED_ORIGINS = [PRIMARY_ORIGIN];
+export const ALLOWED_ORIGINS = Array.from(
+  new Set([PRIMARY_ORIGIN, ...SANITY_PREVIEW_ORIGINS])
+);
 
 export const getAllowedOrigin = (origin?: string | null) => {
-  const normalized = normalizeOrigin(origin);
+  const normalized = normalizeOriginValue(origin);
   return normalized && ALLOWED_ORIGINS.includes(normalized)
     ? normalized
     : null;
 };
 
-
+export { SANITY_PREVIEW_ORIGINS };
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Image from "next/image";
 
 interface Props {
@@ -11,24 +11,13 @@ interface Props {
 export default function YouTubeLitePlayer({ videoId, title }: Props) {
   const [isActive, setIsActive] = useState(false);
 
-  useEffect(() => {
-    if (!videoId) {
-      return;
-    }
-    console.info("[YouTubeLitePlayer] Ready", { videoId, title });
-  }, [videoId, title]);
-
   if (!videoId) {
-    if (process.env.NODE_ENV !== "production") {
-      console.warn("[YouTubeLitePlayer] Missing videoId, player will not render");
-    }
     return null;
   }
 
   const thumbnail = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
 
   const handleActivate = () => {
-    console.info("[YouTubeLitePlayer] Play button clicked", { videoId });
     setIsActive(true);
   };
 
@@ -43,17 +32,6 @@ export default function YouTubeLitePlayer({ videoId, title }: Props) {
           allowFullScreen
           loading="lazy"
           referrerPolicy="no-referrer-when-downgrade"
-          onLoad={() =>
-            console.info("[YouTubeLitePlayer] iFrame loaded successfully", {
-              videoId,
-            })
-          }
-          onError={(event) =>
-            console.error("[YouTubeLitePlayer] iFrame failed to load", {
-              videoId,
-              error: event,
-            })
-          }
         />
       ) : (
         <button
@@ -79,10 +57,7 @@ export default function YouTubeLitePlayer({ videoId, title }: Props) {
               className="drop-shadow-lg"
             >
               <circle cx="32" cy="32" r="32" fill="rgba(0,0,0,0.25)" />
-              <path
-                d="M26 21.5L46 32L26 42.5V21.5Z"
-                fill="white"
-              />
+              <path d="M26 21.5L46 32L26 42.5V21.5Z" fill="white" />
             </svg>
           </span>
         </button>

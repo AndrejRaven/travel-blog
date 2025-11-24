@@ -22,6 +22,7 @@ const ENABLE_CROSS_ORIGIN_ISOLATION =
 
 const withSecurityHeaders = (response: NextResponse, csp: string) => {
   response.headers.set("Content-Security-Policy", csp);
+  // frame-ancestors in CSP controls embedding so Sanity preview can iframe the app.
   response.headers.set("Permissions-Policy", permissionsPolicyHeader);
   if (ENABLE_CROSS_ORIGIN_ISOLATION) {
     response.headers.set("Cross-Origin-Opener-Policy", "same-origin");
@@ -37,7 +38,6 @@ const withSecurityHeaders = (response: NextResponse, csp: string) => {
   response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
   response.headers.set("X-DNS-Prefetch-Control", "on");
   response.headers.set("X-Content-Type-Options", "nosniff");
-  response.headers.set("X-Frame-Options", "DENY");
   response.headers.set("Strict-Transport-Security", "max-age=63072000; includeSubDomains; preload");
   return response;
 };

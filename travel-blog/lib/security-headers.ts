@@ -1,3 +1,5 @@
+import { getSanityPreviewOrigins } from "./origin-helpers";
+
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://www.vlogizdrogi.pl";
 const REPORT_ENDPOINT = "/api/csp-report";
 const REPORTING_GROUP = "csp-endpoint";
@@ -6,6 +8,7 @@ const ENABLE_VERCEL_LIVE =
 const ENABLE_VERCEL_ANALYTICS =
   process.env.NEXT_PUBLIC_ENABLE_VERCEL_ANALYTICS === "true" ||
   process.env.VERCEL === "1";
+const SANITY_PREVIEW_ORIGINS = getSanityPreviewOrigins();
 
 export const buildContentSecurityPolicy = () => {
   const scriptSrc = [
@@ -21,6 +24,7 @@ export const buildContentSecurityPolicy = () => {
     "'self'",
     "https://cdn.sanity.io",
     "https://*.sanity.io",
+    "wss://*.sanity.io",
     "https://connect.mailerlite.com",
     "https://vitals.vercel-insights.com",
     "https://www.youtube.com",
@@ -29,6 +33,15 @@ export const buildContentSecurityPolicy = () => {
     "https://i.ytimg.com",
     "https://s.ytimg.com",
   ];
+  const frameSrc = [
+    "'self'",
+    "https://www.youtube.com",
+    "https://www.youtube-nocookie.com",
+    "https://*.youtube.com",
+    ...SANITY_PREVIEW_ORIGINS,
+  ];
+  const childSrc = [...frameSrc];
+  const frameAncestors = ["'self'", ...SANITY_PREVIEW_ORIGINS];
 
   if (ENABLE_VERCEL_LIVE) {
     scriptSrc.push("https://vercel.live");
@@ -40,6 +53,8 @@ export const buildContentSecurityPolicy = () => {
     connectSrc.push("https://va.vercel-scripts.com");
   }
 
+  connectSrc.push(...SANITY_PREVIEW_ORIGINS);
+
   return [
     "default-src 'self'",
     `script-src ${scriptSrc.join(" ")}`,
@@ -48,13 +63,13 @@ export const buildContentSecurityPolicy = () => {
     "font-src 'self' data:",
     "img-src 'self' data: blob: https://cdn.sanity.io https://img.youtube.com https://i.ytimg.com https://s.ytimg.com https://yt3.ggpht.com",
     `connect-src ${connectSrc.join(" ")}`,
-    "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://*.youtube.com",
-    "child-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://*.youtube.com",
+    `frame-src ${frameSrc.join(" ")}`,
+    `child-src ${childSrc.join(" ")}`,
     "media-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://*.youtube.com https://*.googlevideo.com",
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",
-    "frame-ancestors 'none'",
+    `frame-ancestors ${frameAncestors.join(" ")}`,
     "manifest-src 'self'",
     "worker-src 'self' blob:",
     "upgrade-insecure-requests",
