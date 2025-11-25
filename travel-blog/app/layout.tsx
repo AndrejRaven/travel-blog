@@ -32,6 +32,7 @@ const sourceCodePro = Source_Code_Pro({
 
 const defaultTitle = SITE_CONFIG.name;
 const defaultDescription = SITE_CONFIG.description;
+const baseAlternates = buildAlternates("/");
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_CONFIG.url),
@@ -40,7 +41,17 @@ export const metadata: Metadata = {
     template: `%s | ${defaultTitle}`,
   },
   description: defaultDescription,
-  alternates: buildAlternates("/"),
+  alternates: {
+    ...baseAlternates,
+    types: {
+      "application/rss+xml": [
+        {
+          url: "/rss.xml",
+          title: `${defaultTitle} RSS`,
+        },
+      ],
+    },
+  },
   openGraph: buildOpenGraph({
     title: defaultTitle,
     description: defaultDescription,
