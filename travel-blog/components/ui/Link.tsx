@@ -4,7 +4,7 @@ import React from "react";
 import NextLink from "next/link";
 import { useNavigationProgress } from "@/components/providers/NavigationProgressProvider";
 
-type LinkVariant = "default" | "arrow" | "underline";
+type LinkVariant = "default" | "arrow" | "underline" | "unstyled";
 
 type LinkProps = {
   children: React.ReactNode;
@@ -22,7 +22,8 @@ const variantStyles = {
     "inline-flex items-center gap-1 text-sm font-sans font-medium text-gray-900 dark:text-gray-100 hover:text-gray-600 dark:hover:text-gray-300 transition-all duration-300 group hover:scale-105",
   underline:
     "text-sm font-sans text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-all duration-300 hover:scale-105 relative group",
-};
+  unstyled: "",
+} as const;
 
 export default function Link({
   children,

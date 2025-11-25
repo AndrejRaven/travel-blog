@@ -1,5 +1,6 @@
 import Link from "@/components/ui/Link";
 import Image from "next/image";
+import type { SanityImage } from "@/lib/sanity";
 
 interface CategoryBadgeProps {
   category: {
@@ -7,11 +8,7 @@ interface CategoryBadgeProps {
     name: string;
     slug: { current: string };
     color: string;
-    icon?: {
-      asset: {
-        url: string;
-      };
-    };
+    icon?: SanityImage | null;
     mainCategory?: {
       _id: string;
       name: string;
@@ -83,7 +80,11 @@ export default function CategoryBadge({
 
   if (showLink) {
     return (
-      <Link href={buildCategoryUrl(category)} className={badgeClasses}>
+      <Link
+        href={buildCategoryUrl(category)}
+        variant="unstyled"
+        className={badgeClasses}
+      >
         {badgeContent}
       </Link>
     );

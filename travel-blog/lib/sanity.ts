@@ -214,6 +214,8 @@ export type Post = {
     name: string;
     slug: { current: string };
     color: string;
+    invertOnDark?: boolean;
+    icon?: SanityImage | null;
     mainCategory?: {
       _id: string;
       name: string;
@@ -268,6 +270,8 @@ export type ArticleForList = {
     name: string;
     slug: { current: string };
     color: string;
+    invertOnDark?: boolean;
+    icon?: SanityImage | null;
     mainCategory?: {
       _id: string;
       name: string;

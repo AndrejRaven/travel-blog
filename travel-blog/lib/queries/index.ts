@@ -69,6 +69,7 @@ export const QUERIES = {
           current
         },
         color,
+        invertOnDark,
         icon {
           asset-> {
             _id,
@@ -333,6 +334,7 @@ export const QUERIES = {
           current
         },
         color,
+        invertOnDark,
         icon {
           asset-> {
             _id,

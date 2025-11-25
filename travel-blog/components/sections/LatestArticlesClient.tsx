@@ -3,17 +3,14 @@
 import Image from "next/image";
 import Link from "@/components/ui/Link";
 import CategoryBadge from "@/components/ui/CategoryBadge";
+import type { SanityImage } from "@/lib/sanity";
 
 type CategoryBadgeData = {
   _id: string;
   name: string;
   slug: { current: string };
   color: string;
-  icon?: {
-    asset: {
-      url: string;
-    };
-  };
+  icon?: SanityImage | null;
   invertOnDark?: boolean;
   mainCategory?: {
     _id: string;
@@ -161,4 +158,3 @@ export default function LatestArticlesClient({
     </>
   );
 }
-
