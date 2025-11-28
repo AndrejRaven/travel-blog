@@ -15,6 +15,7 @@
  *    - HTTP method: POST
  *    - API version: v2021-06-07 lub nowsza
  *    - Secret (opcjonalnie): Ustaw token dla bezpieczeństwa
+ *      (nagłówek `x-sanity-secret` musi odpowiadać zmiennej środowiskowej SANITY_WEBHOOK_SECRET)
  * 
  * Zmienne środowiskowe:
  * - INDEXNOW_API_KEY: Klucz API IndexNow (opcjonalny, ma fallback)
@@ -29,6 +30,7 @@ import { SITE_CONFIG } from '@/lib/config';
 import type { Post } from '@/lib/sanity';
 
 export const dynamic = 'force-dynamic';
+const WEBHOOK_SECRET = process.env.SANITY_WEBHOOK_SECRET;
 
 // Typ dla webhook payload z Sanity
 type SanityWebhookPayload = {
@@ -104,6 +106,27 @@ function generatePostUrl(post: Post): string | null {
 
 export async function POST(request: NextRequest) {
   try {
+    if (!WEBHOOK_SECRET) {
+      console.error("❌ IndexNow Webhook: SANITY_WEBHOOK_SECRET is not set");
+      return NextResponse.json(
+        { error: 'Brak konfiguracji webhook secret' },
+        { status: 500 }
+      );
+    }
+
+    const providedSecret =
+      request.headers.get('x-sanity-secret') ||
+      request.headers.get('x-webhook-secret') ||
+      request.headers.get('authorization')?.replace('Bearer ', '').trim();
+
+    if (providedSecret !== WEBHOOK_SECRET) {
+      console.warn('⚠️ IndexNow Webhook: Unauthorized attempt detected');
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
     // Pobierz dane z webhooka
     const body = await request.json().catch(() => null);
     

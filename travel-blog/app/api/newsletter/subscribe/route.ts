@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
       ? forwarded.split(",")[0]
       : req.headers.get("x-real-ip") || "unknown";
 
-    const rateLimitResult = checkRateLimit(
+    const rateLimitResult = await checkRateLimit(
       `newsletter:${ipAddress}`,
       rateLimitConfigs.newsletter
     );

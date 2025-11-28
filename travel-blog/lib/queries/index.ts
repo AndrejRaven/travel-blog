@@ -60,6 +60,38 @@ export const QUERIES = {
       title,
       subtitle,
       description,
+      author->{
+        _id,
+        name,
+        slug {
+          current
+        },
+        role,
+        shortBio,
+        website,
+        socials {
+          facebook,
+          instagram,
+          youtube,
+          twitter,
+          linkedin
+        },
+        avatar {
+          asset-> {
+            _id,
+            url,
+            metadata {
+              dimensions {
+                width,
+                height
+              }
+            }
+          },
+          hotspot,
+          crop,
+          alt
+        }
+      },
       slug,
       publishedAt,
       categories[]-> {
@@ -112,7 +144,8 @@ export const QUERIES = {
           }
         },
         hotspot,
-        crop
+        crop,
+        alt
       },
       coverMobileImage {
         asset-> {
@@ -126,7 +159,8 @@ export const QUERIES = {
           }
         },
         hotspot,
-        crop
+        crop,
+        alt
       },
       seo {
         seoTitle,

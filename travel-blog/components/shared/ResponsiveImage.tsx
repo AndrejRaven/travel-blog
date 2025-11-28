@@ -20,6 +20,7 @@ interface ResponsiveImageProps {
   showHoverEffect?: boolean;
   quality?: number;
   onLoad?: () => void;
+  alt?: string;
 }
 
 /**
@@ -40,6 +41,7 @@ export default function ResponsiveImage({
   showHoverEffect = false,
   quality = 100,
   onLoad,
+  alt,
 }: ResponsiveImageProps) {
   const [imageLoaded, setImageLoaded] = useState(false);
   const hasLoadedRef = useRef(false);
@@ -75,13 +77,36 @@ export default function ResponsiveImage({
     return null;
   }
 
-  const alt = (optimizedProps.alt || "Obrazek") as string;
+  const getAltFromSource = (
+    image?: SanityImage | { src: string; alt?: string } | null
+  ) => {
+    if (!image || typeof image === "string") return undefined;
+    return image.alt || undefined;
+  };
+
+  const derivedAltFromImages =
+    getAltFromSource(desktopImage) ?? getAltFromSource(mobileImage);
+
+  const resolvedAlt =
+    alt ??
+    optimizedProps.alt ??
+    derivedAltFromImages ??
+    fallback?.alt;
+
+  if (!resolvedAlt) {
+    console.warn(
+      "ResponsiveImage: brak opisu alternatywnego dla obrazu",
+      optimizedProps.src
+    );
+  }
+
+  const finalAlt = resolvedAlt || "Ilustracja – opis niedostępny";
 
   if (fill) {
     return (
       <Image
         src={optimizedProps.src}
-        alt={alt}
+        alt={finalAlt}
         fill
         className={imageClasses}
         priority={priority}
@@ -95,7 +120,7 @@ export default function ResponsiveImage({
   return (
     <Image
       src={optimizedProps.src}
-      alt={alt}
+      alt={finalAlt}
       width={width}
       height={height}
       className={imageClasses}

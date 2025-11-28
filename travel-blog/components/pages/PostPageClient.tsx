@@ -6,6 +6,7 @@ import CategoryBadge from "@/components/ui/CategoryBadge";
 import CommentsSection from "@/components/ui/CommentsSection";
 import ShareButtons from "@/components/ui/ShareButtons";
 import ResponsiveImage from "@/components/shared/ResponsiveImage";
+import AuthorCard from "@/components/shared/AuthorCard";
 import { Post } from "@/lib/sanity";
 import type { ReactNode } from "react";
 import { useAnimation, ANIMATION_PRESETS } from "@/lib/useAnimation";
@@ -95,6 +96,11 @@ export default function PostPageClient({
                   alt: post.title,
                 }}
                 fill
+                alt={
+                  post.coverImage?.alt ||
+                  post.coverMobileImage?.alt ||
+                  post.title
+                }
                 priority
                 sizes="100vw"
                 className="w-full h-full object-cover md:object-contain"
@@ -196,6 +202,12 @@ export default function PostPageClient({
           <p className="text-gray-600 dark:text-gray-400 font-sans">
             Brak treści.
           </p>
+        </div>
+      )}
+
+      {post.author && (
+        <div className="mx-auto max-w-3xl px-6 py-10">
+          <AuthorCard author={post.author} />
         </div>
       )}
 

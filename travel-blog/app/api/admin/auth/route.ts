@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
       ? forwarded.split(",")[0]
       : request.headers.get("x-real-ip") || "unknown";
 
-    const rateLimitResult = checkRateLimit(
+    const rateLimitResult = await checkRateLimit(
       `auth:${ipAddress}`,
       rateLimitConfigs.auth
     );

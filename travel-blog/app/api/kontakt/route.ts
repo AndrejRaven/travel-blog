@@ -33,7 +33,7 @@ function getClientIp(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const clientIp = getClientIp(request);
-    const rateLimitResult = checkRateLimit(
+    const rateLimitResult = await checkRateLimit(
       `contact:${clientIp}`,
       rateLimitConfigs.contact
     );

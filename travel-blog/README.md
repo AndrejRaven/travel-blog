@@ -59,10 +59,15 @@ Utwórz plik `.env.local` i dodaj wymagane klucze (również w panelu hostingu):
 ```bash
 RESEND_API_KEY=re_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 CONTACT_RECIPIENT=poczta@vlogizdrogi.pl
+SANITY_WEBHOOK_SECRET=super-tajne-haslo
+RATE_LIMIT_REDIS_REST_URL=https://<twoj-upstash-url>
+RATE_LIMIT_REDIS_REST_TOKEN=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ```
 
 - `RESEND_API_KEY` — prywatny klucz API z Resend (zakładka API keys).
 - `CONTACT_RECIPIENT` — adres docelowy, na który trafiają zgłoszenia z formularza kontaktowego.
+- `SANITY_WEBHOOK_SECRET` — sekret wymagany przez `/api/indexnow/webhook` (dodaj ten sam token w konfiguracji webhooka Sanity w nagłówku `x-sanity-secret`).
+- `RATE_LIMIT_REDIS_REST_URL` / `RATE_LIMIT_REDIS_REST_TOKEN` — dane połączeniowe do Upstash Redis (lub kompatybilnego API REST), wymagane do współdzielonego rate limitingu.
 
 Po zmianie zmiennych środowiskowych zrestartuj serwer deweloperski.
 

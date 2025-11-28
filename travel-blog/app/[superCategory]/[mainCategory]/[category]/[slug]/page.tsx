@@ -2,7 +2,7 @@ import {
   getPostBySlug,
   getAllPostSlugsWithCategories,
 } from "@/lib/queries/functions";
-import { getImageUrl } from "@/lib/sanity";
+import { getImageUrl, type Author } from "@/lib/sanity";
 import PostPageClient from "@/components/pages/PostPageClient";
 import ComponentRenderer from "@/components/ui/ComponentRenderer";
 import JsonLdScript from "@/components/shared/JsonLdScript";
@@ -20,6 +20,7 @@ import {
   generateVideoObjectSchema,
   generateImageGallerySchema,
   type BreadcrumbItem,
+  type PersonData,
 } from "@/lib/schema-org";
 import {
   createEmbedResolutionContext,
@@ -65,6 +66,32 @@ function ensureAbsoluteUrl(
   return null;
 }
 
+function buildAuthorSameAs(
+  socials?: Author["socials"]
+): string[] | undefined {
+  if (!socials) return undefined;
+  const links = [
+    socials.facebook,
+    socials.instagram,
+    socials.youtube,
+    socials.twitter,
+    socials.linkedin,
+  ].filter(Boolean) as string[];
+  return links.length ? links : undefined;
+}
+
+function buildAuthorPersonData(author?: Author | null): PersonData | null {
+  if (!author?.name) return null;
+  const sameAs = buildAuthorSameAs(author.socials);
+  return {
+    name: author.name,
+    url: author.website || undefined,
+    image: author.avatar,
+    jobTitle: author.role,
+    sameAs,
+  };
+}
+
 // Generuj metadata dla SEO
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { slug, superCategory, mainCategory, category } = await params;
@@ -80,6 +107,16 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   // Podstawowe informacje
   const siteName = SITE_CONFIG.name;
   const siteUrl = SITE_CONFIG.url;
+  const contentAuthor = post.author;
+  const resolvedAuthorName = contentAuthor?.name || siteName;
+  const resolvedAuthorUrl =
+    contentAuthor?.website || SITE_CONFIG.author.url || undefined;
+  const metadataAuthors = [
+    {
+      name: resolvedAuthorName,
+      ...(resolvedAuthorUrl && { url: resolvedAuthorUrl }),
+    },
+  ];
 
   // Znajdź główną kategorię dla canonical URL
   const primaryCategory = getPrimaryCategory(post);
@@ -162,8 +199,8 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const metadata: Metadata = {
     title: fullTitle,
     description: seoDescription,
-    authors: [{ name: siteName }],
-    creator: siteName,
+    authors: metadataAuthors,
+    creator: resolvedAuthorName,
     publisher: siteName,
     robots: robots.join(", "),
     alternates,
@@ -182,7 +219,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
     },
     other: {
       "og:url": buildAbsoluteUrl(canonicalUrl),
-      "article:author": siteName,
+      "article:author": resolvedAuthorName,
       "article:section": post.categories?.[0]?.name || "Blog",
       ...(post.publishedAt && {
         "article:published_time": post.publishedAt,
@@ -423,57 +460,10 @@ export default async function PostPage({ params }: Params) {
 
   const breadcrumbJsonLd = generateBreadcrumbListSchema(breadcrumbItems);
 
-  // BlogPosting schema (zamiast Article)
-  const blogPostingJsonLd = generateBlogPostingSchema({
-    headline: post.title,
-    description:
-      post.seo?.seoDescription ||
-      post.subtitle ||
-      `Przeczytaj artykuł: ${post.title}`,
-    image: post.coverImage,
-    url: canonicalUrl,
-    datePublished: post.publishedAt || new Date().toISOString(),
-    dateModified: post.publishedAt || new Date().toISOString(),
-    author:
-      SITE_CONFIG.author.type === "Person"
-        ? {
-            name: SITE_CONFIG.author.name,
-            url: SITE_CONFIG.author.url || siteUrl,
-            sameAs: [
-              ...(SITE_CONFIG.social.twitter
-                ? [`https://twitter.com/${SITE_CONFIG.social.twitter}`]
-                : []),
-              ...(SITE_CONFIG.social.facebook
-                ? [`https://facebook.com/${SITE_CONFIG.social.facebook}`]
-                : []),
-              ...(SITE_CONFIG.social.instagram
-                ? [`https://instagram.com/${SITE_CONFIG.social.instagram}`]
-                : []),
-              ...(SITE_CONFIG.social.youtube
-                ? [`https://youtube.com/${SITE_CONFIG.social.youtube}`]
-                : []),
-            ].filter(Boolean),
-          }
-        : SITE_CONFIG.author.name,
-    publisher: {
-      name: SITE_CONFIG.author.name,
-      url: siteUrl,
-    },
-    articleSection:
-      post.categories && post.categories.length > 0
-        ? post.categories.map((cat) => cat.name)
-        : undefined,
-    keywords: post.seo?.seoKeywords,
-    mainEntityOfPage: canonicalUrl,
-  });
-
-  // Organization schema
-  const organizationJsonLd = generateOrganizationSchema();
-
-  // Person schema dla autorów (jeśli SITE_CONFIG.author.type === "Person")
-  const personJsonLd =
+  const authorPersonData = buildAuthorPersonData(post.author);
+  const siteOwnerPersonData: PersonData | null =
     SITE_CONFIG.author.type === "Person"
-      ? generatePersonSchema({
+      ? {
           name: SITE_CONFIG.author.name,
           url: SITE_CONFIG.author.url || siteUrl,
           sameAs: [
@@ -490,7 +480,46 @@ export default async function PostPage({ params }: Params) {
               ? [`https://youtube.com/${SITE_CONFIG.social.youtube}`]
               : []),
           ].filter(Boolean),
-        })
+        }
+      : null;
+  const siteOwnerAuthorForSchema =
+    siteOwnerPersonData ?? SITE_CONFIG.author.name;
+
+  // BlogPosting schema (zamiast Article)
+  const blogPostingJsonLd = generateBlogPostingSchema({
+    headline: post.title,
+    description:
+      post.seo?.seoDescription ||
+      post.subtitle ||
+      `Przeczytaj artykuł: ${post.title}`,
+    image: post.coverImage,
+    url: canonicalUrl,
+    datePublished: post.publishedAt || new Date().toISOString(),
+    dateModified: post.publishedAt || new Date().toISOString(),
+    author: authorPersonData ?? siteOwnerAuthorForSchema,
+    publisher: {
+      name: SITE_CONFIG.author.name,
+      url: siteUrl,
+    },
+    articleSection:
+      post.categories && post.categories.length > 0
+        ? post.categories.map((cat) => cat.name)
+        : undefined,
+    keywords: post.seo?.seoKeywords,
+    mainEntityOfPage: canonicalUrl,
+  });
+
+  // Organization schema
+  const organizationJsonLd = generateOrganizationSchema();
+
+  // Person schema dla autorów (jeśli SITE_CONFIG.author.type === "Person")
+  const siteOwnerPersonJsonLd = siteOwnerPersonData
+    ? generatePersonSchema(siteOwnerPersonData)
+    : null;
+  const articleAuthorJsonLd =
+    authorPersonData &&
+    authorPersonData.name !== siteOwnerPersonData?.name
+      ? generatePersonSchema(authorPersonData)
       : null;
 
   // VideoObject dla osadzonych filmów YouTube w komponentach
@@ -591,7 +620,12 @@ export default async function PostPage({ params }: Params) {
   const blogPostingJsonLdString = safeJsonLd(blogPostingJsonLd);
   const breadcrumbJsonLdString = safeJsonLd(breadcrumbJsonLd);
   const organizationJsonLdString = safeJsonLd(organizationJsonLd);
-  const personJsonLdString = personJsonLd ? safeJsonLd(personJsonLd) : null;
+  const siteOwnerPersonJsonLdString = siteOwnerPersonJsonLd
+    ? safeJsonLd(siteOwnerPersonJsonLd)
+    : null;
+  const articleAuthorJsonLdString = articleAuthorJsonLd
+    ? safeJsonLd(articleAuthorJsonLd)
+    : null;
   const videoJsonLdStrings = videoObjects
     .map((videoJsonLd) => safeJsonLd(videoJsonLd))
     .filter((jsonLd): jsonLd is string => Boolean(jsonLd));
@@ -604,7 +638,8 @@ export default async function PostPage({ params }: Params) {
       <JsonLdScript data={blogPostingJsonLdString} />
       <JsonLdScript data={breadcrumbJsonLdString} />
       <JsonLdScript data={organizationJsonLdString} />
-      <JsonLdScript data={personJsonLdString} />
+      <JsonLdScript data={siteOwnerPersonJsonLdString} />
+      <JsonLdScript data={articleAuthorJsonLdString} />
       {videoJsonLdStrings.map((jsonLd, index) => (
         <JsonLdScript key={`video-${index}`} data={jsonLd} />
       ))}

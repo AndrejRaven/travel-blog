@@ -35,6 +35,15 @@ export default {
       group: 'main',
     },
     {
+      name: 'author',
+      title: 'Autor',
+      type: 'reference',
+      to: [{ type: 'author' }],
+      description: 'Wybierz autora odpowiedzialnego za treść',
+      group: 'main',
+      validation: (Rule: any) => Rule.required().error('Wybierz autora posta'),
+    },
+    {
       name: 'categories',
       title: 'Podkategorie',
       type: 'array',

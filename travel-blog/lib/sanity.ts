@@ -202,11 +202,29 @@ export type SanityImage = {
   alt?: string;
 };
 
+export type Author = {
+  _id: string;
+  name: string;
+  slug?: { current: string };
+  role?: string;
+  shortBio?: string;
+  website?: string;
+  avatar?: SanityImage | null;
+  socials?: {
+    facebook?: string;
+    instagram?: string;
+    youtube?: string;
+    twitter?: string;
+    linkedin?: string;
+  };
+};
+
 export type Post = {
   _id: string;
   title: string;
   subtitle?: string;
   description?: string;
+  author?: Author | null;
   slug?: { current: string };
   publishedAt?: string;
   categories?: Array<{
