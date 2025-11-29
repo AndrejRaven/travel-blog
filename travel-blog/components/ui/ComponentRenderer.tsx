@@ -3,6 +3,7 @@ import HeroBanner from "@/components/sections/HeroBanner";
 import BackgroundHeroBanner from "@/components/sections/BackgroundHeroBanner";
 import TextContent from "@/components/sections/TextContent";
 import ImageCollage from "@/components/sections/ImageCollage";
+import SingleImage from "@/components/sections/SingleImage";
 import Articles from "@/components/sections/LatestArticles";
 import EmbedYoutube from "@/components/sections/EmbedYoutube";
 import {
@@ -13,6 +14,7 @@ import {
   BackgroundHeroBanner as BackgroundHeroBannerType,
   TextContent as TextContentType,
   ImageCollage as ImageCollageType,
+  SingleImage as SingleImageType,
   BaseContainer,
   RichTextBlock,
   Button,
@@ -132,6 +134,22 @@ const componentMap = {
             images: imageCollage.images || [],
             layout: imageCollage.layout,
           } as Parameters<typeof ImageCollage>[0]["data"]
+        }
+      />
+    );
+  },
+  singleImage: (comp: PostComponent) => {
+    const singleImage = comp as SingleImageType;
+    return (
+      <SingleImage
+        data={
+          {
+            ...convertToComponentData(comp),
+            image: singleImage.image,
+            caption: singleImage.caption,
+            description: singleImage.description,
+            download: singleImage.download,
+          } as Parameters<typeof SingleImage>[0]["data"]
         }
       />
     );

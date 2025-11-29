@@ -13,6 +13,7 @@ import supportSection from "../schemas/komponenty/supportSection"
 import categoriesSection from "../schemas/komponenty/categoriesSection"
 import instagramSection from "../schemas/komponenty/instagramSection"
 import newsletter from "../schemas/komponenty/newsletter"
+import singleImage from "../schemas/komponenty/singleImage"
 
 export const schemaTypesComponents = [
   richText,
@@ -30,4 +31,5 @@ export const schemaTypesComponents = [
   categoriesSection,
   instagramSection,
   newsletter,
+  singleImage,
 ]

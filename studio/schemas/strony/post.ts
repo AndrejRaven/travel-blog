@@ -169,6 +169,7 @@ export default {
         { type: 'backgroundHeroBanner' },
         { type: 'textContent' },
         { type: 'imageCollage' },
+        { type: 'singleImage' },
         { type: 'embedYoutube' },
         { type: 'articles' },
         // Tutaj będziemy dodawać kolejne komponenty jak karuzele, blog artykułów, kategorie itp.

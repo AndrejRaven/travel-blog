@@ -135,6 +135,21 @@ export type ImageCollage = {
 
 export type ImageCollageData = ComponentData<ImageCollage>;
 
+export type SingleImage = {
+  _type: 'singleImage';
+  _key: string;
+  container: BaseContainer;
+  image: SanityImage;
+  caption?: string;
+  description?: string;
+  download?: {
+    label?: string;
+    url?: string;
+  };
+};
+
+export type SingleImageData = ComponentData<SingleImage>;
+
 export type EmbedYoutube = {
   _type: 'embedYoutube';
   _key: string;
@@ -361,7 +376,7 @@ export type YouTubeChannel = {
 export type YouTubeChannelData = ComponentData<YouTubeChannel>;
 
 // Union type dla wszystkich komponentów
-export type PostComponent = HeroBanner | BackgroundHeroBanner | TextContent | ImageCollage | EmbedYoutube | Articles | AboutUs | CategoriesSection | SubcategoryList | MainCategoryList | InstagramSection | Newsletter | SupportSection | YouTubeChannel;
+export type PostComponent = HeroBanner | BackgroundHeroBanner | TextContent | ImageCollage | SingleImage | EmbedYoutube | Articles | AboutUs | CategoriesSection | SubcategoryList | MainCategoryList | InstagramSection | Newsletter | SupportSection | YouTubeChannel;
 
 // Type guard functions dla wszystkich komponentów
 export function isHeroBanner(component: PostComponent): component is HeroBanner {
@@ -378,6 +393,10 @@ export function isTextContent(component: PostComponent): component is TextConten
 
 export function isImageCollage(component: PostComponent): component is ImageCollage {
   return component._type === 'imageCollage';
+}
+
+export function isSingleImage(component: PostComponent): component is SingleImage {
+  return component._type === 'singleImage';
 }
 
 export function isEmbedYoutube(component: PostComponent): component is EmbedYoutube {
