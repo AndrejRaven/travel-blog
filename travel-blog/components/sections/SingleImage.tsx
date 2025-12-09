@@ -17,7 +17,7 @@ export default function SingleImage({ data }: Props) {
 
   const { getOptimizedImageProps } = useResponsiveImage({
     width: 1600,
-    quality: 95,
+    quality: 75,
     format: "webp",
     fit: "fillmax",
   });

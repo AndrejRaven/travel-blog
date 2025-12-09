@@ -20,14 +20,14 @@ const inter = Inter({
 const playfairDisplay = Playfair_Display({
   variable: "--font-playfair",
   subsets: ["latin"],
-  display: "swap",
+  display: "optional",
 });
 
 // Font monospace - Source Code Pro - dla kodu
 const sourceCodePro = Source_Code_Pro({
   variable: "--font-source-code",
   subsets: ["latin"],
-  display: "swap",
+  display: "optional",
 });
 
 const defaultTitle = SITE_CONFIG.name;
@@ -77,6 +77,15 @@ export default async function RootLayout({
   return (
     <html lang="pl">
       <head>
+        {/* Preconnect do Google Fonts dla szybszego ładowania */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link
+          rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossOrigin="anonymous"
+        />
+        {/* DNS prefetch dla Sanity CDN */}
+        <link rel="dns-prefetch" href="https://cdn.sanity.io" />
         <Script
           src="/scripts/theme-init.js"
           strategy="beforeInteractive"

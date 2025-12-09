@@ -29,7 +29,7 @@ export default function InstagramSection({ data }: Props) {
   const { getOptimizedImageProps } = useResponsiveImage({
     width: 600,
     height: 600,
-    quality: 95,
+    quality: 75,
     format: "webp",
     fit: "fillmax",
   });

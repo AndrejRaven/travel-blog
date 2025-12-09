@@ -57,7 +57,7 @@ export const useResponsiveImage = (config: ImageConfig = {}) => {
       const buildVariant = (variantWidth: number) =>
         urlFor(image)
           .width(variantWidth)
-          .quality(config.quality || 95)
+          .quality(config.quality || 80)
           .format(config.format || "webp")
           .fit(config.fit || "fillmax")
           .auto("format")

@@ -39,7 +39,7 @@ export default function ResponsiveImage({
   priority = false,
   objectFit = "cover",
   showHoverEffect = false,
-  quality = 100,
+  quality = 80,
   onLoad,
   alt,
 }: ResponsiveImageProps) {

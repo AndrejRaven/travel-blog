@@ -29,7 +29,7 @@ export default function ImageCollage({ data }: Props) {
   const { container, images, layout } = data;
   const { getOptimizedImageProps } = useResponsiveImage({
     width: 1200,
-    quality: 95,
+    quality: 75,
     format: "webp",
     fit: "fillmax",
   });
@@ -134,6 +134,8 @@ export default function ImageCollage({ data }: Props) {
                             ? imageProps.alt
                             : "Obraz"
                         }
+                        loading="lazy"
+                        priority={false}
                       />
                       <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300" />
                       <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 ease-out">
