@@ -78,6 +78,38 @@ export default async function RootLayout({
   return (
     <html lang="pl">
       <head>
+        {/* Critical CSS inline - eliminuje render-blocking dla najważniejszych stylów */}
+        <style dangerouslySetInnerHTML={{
+          __html: `
+            :root {
+              --radius: 0.625rem;
+              --content-font-size: 1rem;
+              --background: oklch(1 0 0);
+              --foreground: oklch(0.145 0 0);
+            }
+            .dark {
+              --background: oklch(0.145 0 0);
+              --foreground: oklch(0.985 0 0);
+            }
+            html {
+              font-family: system-ui, -apple-system, sans-serif;
+              font-size: 16px;
+              line-height: 1.5;
+            }
+            body {
+              margin: 0;
+              background-color: var(--background);
+              color: var(--foreground);
+              font-family: system-ui, -apple-system, sans-serif;
+              font-size: 12px;
+              -webkit-font-smoothing: antialiased;
+              -moz-osx-font-smoothing: grayscale;
+            }
+            * {
+              box-sizing: border-box;
+            }
+          `
+        }} />
         {/* DNS prefetch dla Sanity CDN */}
         <link rel="dns-prefetch" href="https://cdn.sanity.io" />
         <Script
