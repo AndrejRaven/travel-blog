@@ -1,8 +1,17 @@
+import type { Metadata } from "next";
 import PageLayout from "@/components/shared/PageLayout";
 import PageHeader from "@/components/shared/PageHeader";
 import InfoCard from "@/components/shared/InfoCard";
 import BackToHome from "@/components/shared/BackToHome";
 import Link from "@/components/ui/Link";
+import { buildStaticPageMetadata } from "@/lib/metadata";
+
+export const metadata: Metadata = buildStaticPageMetadata({
+  path: "/polityka-cookies",
+  title: "Polityka cookies | Vlogi Z Drogi",
+  description:
+    "Informacje o używaniu plików cookies na naszej stronie. Dowiedz się, jakie pliki cookies używamy i jak możesz nimi zarządzać.",
+});
 
 export default function PolitykaCookies() {
   return (

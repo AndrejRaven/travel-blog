@@ -1,8 +1,17 @@
+import type { Metadata } from "next";
 import Link from "@/components/ui/Link";
 import PageLayout from "@/components/shared/PageLayout";
 import PageHeader from "@/components/shared/PageHeader";
 import InfoCard from "@/components/shared/InfoCard";
 import BackToHome from "@/components/shared/BackToHome";
+import { buildStaticPageMetadata } from "@/lib/metadata";
+
+export const metadata: Metadata = buildStaticPageMetadata({
+  path: "/regulamin",
+  title: "Regulamin | Vlogi Z Drogi",
+  description:
+    "Regulamin korzystania z bloga podróżniczego Vlogi Z Drogi. Zapoznaj się z zasadami korzystania z naszego bloga.",
+});
 
 export default function Regulamin() {
   return (
