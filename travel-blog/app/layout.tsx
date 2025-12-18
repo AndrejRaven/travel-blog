@@ -12,21 +12,22 @@ import "./globals.css";
 // Font główny - Inter - doskonały do czytania
 const inter = Inter({
   variable: "--font-inter",
-  subsets: ["latin"],
+  subsets: ["latin", "latin-ext"],
   display: "swap",
+  preload: true,
 });
 
 // Font dla nagłówków - Playfair Display - elegancki i czytelny
 const playfairDisplay = Playfair_Display({
   variable: "--font-playfair",
-  subsets: ["latin"],
-  display: "optional",
+  subsets: ["latin", "latin-ext"],
+  display: "swap",
 });
 
 // Font monospace - Source Code Pro - dla kodu
 const sourceCodePro = Source_Code_Pro({
   variable: "--font-source-code",
-  subsets: ["latin"],
+  subsets: ["latin", "latin-ext"],
   display: "optional",
 });
 
@@ -77,13 +78,6 @@ export default async function RootLayout({
   return (
     <html lang="pl">
       <head>
-        {/* Preconnect do Google Fonts dla szybszego ładowania */}
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link
-          rel="preconnect"
-          href="https://fonts.gstatic.com"
-          crossOrigin="anonymous"
-        />
         {/* DNS prefetch dla Sanity CDN */}
         <link rel="dns-prefetch" href="https://cdn.sanity.io" />
         <Script
