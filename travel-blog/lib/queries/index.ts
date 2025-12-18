@@ -94,6 +94,7 @@ export const QUERIES = {
       },
       slug,
       publishedAt,
+      _updatedAt,
       categories[]-> {
         _id,
         name,

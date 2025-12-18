@@ -495,7 +495,7 @@ export default async function PostPage({ params }: Params) {
     image: post.coverImage,
     url: canonicalUrl,
     datePublished: post.publishedAt || new Date().toISOString(),
-    dateModified: post.publishedAt || new Date().toISOString(),
+    dateModified: post._updatedAt || post.publishedAt || new Date().toISOString(),
     author: authorPersonData ?? siteOwnerAuthorForSchema,
     publisher: {
       name: SITE_CONFIG.author.name,
@@ -567,6 +567,7 @@ export default async function PostPage({ params }: Params) {
       const imageCollage = component as {
         images?: Array<{
           asset?: {
+            _id?: string;
             url?: string;
             metadata?: {
               dimensions?: {
@@ -581,13 +582,29 @@ export default async function PostPage({ params }: Params) {
 
       if (imageCollage.images && imageCollage.images.length > 0) {
         const galleryImages = imageCollage.images
-          .filter((img) => img.asset?.url)
-          .map((img) => ({
-            url: img.asset!.url!,
-            alt: img.alt || `Zdjęcie z galerii`,
-            width: img.asset?.metadata?.dimensions?.width,
-            height: img.asset?.metadata?.dimensions?.height,
-          }));
+          .map((img) => {
+            // Użyj getImageUrl() z optymalizacją zamiast surowego URL
+            const optimizedImageUrl = getImageUrl(img as Parameters<typeof getImageUrl>[0], {
+              width: 1200,
+              height: 800,
+              format: "webp",
+              quality: 85,
+            });
+
+            if (!optimizedImageUrl) return null;
+
+            // Upewnij się że URL jest absolutny
+            const absoluteUrl = ensureAbsoluteUrl(optimizedImageUrl, siteUrl);
+            if (!absoluteUrl) return null;
+
+            return {
+              url: absoluteUrl,
+              alt: img.alt || `Zdjęcie z galerii`,
+              width: img.asset?.metadata?.dimensions?.width,
+              height: img.asset?.metadata?.dimensions?.height,
+            };
+          })
+          .filter((img): img is NonNullable<typeof img> => img !== null);
 
         if (galleryImages.length > 0) {
           const imageGalleryJsonLd = generateImageGallerySchema({

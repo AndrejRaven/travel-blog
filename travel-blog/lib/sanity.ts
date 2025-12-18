@@ -227,6 +227,7 @@ export type Post = {
   author?: Author | null;
   slug?: { current: string };
   publishedAt?: string;
+  _updatedAt?: string;
   categories?: Array<{
     _id: string;
     name: string;
