@@ -7,6 +7,7 @@ import BackToHome from "@/components/shared/BackToHome";
 import InfoCard from "@/components/shared/InfoCard";
 import CategoryArticles from "@/components/sections/CategoryArticles";
 import MainCategoryList from "@/components/sections/MainCategoryList";
+import Breadcrumbs from "@/components/shared/Breadcrumbs";
 import { SuperCategory, ArticleForList, MainCategory } from "@/lib/sanity";
 import { SITE_CONFIG } from "@/lib/config";
 import JsonLdScript from "@/components/shared/JsonLdScript";
@@ -177,6 +178,11 @@ export default async function SuperCategoryPage({
   const itemListJsonLdString = itemListJsonLd ? safeJsonLd(itemListJsonLd) : null;
   const breadcrumbJsonLdString = safeJsonLd(breadcrumbJsonLd);
 
+  const breadcrumbNavItems = [
+    { label: "Strona główna", href: "/" },
+    { label: superCategory.name },
+  ];
+
   return (
     <>
       <JsonLdScript data={collectionPageJsonLdString} />
@@ -185,11 +191,9 @@ export default async function SuperCategoryPage({
       <PageLayout maxWidth="6xl">
       <PageHeader
         title={superCategory.name}
-        subtitle={
-          superCategory.description ||
-          `Wszystkie posty z kategorii ${superCategory.name}`
-        }
       />
+
+      <Breadcrumbs className="mb-8" items={breadcrumbNavItems} />
 
       {/* Kategorie główne */}
       {mainCategoriesWithCounts.length > 0 && (

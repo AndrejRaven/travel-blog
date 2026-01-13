@@ -213,10 +213,6 @@ export default async function MainCategoryPage({
       <PageLayout maxWidth="6xl">
       <PageHeader
         title={mainCategory.name}
-        subtitle={
-          mainCategory.description ||
-          `Wszystkie posty z kategorii ${mainCategory.name}`
-        }
       />
 
       <Breadcrumbs className="mb-8" items={breadcrumbNavItems} />

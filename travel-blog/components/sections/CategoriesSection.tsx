@@ -140,11 +140,6 @@ export default async function CategoriesSection({ data }: Props) {
                     <p className="font-sans font-medium text-gray-900 dark:text-gray-100">
                       {category.name}
                     </p>
-                    {category.description && (
-                      <p className="text-sm font-sans text-gray-600 dark:text-gray-400">
-                        {category.description}
-                      </p>
-                    )}
                     {typeof category.articleCount === "number" && (
                       <p className="text-xs font-sans text-gray-500 dark:text-gray-500 mt-1">
                         {category.articleCount} artykułów
