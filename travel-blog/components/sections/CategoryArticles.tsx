@@ -18,12 +18,24 @@ const formatDate = (dateString?: string) => {
 
   const date = new Date(dateString);
   const now = new Date();
-  const diffTime = Math.abs(now.getTime() - date.getTime());
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-  if (diffDays === 1) return "1 dzień temu";
+  // Normalizuj daty do północy (usuwa czas) dla precyzyjnego porównania
+  const dateMidnight = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const nowMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  // Oblicz różnicę w dniach kalendarzowych
+  const diffTime = nowMidnight.getTime() - dateMidnight.getTime();
+  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+  // Sprawdź czy data jest dzisiaj
+  if (diffDays === 0) return "dzisiaj";
+
+  // Sprawdź czy data jest wczoraj
+  if (diffDays === 1) return "wczoraj";
+
+  // Dla starszych dat
   if (diffDays < 7) return `${diffDays} dni temu`;
-  if (diffDays < 30) return `${Math.ceil(diffDays / 7)} tygodni temu`;
+  if (diffDays < 30) return `${Math.floor(diffDays / 7)} tygodni temu`;
   return date.toLocaleDateString("pl-PL");
 };
 

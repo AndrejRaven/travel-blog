@@ -211,10 +211,6 @@ export default async function SubcategoryPage({
       <PageLayout maxWidth="6xl">
       <PageHeader
         title={category.name}
-        subtitle={
-          category.description ||
-          `Wszystkie posty z podkategorii ${category.name}`
-        }
       />
 
       <Breadcrumbs className="mb-8" items={breadcrumbNavItems} />
