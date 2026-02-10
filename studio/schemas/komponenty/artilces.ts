@@ -87,6 +87,20 @@ export default {
       hidden: ({ parent }: any) => parent?.articlesType !== 'latest',
       group: 'content',
     },
+    {
+      name: 'layoutVersion',
+      title: 'Wersja layoutu',
+      type: 'string',
+      options: {
+        list: [
+          { title: 'Stara (3 karty w rzędzie)', value: 'grid' },
+          { title: 'Nowa (karty jeden pod drugim)', value: 'horizontal' },
+        ],
+        layout: 'radio',
+      },
+      initialValue: 'grid',
+      group: 'properties',
+    },
   ],
   groups: [
     {

@@ -177,6 +177,7 @@ export type Articles = {
     _ref: string;
   }>;
   maxArticles: number;
+  layoutVersion?: 'grid' | 'horizontal';
 };
 
 export type ArticlesData = ComponentData<Articles>;
