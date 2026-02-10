@@ -2,14 +2,18 @@
 
 import { useState, useMemo } from "react";
 import { MapPin, Calendar, DollarSign, TrendingUp, Plus, Globe, MoreVertical, Edit, Trash2 } from "lucide-react";
+import Link from "@/components/ui/Link";
 import TravelWalletStatCard from "./TravelWalletStatCard";
 import TravelWalletStats from "./TravelWalletStats";
 import TravelWalletHeader from "./TravelWalletHeader";
 import CountryExpensesSection from "./CountryExpensesSection";
 import TravelWalletProgress from "./TravelWalletProgress";
 import TravelWalletChartsSection from "./TravelWalletChartsSection";
+import CurrencyBalancesCard from "./CurrencyBalancesCard";
+import CurrencyTransactionsHistory from "./CurrencyTransactionsHistory";
+import TransactionDetailsModal from "./TransactionDetailsModal";
 import Button from "@/components/ui/Button";
-import type { TravelWalletData, Country, Expense, ExpenseCategory } from "@/lib/travel-wallet/types";
+import type { TravelWalletData, Country, Expense, ExpenseCategory, CurrencyTransaction } from "@/lib/travel-wallet/types";
 import {
   calculateTotalSpent,
   calculateRemainingBudget,
@@ -27,10 +31,14 @@ import { calculatePlannedTotal } from "@/lib/travel-wallet/countries";
 import { getExpensesByCountryId, getUniqueLocationsFromExpenses, calculateExpenseCategories } from "@/lib/travel-wallet/expenses";
 import { getTripBySlug } from "@/lib/travel-wallet/trips-storage";
 import { formatDateRange } from "@/lib/travel-wallet/countries";
+import { getCurrencyTransactionsByCountry } from "@/lib/travel-wallet/currency-transactions";
+import { formatCurrency as formatCurrencyAmount, formatDate } from "@/lib/travel-wallet/formatters";
 
 interface SingleCountryDashboardProps {
   data: TravelWalletData;
   slug: string;
+  tripId?: string;
+  tripName?: string;
   tripStartDate?: string;
   tripEndDate?: string;
   onAddExpense?: () => void;
@@ -41,11 +49,17 @@ interface SingleCountryDashboardProps {
   onDeleteLocation?: (location: string) => void;
   onAddCountry?: (startDate?: string, endDate?: string) => void;
   onEditTrip?: () => void;
+  onEditCountry?: (country: Country) => void;
+  onAddCurrencyTransaction?: () => void;
+  onDeleteCurrencyTransaction?: (transactionId: string) => void;
+  onEditCurrencyTransaction?: (transaction: CurrencyTransaction) => void;
 }
 
 export default function SingleCountryDashboard({
   data,
   slug,
+  tripId,
+  tripName,
   tripStartDate,
   tripEndDate,
   onAddExpense,
@@ -56,6 +70,10 @@ export default function SingleCountryDashboard({
   onDeleteLocation,
   onAddCountry,
   onEditTrip,
+  onEditCountry,
+  onAddCurrencyTransaction,
+  onDeleteCurrencyTransaction,
+  onEditCurrencyTransaction,
 }: SingleCountryDashboardProps) {
   // Użyj useMemo aby zapewnić aktualność danych kraju
   // Używamy data zamiast data.countries aby wykryć wszystkie zmiany
@@ -79,6 +97,21 @@ export default function SingleCountryDashboard({
     if (!trip || !country) return [];
     return getExpensesByCountryId(country.id, trip.id);
   }, [trip, country?.id]);
+
+  // Pobierz transakcje walutowe dla kraju
+  const transactions = useMemo(() => {
+    if (!tripId || !country) return [];
+    return getCurrencyTransactionsByCountry(tripId, country.id);
+  }, [tripId, country?.id, data]); // Dodaj data do zależności aby odświeżać po zmianach
+
+  // Stan modala ze szczegółami transakcji
+  const [selectedTransaction, setSelectedTransaction] = useState<CurrencyTransaction | null>(null);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+
+  const handleTransactionClick = (transaction: CurrencyTransaction) => {
+    setSelectedTransaction(transaction);
+    setIsDetailsModalOpen(true);
+  };
 
   // Wszystkie hooki muszą być wywoływane przed warunkowym returnem
   const [locationMenuOpen, setLocationMenuOpen] = useState<string | null>(null);
@@ -245,28 +278,15 @@ export default function SingleCountryDashboard({
     return unassignedRanges;
   }, [country]);
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("pl-PL", {
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
-
-  const formatDate = (dateString?: string) => {
-    if (!dateString) return "—";
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) return "—";
-    return date.toLocaleDateString("pl-PL", {
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-    });
-  };
+  // Użyj formatCurrencyAmount z formatters (bez symbolu waluty, tylko liczba)
+  const formatCurrency = formatCurrencyAmount;
 
   // Jeśli nie ma kraju, pokaż empty state
   if (!country || data.countries.length === 0) {
-    const totalSpent = calculateTotalSpent(data);
-    const remainingBudget = calculateRemainingBudget(data);
-    const totalBudget = calculateTotalBudget(data);
+    const totalSpent = calculateTotalSpent(data, tripId);
+    const remainingBudget = calculateRemainingBudget(data, tripId);
+    // Use data.totalBudget for planned budget (original total budget), fallback to calculateTotalBudget
+    const plannedBudget = data.totalBudget ?? calculateTotalBudget(data, tripId);
     const totalTripDays = calculateTotalTripDays(tripStartDate, tripEndDate);
 
     return (
@@ -285,10 +305,10 @@ export default function SingleCountryDashboard({
                     <span>{formatDate(tripStartDate)} - {formatDate(tripEndDate)}</span>
                   </div>
                 )}
-                {totalBudget > 0 && (
+                {plannedBudget > 0 && (
                   <div className="flex items-center gap-2">
                     <DollarSign className="w-4 h-4" />
-                    <span>Budżet: {formatCurrency(totalBudget)} zł</span>
+                    <span>Budżet: {formatCurrency(plannedBudget)}</span>
                   </div>
                 )}
               </div>
@@ -300,17 +320,17 @@ export default function SingleCountryDashboard({
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
           <TravelWalletStatCard
             label="Budżet całkowity"
-            value={`${formatCurrency(totalBudget)} zł`}
+            value={formatCurrency(plannedBudget)}
             icon={DollarSign}
           />
           <TravelWalletStatCard
             label="Wydane"
-            value={`${formatCurrency(totalSpent)} zł`}
+            value={formatCurrency(totalSpent)}
             icon={DollarSign}
           />
           <TravelWalletStatCard
             label="Pozostały budżet"
-            value={`${formatCurrency(remainingBudget)} zł`}
+            value={`≈ ${formatCurrency(remainingBudget)}/${formatCurrency(plannedBudget)}`}
             icon={TrendingUp}
           />
           {totalTripDays > 0 && (
@@ -330,10 +350,10 @@ export default function SingleCountryDashboard({
                 <Globe className="w-8 h-8 text-gray-600 dark:text-gray-400" />
               </div>
               <h2 className="text-2xl font-serif font-bold text-gray-900 dark:text-gray-100 mb-2">
-                Dodaj lokalizację
+                Dodaj miejsce
               </h2>
               <p className="text-gray-600 dark:text-gray-400 mb-6">
-                Aby rozpocząć śledzenie wydatków, dodaj kraj z lokalizacją do swojej podróży. 
+                Aby rozpocząć śledzenie wydatków, dodaj kraj z miejscem do swojej podróży. 
                 Będziesz mógł planować budżet i rejestrować wydatki.
               </p>
             </div>
@@ -344,7 +364,7 @@ export default function SingleCountryDashboard({
                 className="flex items-center gap-2 mx-auto"
               >
                 <Plus className="w-4 h-4" />
-                Dodaj lokalizację
+                Dodaj miejsce
               </Button>
             )}
             {onAddExpense && (
@@ -367,7 +387,7 @@ export default function SingleCountryDashboard({
 
         {/* Postęp budżetu (jeśli są wydatki) */}
         {totalSpent > 0 && (
-          <TravelWalletProgress data={data} />
+          <TravelWalletProgress data={data} tripId={tripId} />
         )}
       </div>
     );
@@ -385,7 +405,7 @@ export default function SingleCountryDashboard({
   const isSingleLocation = country.locations && country.locations.length === 1;
   const location = isSingleLocation ? country.locations[0] : null;
 
-  const availableBalance = calculateRemainingBudget(data);
+  const availableBalance = calculateRemainingBudget(data, tripId);
   const totalBudget = calculateTotalBudget(data);
 
   return (
@@ -396,6 +416,7 @@ export default function SingleCountryDashboard({
         availableBalance={availableBalance}
         totalBudget={totalBudget}
         slug={slug}
+        tripName={tripName}
         onAddExpense={onAddExpense}
         onEditTrip={onEditTrip}
         data={data}
@@ -427,21 +448,41 @@ export default function SingleCountryDashboard({
               )}
             </div>
           </div>
+          {onEditCountry && (
+            <button
+              onClick={() => onEditCountry(country)}
+              className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors flex items-center gap-1.5"
+            >
+              <Edit className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Edytuj kraj</span>
+            </button>
+          )}
         </div>
       </div>
 
       {/* Statystyki podróży */}
       <TravelWalletStats 
-        data={data} 
+        data={data}
+        tripId={tripId}
         tripStartDate={tripStartDate}
         tripEndDate={tripEndDate}
+        slug={slug}
       />
 
-      {/* Lokalizacje */}
+      {/* Currency Transactions Section - zawsze pokazywać */}
+      {tripId && (
+        <CurrencyBalancesCard
+          transactions={transactions}
+          onAddTransaction={onAddCurrencyTransaction}
+          onTransactionClick={handleTransactionClick}
+        />
+      )}
+
+      {/* Miejsca */}
       <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
-            Lokalizacje
+            Miejsca
           </h2>
           {onAddLocation && (
             <button
@@ -543,7 +584,7 @@ export default function SingleCountryDashboard({
           </div>
         ) : (
           <p className="text-gray-600 dark:text-gray-400 text-center py-4">
-            Brak lokalizacji. Dodaj lokalizację, aby móc przypisywać wydatki do
+            Brak miejsc. Dodaj miejsce, aby móc przypisywać wydatki do
             konkretnych miejsc.
           </p>
         )}
@@ -564,9 +605,9 @@ export default function SingleCountryDashboard({
                     <span className="text-xs text-amber-700 dark:text-amber-300 font-medium">
                       {formatLocationDateRange(range.startDate, range.endDate)}
                     </span>
-                    <span className="text-xs text-amber-600 dark:text-amber-400 italic">
-                      (brak lokalizacji)
-                    </span>
+                      <span className="text-xs text-amber-600 dark:text-amber-400 italic">
+                        (brak miejsc)
+                      </span>
                   </div>
                 </div>
               ))}
@@ -610,7 +651,7 @@ export default function SingleCountryDashboard({
               Planowany budżet:
             </span>
             <span className="text-lg font-bold text-gray-900 dark:text-gray-100">
-              {formatCurrency(planned)} zł
+              {formatCurrency(planned)}
             </span>
           </div>
           <div className="flex justify-between items-center">
@@ -618,7 +659,7 @@ export default function SingleCountryDashboard({
               Faktyczne wydatki:
             </span>
             <span className="text-lg font-bold text-gray-900 dark:text-gray-100">
-              {formatCurrency(actual)} zł
+              {formatCurrency(actual)}
             </span>
           </div>
           <div className="flex justify-between items-center">
@@ -633,7 +674,7 @@ export default function SingleCountryDashboard({
               }`}
             >
               {budgetDifference >= 0 ? "+" : ""}
-              {formatCurrency(budgetDifference)} zł
+              {formatCurrency(budgetDifference)}
             </span>
           </div>
           {travelDays > 0 && (
@@ -642,7 +683,7 @@ export default function SingleCountryDashboard({
                 Średni dzienny koszt:
               </span>
               <span className="text-lg font-bold text-gray-900 dark:text-gray-100">
-                {formatCurrency(averageDailyCost)} zł/dzień
+                {formatCurrency(averageDailyCost)}/dzień
               </span>
             </div>
           )}
@@ -654,30 +695,6 @@ export default function SingleCountryDashboard({
 
       {/* Wykresy */}
       <TravelWalletChartsSection data={data} />
-
-      {/* Budżety według waluty */}
-      {country.budgets.length > 0 && (
-        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-            Budżety według waluty
-          </h2>
-          <div className="space-y-2">
-            {country.budgets.map((budget, index) => (
-              <div
-                key={index}
-                className="flex justify-between items-center text-sm"
-              >
-                <span className="text-gray-700 dark:text-gray-300">
-                  {budget.currency.toUpperCase()}
-                </span>
-                <span className="font-semibold text-gray-900 dark:text-gray-100">
-                  {formatCurrency(budget.amount)}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* Kategorie wydatków */}
       {calculatedCategories && calculatedCategories.length > 0 && (
@@ -696,12 +713,12 @@ export default function SingleCountryDashboard({
                     {category.name}
                   </p>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Planowane: {formatCurrency(category.plannedAmount)} zł
+                    Planowane: {formatCurrency(category.plannedAmount)}
                   </p>
                 </div>
                 <div className="text-right">
                   <p className="font-bold text-gray-900 dark:text-gray-100">
-                    {formatCurrency(category.amount)} zł
+                    {formatCurrency(category.amount)}
                   </p>
                   {category.plannedAmount > 0 && (
                     <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -714,6 +731,26 @@ export default function SingleCountryDashboard({
           </div>
         </div>
       )}
+
+      {/* Currency Transactions History - zawsze pokazywać */}
+      {tripId && (
+        <CurrencyTransactionsHistory
+          transactions={transactions}
+          onDelete={onDeleteCurrencyTransaction}
+          onEdit={onEditCurrencyTransaction}
+          onTransactionClick={handleTransactionClick}
+        />
+      )}
+
+      {/* Transaction Details Modal */}
+      <TransactionDetailsModal
+        isOpen={isDetailsModalOpen}
+        onClose={() => {
+          setIsDetailsModalOpen(false);
+          setSelectedTransaction(null);
+        }}
+        transaction={selectedTransaction}
+      />
     </div>
   );
 }

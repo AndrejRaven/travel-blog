@@ -1,17 +1,19 @@
 "use client";
 
-import { Plus, Share2, LogOut, Edit, Layout } from "lucide-react";
+import { Plus, Share2, LogOut, Edit, FileText, TrendingUp } from "lucide-react";
 import Button from "@/components/ui/Button";
-import {
-  getEffectiveDashboardMode,
-} from "@/lib/travel-wallet/dashboard-mode";
+import Link from "@/components/ui/Link";
 import type { TravelWalletData } from "@/lib/travel-wallet/types";
+import { getBalancesWithBaseCurrency, calculateMainBudget } from "@/lib/travel-wallet/wallet-operations";
+import { formatCurrency } from "@/lib/travel-wallet/formatters";
+import { CURRENCY_SYMBOLS } from "@/lib/travel-wallet/constants";
 
 interface TravelWalletHeaderProps {
   userName?: string;
   availableBalance: number;
   totalBudget: number;
   slug: string;
+  tripName?: string; // Nazwa podróży
   onAddExpense?: () => void;
   onEditTrip?: () => void;
   onShare?: () => void;
@@ -24,27 +26,68 @@ export default function TravelWalletHeader({
   availableBalance,
   totalBudget,
   slug,
+  tripName,
   onAddExpense,
   onEditTrip,
   onShare,
   onLogout,
   data,
 }: TravelWalletHeaderProps) {
-  const formattedBalance = new Intl.NumberFormat("pl-PL", {
-    maximumFractionDigits: 0,
-  }).format(availableBalance);
-  
-  const formattedTotalBudget = new Intl.NumberFormat("pl-PL", {
-    maximumFractionDigits: 0,
-  }).format(totalBudget);
+  // Check if new wallet system is available
+  const hasWallet = data?.wallet !== undefined;
+  let balanceCurrencies: Array<{ currency: string; amount: number; isBase: boolean }> = [];
+  let remainingBudgetDisplay: string;
+  let plannedBudgetDisplay: string;
+  let baseCurrency = "PLN";
 
-  // Określ aktualny tryb dashboardu
-  const currentMode = data ? getEffectiveDashboardMode(data) : "multi-country";
-  const modeLabels: Record<string, string> = {
-    "multi-country": "Wiele krajów",
-    "single-country": "Jeden kraj",
-    "single-location": "Jedna lokalizacja",
-  };
+  // Get planned budget (original total budget)
+  const plannedBudget = data?.totalBudget ?? totalBudget;
+
+  if (hasWallet && data.wallet) {
+    // New wallet system: show all currencies
+    const balances = getBalancesWithBaseCurrency(data.wallet);
+    console.log("[TravelWalletHeader] Wallet balances:", balances);
+    console.log("[TravelWalletHeader] Wallet balances count:", balances.length);
+    const nonZeroBalances = balances.filter((b) => b.amount > 0.01);
+    console.log("[TravelWalletHeader] Non-zero balances:", nonZeroBalances);
+    console.log("[TravelWalletHeader] Non-zero balances count:", nonZeroBalances.length);
+    baseCurrency = data.wallet.baseCurrency;
+    
+    if (nonZeroBalances.length === 0) {
+      balanceCurrencies = [{ currency: baseCurrency, amount: 0, isBase: true }];
+      const currentBalance = calculateMainBudget(data.wallet);
+      remainingBudgetDisplay = formatCurrency(currentBalance, baseCurrency);
+    } else {
+      // Separate base currency from others
+      balanceCurrencies = nonZeroBalances.map((b) => ({
+        currency: b.currency,
+        amount: b.amount,
+        isBase: b.currency === baseCurrency,
+      }));
+      
+      // Remaining budget: current balances in base currency (sum of all currencies converted to base)
+      const currentBalance = calculateMainBudget(data.wallet);
+      remainingBudgetDisplay = formatCurrency(currentBalance, baseCurrency);
+    }
+    plannedBudgetDisplay = formatCurrency(plannedBudget, baseCurrency);
+  } else {
+    // Old system: show only PLN
+    const formattedBalance = new Intl.NumberFormat("pl-PL", {
+      maximumFractionDigits: 0,
+    }).format(availableBalance);
+    
+    const formattedRemainingBudget = new Intl.NumberFormat("pl-PL", {
+      maximumFractionDigits: 0,
+    }).format(totalBudget);
+    
+    const formattedPlannedBudget = new Intl.NumberFormat("pl-PL", {
+      maximumFractionDigits: 0,
+    }).format(plannedBudget);
+    
+    balanceCurrencies = [{ currency: "PLN", amount: availableBalance, isBase: true }];
+    remainingBudgetDisplay = `${formattedRemainingBudget} zł`;
+    plannedBudgetDisplay = `${formattedPlannedBudget} zł`;
+  }
 
   return (
     <div className="mb-8">
@@ -52,7 +95,7 @@ export default function TravelWalletHeader({
         {/* Left side - Title and welcome */}
         <div>
           <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2">
-            Portfel podróżniczy
+            {tripName || "Portfel podróżniczy"}
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
             Witaj ponownie, {userName}
@@ -62,12 +105,27 @@ export default function TravelWalletHeader({
         {/* Right side - Available balance and logout */}
         <div className="flex items-center gap-4">
           <div className="text-right">
-            <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1">
+            <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-2">
               Dostępny budżet
             </p>
-            <p className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100">
-              {formattedBalance}/{formattedTotalBudget} zł
-            </p>
+            <div className="flex flex-col items-end gap-1">
+              {balanceCurrencies.map((balance, index) => (
+                <p
+                  key={balance.currency}
+                  className={
+                    balance.isBase
+                      ? "text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100"
+                      : "text-lg md:text-xl font-semibold text-gray-700 dark:text-gray-300"
+                  }
+                >
+                  {formatCurrency(balance.amount, balance.currency)}
+                </p>
+              ))}
+            </div>
+            <div className="text-xs text-gray-500 dark:text-gray-400 mt-2 space-y-0.5">
+              <p>Zaplanowany budżet: {plannedBudgetDisplay}</p>
+              <p>Pozostały: ≈ {remainingBudgetDisplay}</p>
+            </div>
           </div>
           {onLogout && (
             <Button
@@ -114,12 +172,22 @@ export default function TravelWalletHeader({
             Edytuj podróż
           </Button>
         )}
-        {data && (
-          <div className="flex items-center gap-2 px-3 py-2 bg-gray-100 dark:bg-gray-700 rounded-md text-sm text-gray-700 dark:text-gray-300">
-            <Layout className="w-4 h-4" />
-            <span>Tryb: {modeLabels[currentMode] || currentMode}</span>
-          </div>
-        )}
+        <Link
+          href={`/portfel-podrozniczy/${slug}/logi`}
+          variant="outline"
+          className="inline-flex items-center gap-2"
+        >
+          <FileText className="w-4 h-4" />
+          Logi zmian
+        </Link>
+        <Link
+          href={`/portfel-podrozniczy/${slug}/kursy`}
+          variant="outline"
+          className="inline-flex items-center gap-2"
+        >
+          <TrendingUp className="w-4 h-4" />
+          Kursy walut
+        </Link>
       </div>
     </div>
   );

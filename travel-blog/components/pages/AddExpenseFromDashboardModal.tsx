@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import { X, Plus } from "lucide-react";
 import Button from "@/components/ui/Button";
 import DatePicker from "@/components/ui/DatePicker";
+import Select from "@/components/ui/Select";
 import type { Country, Expense, TravelWalletData } from "@/lib/travel-wallet/types";
 
 interface AddExpenseFromDashboardModalProps {
@@ -23,6 +24,10 @@ interface AddExpenseFromDashboardModalProps {
   }) => void;
   data: TravelWalletData;
   tripId: string;
+  initialDate?: string;
+  expense?: Expense;
+  tripStartDate?: string;
+  tripEndDate?: string;
   onAddLocation?: (countryId: string, date: string) => void;
   onAddCountry?: () => void;
 }
@@ -35,6 +40,10 @@ export default function AddExpenseFromDashboardModal({
   onSave,
   data,
   tripId,
+  initialDate,
+  expense,
+  tripStartDate,
+  tripEndDate,
   onAddLocation,
   onAddCountry,
 }: AddExpenseFromDashboardModalProps) {
@@ -48,25 +57,100 @@ export default function AddExpenseFromDashboardModal({
   const [location, setLocation] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  // Znajdź kraj dla danej daty
+  const findCountryForDate = useMemo(() => {
+    return (dateString: string): Country | null => {
+      if (!dateString) return null;
+      
+      const date = new Date(dateString);
+      date.setHours(0, 0, 0, 0);
+      
+      // Znajdź kraj, którego zakres dat zawiera podaną datę
+      for (const country of data.countries) {
+        if (country.startDate && country.endDate) {
+          const start = new Date(country.startDate);
+          start.setHours(0, 0, 0, 0);
+          const end = new Date(country.endDate);
+          end.setHours(0, 0, 0, 0);
+          
+          if (date >= start && date <= end) {
+            return country;
+          }
+        }
+      }
+      
+      return null;
+    };
+  }, [data.countries]);
+
+  // Automatycznie wybierz kraj na podstawie daty lub gdy jest tylko jeden kraj
+  useEffect(() => {
+    if (initialDate) {
+      const countryForDate = findCountryForDate(initialDate);
+      if (countryForDate) {
+        setSelectedCountryId(countryForDate.id);
+      }
+    } else if (data.countries.length === 1 && !selectedCountryId) {
+      // Jeśli jest tylko jeden kraj i nie ma wybranego kraju, automatycznie go wybierz
+      setSelectedCountryId(data.countries[0].id);
+    }
+  }, [initialDate, findCountryForDate, data.countries, selectedCountryId]);
+
   // Pobierz wybrany kraj
   const selectedCountry = useMemo(() => {
     return data.countries.find((c) => c.id === selectedCountryId);
   }, [selectedCountryId, data.countries]);
 
+  // Sprawdź czy kraj jest zablokowany (gdy initialDate jest podane i znaleziono kraj)
+  const isCountryLocked = useMemo(() => {
+    if (!initialDate) return false;
+    const countryForDate = findCountryForDate(initialDate);
+    return countryForDate !== null;
+  }, [initialDate, findCountryForDate]);
+
   // Reset formularza gdy modal się otwiera/zamyka
   useEffect(() => {
     if (isOpen) {
-      setSelectedCountryId("");
-      setDescription("");
-      setCategory("Jedzenie");
-      setAmount("");
-      setCurrency("PLN");
-      setDate("");
-      setNote("");
-      setLocation("");
+      if (expense) {
+        // Edycja wydatku - wypełnij formularz danymi wydatku
+        setSelectedCountryId(expense.countryId);
+        setDescription(expense.description || "");
+        setCategory(expense.category || "Jedzenie");
+        setAmount(expense.amount.toString());
+        setCurrency(expense.currency || "PLN");
+        setDate(expense.date);
+        setNote(expense.note || "");
+        setLocation(expense.location || "");
+      } else {
+        // Dodawanie nowego wydatku
+        // Jeśli initialDate jest podane, automatycznie wybierz kraj
+        if (initialDate) {
+          const countryForDate = findCountryForDate(initialDate);
+          setSelectedCountryId(countryForDate?.id || "");
+        } else if (data.countries.length === 1) {
+          // Jeśli jest tylko jeden kraj, automatycznie go wybierz
+          setSelectedCountryId(data.countries[0].id);
+        } else {
+          setSelectedCountryId("");
+        }
+        setDescription("");
+        setCategory("Jedzenie");
+        setAmount("");
+        setCurrency("PLN");
+        setDate(initialDate || "");
+        setNote("");
+        setLocation("");
+      }
       setErrors({});
     }
-  }, [isOpen]);
+  }, [isOpen, initialDate, expense, findCountryForDate, data.countries]);
+
+  // Ustaw datę z initialDate gdy się zmienia
+  useEffect(() => {
+    if (initialDate) {
+      setDate(initialDate);
+    }
+  }, [initialDate]);
 
   // Resetuj walutę gdy zmienia się wybrany kraj
   useEffect(() => {
@@ -158,7 +242,12 @@ export default function AddExpenseFromDashboardModal({
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
 
-    if (!selectedCountryId) {
+    // Jeśli jest tylko jeden kraj, automatycznie użyj go
+    const finalCountryId = data.countries.length === 1 
+      ? data.countries[0].id 
+      : selectedCountryId;
+
+    if (!finalCountryId) {
       newErrors.country = "Kraj jest wymagany";
     }
 
@@ -181,12 +270,18 @@ export default function AddExpenseFromDashboardModal({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!validate() || !selectedCountry) {
+    // Jeśli jest tylko jeden kraj, użyj go automatycznie
+    const finalCountry = data.countries.length === 1 
+      ? data.countries[0] 
+      : selectedCountry;
+
+    if (!validate() || !finalCountry) {
       return;
     }
 
     onSave({
-      countryId: selectedCountry.id,
+      id: expense?.id,
+      countryId: finalCountry.id,
       description: description.trim(),
       category,
       amount: parseFloat(amount),
@@ -213,7 +308,7 @@ export default function AddExpenseFromDashboardModal({
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
           <h2 className="text-xl font-serif font-semibold text-gray-900 dark:text-gray-100">
-            Dodaj wydatek
+            {expense ? "Edytuj wydatek" : "Dodaj wydatek"}
           </h2>
           <button
             onClick={onClose}
@@ -227,49 +322,61 @@ export default function AddExpenseFromDashboardModal({
         {/* Formularz */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto flex-1">
           {/* Wybór kraju */}
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <label
-                htmlFor="country"
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
-              >
-                Kraj *
+          {data.countries.length === 1 ? (
+            // Gdy jest tylko jeden kraj, pokaż go jako tekst
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Kraj
               </label>
-              {onAddCountry && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    onAddCountry();
-                    onClose();
-                  }}
-                  className="inline-flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
+              <div className="px-3 py-2 border rounded-md bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100">
+                {data.countries[0].name}
+              </div>
+            </div>
+          ) : (
+            // Gdy jest więcej krajów, pokaż select
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label
+                  htmlFor="country"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300"
                 >
-                  <Plus className="w-3 h-3" />
-                  Dodaj kraj
-                </button>
+                  Kraj *
+                </label>
+                {onAddCountry && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onAddCountry();
+                      onClose();
+                    }}
+                    className="inline-flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
+                  >
+                    <Plus className="w-3 h-3" />
+                    Dodaj kraj
+                  </button>
+                )}
+              </div>
+              <Select
+                value={selectedCountryId}
+                onChange={setSelectedCountryId}
+                disabled={isCountryLocked}
+                placeholder="Wybierz kraj"
+                options={[
+                  { value: "", label: "Wybierz kraj" },
+                  ...data.countries.map((country) => ({
+                    value: country.id,
+                    label: country.name,
+                  })),
+                ]}
+                className={errors.country ? "border-red-500 dark:border-red-400" : ""}
+              />
+              {errors.country && (
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                  {errors.country}
+                </p>
               )}
             </div>
-            <select
-              id="country"
-              value={selectedCountryId}
-              onChange={(e) => setSelectedCountryId(e.target.value)}
-              className={`w-full px-3 py-2 border rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 ${
-                errors.country ? "border-red-500 dark:border-red-400" : ""
-              }`}
-            >
-              <option value="">Wybierz kraj</option>
-              {data.countries.map((country) => (
-                <option key={country.id} value={country.id}>
-                  {country.name}
-                </option>
-              ))}
-            </select>
-            {errors.country && (
-              <p className="mt-1 text-sm text-red-600 dark:text-red-400">
-                {errors.country}
-              </p>
-            )}
-          </div>
+          )}
 
           {/* Tytuł (description) */}
           <div>
@@ -306,18 +413,14 @@ export default function AddExpenseFromDashboardModal({
             >
               Kategoria *
             </label>
-            <select
-              id="category"
+            <Select
               value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="w-full px-3 py-2 border rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
-            >
-              {EXPENSE_CATEGORIES.map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat}
-                </option>
-              ))}
-            </select>
+              onChange={setCategory}
+              options={EXPENSE_CATEGORIES.map((cat) => ({
+                value: cat,
+                label: cat,
+              }))}
+            />
           </div>
 
           {/* Kwota i Waluta */}
@@ -354,31 +457,27 @@ export default function AddExpenseFromDashboardModal({
               >
                 Waluta *
               </label>
-              <select
-                id="currency"
+              <Select
                 value={currency}
-                onChange={(e) => setCurrency(e.target.value)}
-                className="w-full px-3 py-2 border rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
+                onChange={setCurrency}
                 disabled={!selectedCountry || selectedCountry.budgets.length === 0}
-              >
-                {selectedCountry && selectedCountry.budgets.length > 0 ? (
-                  selectedCountry.budgets.map((budget) => (
-                    <option key={budget.currency} value={budget.currency}>
-                      {budget.currency.toUpperCase()}
-                    </option>
-                  ))
-                ) : (
-                  <option value="PLN">PLN</option>
-                )}
-              </select>
+                options={
+                  selectedCountry && selectedCountry.budgets.length > 0
+                    ? selectedCountry.budgets.map((budget) => ({
+                        value: budget.currency,
+                        label: budget.currency.toUpperCase(),
+                      }))
+                    : [{ value: "PLN", label: "PLN" }]
+                }
+              />
             </div>
           </div>
 
-          {/* Lokalizacja */}
+          {/* Miejsce */}
           {selectedCountry && (
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Lokalizacja
+                Miejsce
               </label>
               {location ? (
                 <div className="px-3 py-2 border rounded-md bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100">
@@ -387,7 +486,7 @@ export default function AddExpenseFromDashboardModal({
               ) : (
                 <div className="flex items-center gap-2">
                   <p className="text-sm text-gray-500 dark:text-gray-400 flex-1">
-                    Brak lokalizacji dla wybranej daty
+                    Brak miejsc dla wybranej daty
                   </p>
                   {date && onAddLocation && (
                     <button
@@ -400,7 +499,7 @@ export default function AddExpenseFromDashboardModal({
                       className="inline-flex items-center gap-1 px-3 py-2 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 border border-blue-300 dark:border-blue-700 rounded-md hover:bg-blue-50 dark:hover:bg-blue-900/20"
                     >
                       <Plus className="w-4 h-4" />
-                      Dodaj lokalizację
+                      Dodaj miejsce
                     </button>
                   )}
                 </div>
@@ -415,8 +514,8 @@ export default function AddExpenseFromDashboardModal({
               label="Data"
               value={date}
               onChange={(newDate) => setDate(newDate)}
-              min={selectedLocationDateRange?.min || selectedCountry?.startDate || undefined}
-              max={selectedLocationDateRange?.max || selectedCountry?.endDate || undefined}
+              min={selectedLocationDateRange?.min || selectedCountry?.startDate || tripStartDate || undefined}
+              max={selectedLocationDateRange?.max || selectedCountry?.endDate || tripEndDate || undefined}
               required
               error={errors.date}
               disabled={!selectedCountry}

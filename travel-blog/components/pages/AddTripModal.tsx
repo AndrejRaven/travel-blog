@@ -15,33 +15,48 @@ interface AddTripModalProps {
     userName?: string;
     dashboardMode?: "multi-country" | "single-country" | "single-location" | "auto";
   }) => void;
+  initialValues?: {
+    name?: string;
+    startDate?: string;
+    endDate?: string;
+    totalBudget?: string;
+    userName?: string;
+    dashboardMode?: "multi-country" | "single-country" | "single-location" | "auto";
+  };
 }
 
 export default function AddTripModal({
   isOpen,
   onClose,
   onSave,
+  initialValues,
 }: AddTripModalProps) {
   const [name, setName] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [totalBudget, setTotalBudget] = useState("");
   const [userName, setUserName] = useState("");
-  const [dashboardMode, setDashboardMode] = useState<"multi-country" | "single-country" | "auto">("multi-country");
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Reset formularza gdy modal się otwiera/zamyka
+  // Reset formularza gdy modal się otwiera/zamyka lub przywróć zapisane wartości
   useEffect(() => {
     if (isOpen) {
-      setName("");
-      setStartDate("");
-      setEndDate("");
-      setTotalBudget("");
-      setUserName("");
-      setDashboardMode("auto");
+      if (initialValues) {
+        setName(initialValues.name || "");
+        setStartDate(initialValues.startDate || "");
+        setEndDate(initialValues.endDate || "");
+        setTotalBudget(initialValues.totalBudget || "");
+        setUserName(initialValues.userName || "");
+      } else {
+        setName("");
+        setStartDate("");
+        setEndDate("");
+        setTotalBudget("");
+        setUserName("");
+      }
       setErrors({});
     }
-  }, [isOpen]);
+  }, [isOpen, initialValues]);
 
   const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget) {
@@ -87,7 +102,7 @@ export default function AddTripModal({
       endDate: endDate || undefined,
       totalBudget: totalBudget ? parseFloat(totalBudget) : undefined,
       userName: userName.trim() || undefined,
-      dashboardMode: dashboardMode || "auto",
+      dashboardMode: "auto",
     });
   };
 
@@ -226,28 +241,6 @@ export default function AddTripModal({
               className="w-full px-3 py-2 border rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
               placeholder="np. Sarah"
             />
-          </div>
-
-          {/* Liczba krajów */}
-          <div>
-            <label
-              htmlFor="dashboardMode"
-              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-            >
-              Liczba krajów
-            </label>
-            <select
-              id="dashboardMode"
-              value={dashboardMode}
-              onChange={(e) => setDashboardMode(e.target.value as "multi-country" | "single-country" | "auto")}
-              className="w-full px-3 py-2 border rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
-            >
-              <option value="multi-country">Wiele krajów</option>
-              <option value="single-country">Jeden kraj</option>
-            </select>
-            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-              Wybierz czy podróż obejmuje jeden czy wiele krajów. Po utworzeniu podróży będziesz musiał dodać co najmniej jeden kraj.
-            </p>
           </div>
 
           {/* Przyciski */}

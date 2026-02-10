@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Wallet, MapPin, Calendar, TrendingUp } from "lucide-react";
 import type { TravelWalletData } from "@/lib/travel-wallet/types";
 import { ProgressBar, BudgetBreakdown } from "./TravelWalletCharts";
+import { formatCurrency } from "@/lib/travel-wallet/formatters";
 
 interface TravelWalletSummaryProps {
   data: TravelWalletData;
@@ -330,7 +331,7 @@ export default function TravelWalletSummary({
                       </span>
                     </div>
                     <p className="text-lg font-bold text-gray-900 dark:text-gray-100">
-                      {formatCurrency(item.currency, formattedAmount)}
+                      {formatCurrency(item.amount, item.currency)}
                     </p>
                     <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
                       {percentage.toFixed(1)}%

@@ -20,6 +20,10 @@ interface AddExpenseModalProps {
     note?: string;
     location?: string;
     tripId?: string;
+    paymentMethod?: {
+      type: "card" | "cash" | "bank-withdrawal";
+      sourceCurrency?: string;
+    };
   }) => void;
   country: Country;
   initialDate?: string; // YYYY-MM-DD
@@ -50,6 +54,8 @@ export default function AddExpenseModal({
   const [note, setNote] = useState("");
   const [location, setLocation] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [paymentType, setPaymentType] = useState<"card" | "cash" | "bank-withdrawal">("card");
+  const [sourceCurrency, setSourceCurrency] = useState("PLN");
 
   // Reset formularza gdy modal się otwiera/zamyka lub gdy expense się zmienia
   useEffect(() => {
@@ -63,6 +69,8 @@ export default function AddExpenseModal({
         setDate(expense.date);
         setNote(expense.note || "");
         setLocation(expense.location || "");
+        setPaymentType(expense.paymentMethod?.type || "card");
+        setSourceCurrency(expense.paymentMethod?.sourceCurrency || "PLN");
       } else {
         // Tryb dodawania - reset formularza
         setDescription("");
@@ -72,6 +80,8 @@ export default function AddExpenseModal({
         setDate(initialDate || "");
         setNote("");
         setLocation("");
+        setPaymentType("card");
+        setSourceCurrency("PLN");
       }
       setErrors({});
     }
@@ -224,6 +234,10 @@ export default function AddExpenseModal({
       note: note.trim() || undefined,
       location: location.trim() || undefined,
       tripId: tripId,
+      paymentMethod: {
+        type: paymentType,
+        sourceCurrency: paymentType !== "cash" ? sourceCurrency : undefined,
+      },
     });
 
     onClose();
@@ -353,10 +367,72 @@ export default function AddExpenseModal({
             </div>
           </div>
 
-          {/* Lokalizacja */}
+          {/* Metoda płatności */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Metoda płatności
+            </label>
+            <div className="space-y-2">
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPaymentType("card")}
+                  className={`flex-1 px-3 py-2 rounded-md border transition-colors text-sm ${
+                    paymentType === "card"
+                      ? "bg-blue-50 dark:bg-blue-900/20 border-blue-500 text-blue-700 dark:text-blue-300"
+                      : "border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700"
+                  }`}
+                >
+                  Karta
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPaymentType("cash")}
+                  className={`flex-1 px-3 py-2 rounded-md border transition-colors text-sm ${
+                    paymentType === "cash"
+                      ? "bg-blue-50 dark:bg-blue-900/20 border-blue-500 text-blue-700 dark:text-blue-300"
+                      : "border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700"
+                  }`}
+                >
+                  Gotówka
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPaymentType("bank-withdrawal")}
+                  className={`flex-1 px-3 py-2 rounded-md border transition-colors text-sm ${
+                    paymentType === "bank-withdrawal"
+                      ? "bg-blue-50 dark:bg-blue-900/20 border-blue-500 text-blue-700 dark:text-blue-300"
+                      : "border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700"
+                  }`}
+                >
+                  Bankomat
+                </button>
+              </div>
+              {paymentType !== "cash" && (
+                <div>
+                  <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">
+                    Waluta źródłowa
+                  </label>
+                  <select
+                    value={sourceCurrency}
+                    onChange={(e) => setSourceCurrency(e.target.value)}
+                    className="w-full px-3 py-2 border rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600 text-sm"
+                  >
+                    {country.budgets.map((budget) => (
+                      <option key={budget.currency} value={budget.currency}>
+                        {budget.currency.toUpperCase()}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Miejsce */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Lokalizacja
+              Miejsce
             </label>
             {location ? (
               <div className="px-3 py-2 border rounded-md bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100">
@@ -365,7 +441,7 @@ export default function AddExpenseModal({
             ) : (
               <div className="flex items-center gap-2">
                 <p className="text-sm text-gray-500 dark:text-gray-400 flex-1">
-                  Brak lokalizacji dla wybranej daty
+                  Brak miejsc dla wybranej daty
                 </p>
                 {date && onAddLocation && (
                   <button
@@ -376,7 +452,7 @@ export default function AddExpenseModal({
                     className="inline-flex items-center gap-1 px-3 py-2 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 border border-blue-300 dark:border-blue-700 rounded-md hover:bg-blue-50 dark:hover:bg-blue-900/20"
                   >
                     <Plus className="w-4 h-4" />
-                    Dodaj lokalizację
+                    Dodaj miejsce
                   </button>
                 )}
               </div>

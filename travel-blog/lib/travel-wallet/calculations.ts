@@ -1,4 +1,8 @@
-import type { TravelWalletData, Country, ExpenseCategory } from "./types";
+import type { TravelWalletData, Country, ExpenseCategory, Wallet } from "./types";
+import { getAllExpenses, convertExpenseToPLN } from "./expenses";
+import { getCurrencyTransactions } from "./currency-transactions";
+import { calculateMainBudget as calculateWalletMainBudget } from "./wallet-operations";
+import { getWallet } from "./wallet-storage";
 
 /**
  * Kursy walut do PLN (przykładowe, później można pobrać z API)
@@ -24,8 +28,15 @@ function convertToPLN(amount: number, currency: string): number {
 
 /**
  * Oblicza całkowity budżet (suma wszystkich budżetów we wszystkich walutach, przeliczona na PLN)
+ * Uses new wallet system if available, falls back to old system for backward compatibility
  */
-export function calculateTotalBudget(data: TravelWalletData): number {
+export function calculateTotalBudget(data: TravelWalletData, tripId?: string): number {
+  // Try new wallet system first
+  if (tripId && data.wallet) {
+    return calculateWalletMainBudget(data.wallet);
+  }
+
+  // Fallback to old system
   if (data.totalBudget !== undefined) {
     return data.totalBudget;
   }
@@ -41,8 +52,18 @@ export function calculateTotalBudget(data: TravelWalletData): number {
 
 /**
  * Oblicza całkowite faktyczne wydatki (suma actualSpending dla wszystkich krajów)
+ * @param data - dane podróży
+ * @param tripId - opcjonalne ID podróży (jeśli podane, używa rzeczywistych wydatków i transakcji)
  */
-export function calculateTotalSpent(data: TravelWalletData): number {
+export function calculateTotalSpent(data: TravelWalletData, tripId?: string): number {
+  // Jeśli tripId jest podane, użyj rzeczywistych wydatków i transakcji
+  if (tripId) {
+    const expensesTotal = calculateTotalSpentFromExpenses(tripId);
+    const transactionsTotal = calculateTotalSpentFromTransactions(tripId, data);
+    return expensesTotal + transactionsTotal;
+  }
+  
+  // W przeciwnym razie użyj starej logiki (dla backward compatibility)
   let total = 0;
   data.countries.forEach((country) => {
     if (country.actualSpending !== undefined) {
@@ -62,10 +83,103 @@ export function calculateTotalSpent(data: TravelWalletData): number {
 }
 
 /**
- * Oblicza pozostały budżet
+ * Oblicza całkowite wydatki z rzeczywistych danych (expenses) przeliczone na PLN
  */
-export function calculateRemainingBudget(data: TravelWalletData): number {
-  const totalBudget = calculateTotalBudget(data);
+export function calculateTotalSpentFromExpenses(tripId?: string): number {
+  if (!tripId) return 0;
+  
+  const expenses = getAllExpenses(tripId);
+  return expenses.reduce((total, expense) => {
+    return total + convertExpenseToPLN(expense);
+  }, 0);
+}
+
+/**
+ * Oblicza całkowite wydatki z transakcji walutowych które zmniejszają budżet w PLN
+ * (wymiany PLN na inne waluty, wypłaty z PLN, prowizje w PLN)
+ * 
+ * NOTE: In new wallet system, exchanges do NOT decrease budget - only fees from exchanges count as spending.
+ * This function is kept for backward compatibility with old system.
+ */
+export function calculateTotalSpentFromTransactions(
+  tripId?: string,
+  data?: TravelWalletData
+): number {
+  if (!tripId) return 0;
+
+  // New wallet system: exchanges don't count as spending, only fees
+  if (data?.wallet) {
+    const { getExchanges } = require("./wallet-storage");
+    const exchanges = getExchanges(tripId);
+    let total = 0;
+
+    exchanges.forEach((exchange) => {
+      // Only count fees as spending
+      if (exchange.fee && exchange.feeCurrency) {
+        // Convert fee to PLN if needed
+        const feeInPLN = convertToPLN(exchange.fee, exchange.feeCurrency);
+        total += feeInPLN;
+      }
+    });
+
+    return total;
+  }
+
+  // Old system: backward compatibility
+  // Używamy bezpośrednio trip.data.currencyTransactions, nie getCurrencyTransactions()
+  // bo getCurrencyTransactions() teraz zwraca również exchanges z nowego systemu
+  const { getTripById } = require("./trips-storage");
+  const trip = getTripById(tripId);
+  if (!trip) return 0;
+  
+  const transactions = trip.data.currencyTransactions || [];
+  let total = 0;
+
+  transactions.forEach((tx) => {
+    // Wymiana walut NIE jest wydatkiem - tylko komisja jest wydatkiem
+    // (W starym systemie wymiana PLN była błędnie liczona jako wydatek, ale to było nieprawidłowe)
+    
+    // Wypłata z bankomatu PLN na inną walutę = zmniejsza budżet w PLN (old system only)
+    if (tx.fromCurrency === "PLN" && tx.type === "withdrawal") {
+      total += tx.fromAmount;
+    }
+
+    // Prowizja w PLN = zmniejsza budżet w PLN (old system only)
+    if (tx.fee && tx.feeCurrency === "PLN") {
+      total += tx.fee;
+    }
+  });
+
+  return total;
+}
+
+/**
+ * Oblicza pozostały budżet
+ * @param data - dane podróży
+ * @param tripId - opcjonalne ID podróży (jeśli podane, używa rzeczywistych wydatków i transakcji)
+ */
+export function calculateRemainingBudget(data: TravelWalletData, tripId?: string): number {
+  const totalBudget = calculateTotalBudget(data, tripId);
+  
+  // Jeśli tripId jest podane, użyj rzeczywistych wydatków
+  // W nowym systemie: exchanges NIE zmniejszają budżetu, tylko expenses
+  if (tripId) {
+    // Try new wallet system
+    if (data.wallet) {
+      // Main budget is already calculated from current balances (sum of all currencies)
+      // Remaining budget = main budget (since balances already reflect expenses)
+      // The wallet balances are the current state after all operations
+      return Math.max(0, totalBudget);
+    }
+    
+    // Fallback to old system
+    const expensesTotal = calculateTotalSpentFromExpenses(tripId);
+    const transactionsTotal = calculateTotalSpentFromTransactions(tripId, data);
+    const totalSpent = expensesTotal + transactionsTotal;
+    return Math.max(0, totalBudget - totalSpent);
+  }
+  
+  // W przeciwnym razie użyj starej logiki (dla backward compatibility)
   const totalSpent = calculateTotalSpent(data);
   return Math.max(0, totalBudget - totalSpent);
 }
@@ -95,9 +209,11 @@ export function calculateTravelDays(data: TravelWalletData): number {
 
 /**
  * Oblicza średnie dzienne wydatki
+ * @param data - dane podróży
+ * @param tripId - opcjonalne ID podróży (jeśli podane, używa rzeczywistych wydatków)
  */
-export function calculateAverageDailySpend(data: TravelWalletData): number {
-  const totalSpent = calculateTotalSpent(data);
+export function calculateAverageDailySpend(data: TravelWalletData, tripId?: string): number {
+  const totalSpent = calculateTotalSpent(data, tripId);
   const totalDays = calculateTravelDays(data);
   if (totalDays === 0) return 0;
   return totalSpent / totalDays;
@@ -239,9 +355,11 @@ export function calculateUnspentPlannedSpending(data: TravelWalletData): number 
 
 /**
  * Oblicza burn rate (procent, o ile szybciej/wolniej wydajemy niż planowano)
+ * @param data - dane podróży
+ * @param tripId - opcjonalne ID podróży (jeśli podane, używa rzeczywistych wydatków)
  */
-export function calculateBurnRate(data: TravelWalletData): number {
-  const totalSpent = calculateTotalSpent(data);
+export function calculateBurnRate(data: TravelWalletData, tripId?: string): number {
+  const totalSpent = calculateTotalSpent(data, tripId);
   const totalPlanned = data.countries.reduce((sum, country) => {
     // Oblicz planowane wydatki dla kraju
     let planned = 0;

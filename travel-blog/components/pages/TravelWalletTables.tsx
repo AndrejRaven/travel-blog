@@ -12,6 +12,7 @@ import {
   calculateCountryVariance,
   calculateAverageDailyCost,
 } from "@/lib/travel-wallet/calculations";
+import { formatCurrency } from "@/lib/travel-wallet/formatters";
 
 interface TravelWalletTablesProps {
   data: TravelWalletData;
@@ -33,11 +34,6 @@ export default function TravelWalletTables({
   onAddCountry,
 }: TravelWalletTablesProps) {
   const router = useRouter();
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("pl-PL", {
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
 
   const formatDate = (dateString?: string) => {
     if (!dateString) return "—";

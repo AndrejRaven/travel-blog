@@ -8,10 +8,11 @@ import {
   calculateActualTotal,
   groupCountriesByStatus,
 } from "@/lib/travel-wallet/countries";
+import { formatCurrency } from "@/lib/travel-wallet/formatters";
 
 interface CountriesListProps {
   countries: Country[];
-  slug?: string;
+  slug: string;
   tripId?: string;
 }
 
@@ -22,11 +23,6 @@ export default function CountriesList({
 }: CountriesListProps) {
   const grouped = groupCountriesByStatus(countries);
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("pl-PL", {
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
 
   const getStatusLabel = (status: Country["status"]) => {
     switch (status) {
@@ -82,11 +78,7 @@ export default function CountriesList({
                   >
                     <td className="px-4 py-3">
                       <Link
-                        href={
-                          slug
-                            ? `/portfel-podrozniczy/${slug}/kraje/${country.slug}`
-                            : `/portfel-podrozniczy/kraje/${country.slug}`
-                        }
+                        href={`/portfel-podrozniczy/${slug}/kraje/${country.slug}`}
                         variant="default"
                         className="font-semibold text-gray-900 dark:text-gray-100"
                       >

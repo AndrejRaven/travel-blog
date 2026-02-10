@@ -1,6 +1,7 @@
 import type { Trip, Country, Budget, Expense, Location, TravelWalletData } from "./types";
 import { getTripById, updateTrip, getTripsDataFromStorage } from "./trips-storage";
 import { addLocationToExpensesInDateRange } from "./expenses";
+import { syncWalletWithBudgets } from "./wallet-sync";
 
 /**
  * Migruje slugi dla krajów w podróży (dla krajów bez slug)
@@ -132,9 +133,6 @@ function generateUniqueCountrySlug(
  * Dodaje kraj do podróży
  */
 export function addCountry(tripId: string, countryData: Omit<Country, "id" | "slug">): boolean {
-  console.log('[countries-storage] addCountry - countryData:', countryData);
-  console.log('[countries-storage] addCountry - countryData.locations:', countryData.locations);
-  
   const trip = getTripById(tripId);
   if (!trip) {
     console.error('[countries-storage] addCountry - trip not found');
@@ -154,9 +152,6 @@ export function addCountry(tripId: string, countryData: Omit<Country, "id" | "sl
     locations: countryData.locations ? countryData.locations.map(loc => ({ ...loc })) : [],
   };
 
-  console.log('[countries-storage] addCountry - newCountry:', newCountry);
-  console.log('[countries-storage] addCountry - newCountry.locations:', newCountry.locations);
-
   // Stwórz nową kopię countries array z dodanym krajem zamiast mutować
   const updatedCountries = [...trip.data.countries, newCountry];
   
@@ -166,15 +161,15 @@ export function addCountry(tripId: string, countryData: Omit<Country, "id" | "sl
     countries: updatedCountries,
   };
   
-  console.log('[countries-storage] addCountry - updatedData:', updatedData);
-  console.log('[countries-storage] addCountry - updatedData.countries:', updatedData.countries);
-  if (updatedData.countries.length > 0) {
-    const lastCountry = updatedData.countries[updatedData.countries.length - 1];
-    console.log('[countries-storage] addCountry - lastCountry.locations:', lastCountry.locations);
-  }
-  
   const result = updateTrip(tripId, { data: updatedData });
-  console.log('[countries-storage] addCountry - updateTrip result:', result);
+  
+  // Synchronizuj portfel z budżetami krajów (jeśli portfel istnieje lub dodajemy kraj z budżetem)
+  if (result && updatedData.wallet) {
+    syncWalletWithBudgets(tripId);
+  } else if (result && newCountry.budgets && newCountry.budgets.length > 0) {
+    // Jeśli portfel nie istnieje, ale dodajemy kraj z budżetem, stwórz portfel
+    syncWalletWithBudgets(tripId);
+  }
   
   return result;
 }
@@ -243,7 +238,17 @@ export function addBudgetToCountry(
   if (!country) return false;
 
   country.budgets.push(budget);
-  return updateTrip(tripId, { data: trip.data });
+  const result = updateTrip(tripId, { data: trip.data });
+  
+  // Synchronizuj portfel z budżetami krajów
+  if (result && trip.data.wallet) {
+    syncWalletWithBudgets(tripId);
+  } else if (result && budget.amount > 0) {
+    // Jeśli portfel nie istnieje, ale dodajemy budżet, stwórz portfel
+    syncWalletWithBudgets(tripId);
+  }
+  
+  return result;
 }
 
 /**
@@ -263,7 +268,17 @@ export function updateBudgetInCountry(
     return false;
 
   country.budgets[budgetIndex] = budget;
-  return updateTrip(tripId, { data: trip.data });
+  const result = updateTrip(tripId, { data: trip.data });
+  
+  // Synchronizuj portfel z budżetami krajów
+  if (result && trip.data.wallet) {
+    syncWalletWithBudgets(tripId);
+  } else if (result && budget.amount > 0) {
+    // Jeśli portfel nie istnieje, ale aktualizujemy budżet, stwórz portfel
+    syncWalletWithBudgets(tripId);
+  }
+  
+  return result;
 }
 
 /**
@@ -282,7 +297,14 @@ export function removeBudgetFromCountry(
     return false;
 
   country.budgets.splice(budgetIndex, 1);
-  return updateTrip(tripId, { data: trip.data });
+  const result = updateTrip(tripId, { data: trip.data });
+  
+  // Synchronizuj portfel z budżetami krajów
+  if (result && trip.data.wallet) {
+    syncWalletWithBudgets(tripId);
+  }
+  
+  return result;
 }
 
 /**

@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import TravelWalletHeader from "./TravelWalletHeader";
 import TravelWalletStats from "./TravelWalletStats";
 import TravelWalletProgress from "./TravelWalletProgress";
@@ -7,19 +8,28 @@ import TravelWalletChartsSection from "./TravelWalletChartsSection";
 import TravelWalletTables from "./TravelWalletTables";
 import TravelWalletTimeline from "./TravelWalletTimeline";
 import SingleCountryDashboard from "./SingleCountryDashboard";
-import type { TravelWalletData } from "@/lib/travel-wallet/types";
+import CurrencyBalancesCard from "./CurrencyBalancesCard";
+import CurrencyTransactionsHistory from "./CurrencyTransactionsHistory";
+import TransactionDetailsModal from "./TransactionDetailsModal";
+import CountryExpensesSection from "./CountryExpensesSection";
+import type { TravelWalletData, Trip, CurrencyTransaction } from "@/lib/travel-wallet/types";
 import {
   calculateRemainingBudget,
   calculateTotalBudget,
+  calculateTotalTripDays,
 } from "@/lib/travel-wallet/calculations";
 import {
   getEffectiveDashboardMode,
 } from "@/lib/travel-wallet/dashboard-mode";
+import { getCurrencyTransactions } from "@/lib/travel-wallet/currency-transactions";
+import { getAllExpenses } from "@/lib/travel-wallet/expenses";
 import type { Country, Expense } from "@/lib/travel-wallet/types";
 
 interface TravelWalletDashboardProps {
   data: TravelWalletData;
   slug: string;
+  tripId?: string;
+  tripName?: string;
   tripStartDate?: string;
   tripEndDate?: string;
   expandedCountries?: Set<string>;
@@ -36,11 +46,16 @@ interface TravelWalletDashboardProps {
   onEditLocation?: (location: string) => void;
   onDeleteLocation?: (location: string) => void;
   onEditTrip?: () => void;
+  onAddCurrencyTransaction?: () => void;
+  onDeleteCurrencyTransaction?: (transactionId: string) => void;
+  onEditCurrencyTransaction?: (transaction: CurrencyTransaction) => void;
 }
 
 export default function TravelWalletDashboard({
   data,
   slug,
+  tripId,
+  tripName,
   tripStartDate,
   tripEndDate,
   onAddCountry,
@@ -55,12 +70,53 @@ export default function TravelWalletDashboard({
   onEditLocation,
   onDeleteLocation,
   onEditTrip,
+  onAddCurrencyTransaction,
+  onDeleteCurrencyTransaction,
+  onEditCurrencyTransaction,
 }: TravelWalletDashboardProps) {
-  const availableBalance = calculateRemainingBudget(data);
-  const totalBudget = calculateTotalBudget(data);
+  const availableBalance = calculateRemainingBudget(data, tripId);
+  const totalBudget = calculateTotalBudget(data, tripId);
   
   // Określ efektywny tryb dashboardu
   const effectiveMode = getEffectiveDashboardMode(data);
+
+  // Pobierz transakcje walutowe (jeśli tripId dostępne)
+  const transactions = useMemo(() => {
+    if (!tripId) {
+      return [];
+    }
+    return getCurrencyTransactions(tripId);
+  }, [tripId, data]);
+
+  // Pobierz wszystkie wydatki dla podróży (wszystkie kraje)
+  const allExpenses = useMemo(() => {
+    if (!tripId) {
+      return [];
+    }
+    return getAllExpenses(tripId);
+  }, [tripId, data]);
+
+  // Stwórz "wirtualny kraj" dla wszystkich wydatków (dla CountryExpensesSection)
+  const allCountriesCountry: Country = useMemo(() => ({
+    id: "all-countries",
+    slug: "all-countries",
+    name: "Wszystkie kraje",
+    days: calculateTotalTripDays(tripStartDate, tripEndDate),
+    startDate: tripStartDate,
+    endDate: tripEndDate,
+    budgets: [],
+    status: "current" as const,
+    locations: [],
+  }), [tripStartDate, tripEndDate]);
+
+  // Stan modala ze szczegółami transakcji
+  const [selectedTransaction, setSelectedTransaction] = useState<CurrencyTransaction | null>(null);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+
+  const handleTransactionClick = (transaction: CurrencyTransaction) => {
+    setSelectedTransaction(transaction);
+    setIsDetailsModalOpen(true);
+  };
   
   // Jeśli tryb to single-country lub single-location, użyj SingleCountryDashboard
   const isSingleMode = effectiveMode === "single-country" || effectiveMode === "single-location";
@@ -70,6 +126,8 @@ export default function TravelWalletDashboard({
       <SingleCountryDashboard
         data={data}
         slug={slug}
+        tripId={tripId}
+        tripName={tripName}
         tripStartDate={tripStartDate}
         tripEndDate={tripEndDate}
         onAddExpense={onAddExpense}
@@ -80,6 +138,10 @@ export default function TravelWalletDashboard({
         onDeleteLocation={onDeleteLocation}
         onAddCountry={onAddCountry}
         onEditTrip={onEditTrip}
+        onEditCountry={onEditCountry}
+        onAddCurrencyTransaction={onAddCurrencyTransaction}
+        onDeleteCurrencyTransaction={onDeleteCurrencyTransaction}
+        onEditCurrencyTransaction={onEditCurrencyTransaction}
       />
     );
   }
@@ -92,16 +154,42 @@ export default function TravelWalletDashboard({
         availableBalance={availableBalance}
         totalBudget={totalBudget}
         slug={slug}
+        tripName={tripName}
         onAddExpense={onAddExpense}
         onEditTrip={onEditTrip}
         data={data}
       />
       <TravelWalletStats 
-        data={data} 
+        data={data}
+        tripId={tripId}
         tripStartDate={tripStartDate}
         tripEndDate={tripEndDate}
+        slug={slug}
       />
-      <TravelWalletProgress data={data} />
+
+      {/* Currency Transactions Section - zawsze pokazywać */}
+      {tripId && (
+        <CurrencyBalancesCard
+          transactions={transactions}
+          onAddTransaction={onAddCurrencyTransaction}
+          onTransactionClick={handleTransactionClick}
+        />
+      )}
+
+      {/* Kalendarz wydatków */}
+      {tripId && (
+        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+          <CountryExpensesSection
+            country={allCountriesCountry}
+            expenses={allExpenses}
+            onAddExpense={onAddExpense}
+            onEditExpense={onEditExpense}
+            onDeleteExpense={onDeleteExpense}
+          />
+        </div>
+      )}
+
+      <TravelWalletProgress data={data} tripId={tripId} />
       <TravelWalletChartsSection data={data} />
       <TravelWalletTables
         data={data}
@@ -123,6 +211,26 @@ export default function TravelWalletDashboard({
         onDeleteCountry={onDeleteCountry}
         onAddCountry={onAddCountry}
       />
+
+      {/* Currency Transactions History - zawsze pokazywać */}
+      {tripId && (
+        <CurrencyTransactionsHistory
+          transactions={transactions}
+          onDelete={onDeleteCurrencyTransaction}
+          onEdit={onEditCurrencyTransaction}
+          onTransactionClick={handleTransactionClick}
+        />
+      )}
+
+      {/* Transaction Details Modal */}
+      <TransactionDetailsModal
+        isOpen={isDetailsModalOpen}
+        onClose={() => {
+          setIsDetailsModalOpen(false);
+          setSelectedTransaction(null);
+        }}
+        transaction={selectedTransaction}
+      />
     </div>
   );
 }
@@ -131,6 +239,7 @@ export default function TravelWalletDashboard({
 function MultiCountryDashboardContent({
   data,
   slug,
+  tripName,
   tripStartDate,
   tripEndDate,
   availableBalance,
@@ -145,6 +254,7 @@ function MultiCountryDashboardContent({
 }: {
   data: TravelWalletData;
   slug: string;
+  tripName?: string;
   tripStartDate?: string;
   tripEndDate?: string;
   availableBalance: number;
@@ -164,16 +274,19 @@ function MultiCountryDashboardContent({
         availableBalance={availableBalance}
         totalBudget={totalBudget}
         slug={slug}
+        tripName={tripName}
         onAddExpense={onAddExpense}
         onEditTrip={onEditTrip}
         data={data}
       />
       <TravelWalletStats 
-        data={data} 
+        data={data}
+        tripId={tripId}
         tripStartDate={tripStartDate}
         tripEndDate={tripEndDate}
+        slug={slug}
       />
-      <TravelWalletProgress data={data} />
+      <TravelWalletProgress data={data} tripId={tripId} />
       <TravelWalletChartsSection data={data} />
       <TravelWalletTables
         data={data}

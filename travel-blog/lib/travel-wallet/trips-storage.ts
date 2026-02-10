@@ -119,7 +119,8 @@ export function getTripsDataFromStorage(): TripsData {
     }
 
     const parsed = JSON.parse(stored);
-    if (validateTripsData(parsed)) {
+    const isValid = validateTripsData(parsed);
+    if (isValid) {
       return parsed;
     }
 
@@ -140,12 +141,14 @@ function saveTripsDataToStorage(data: TripsData): boolean {
   }
 
   try {
-    if (!validateTripsData(data)) {
+    const isValid = validateTripsData(data);
+    if (!isValid) {
       console.error("Invalid trips data structure");
       return false;
     }
 
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    const dataToSave = JSON.stringify(data);
+    localStorage.setItem(STORAGE_KEY, dataToSave);
     return true;
   } catch (error) {
     console.error("Error saving trips data to localStorage:", error);
@@ -175,9 +178,19 @@ export function migrateOldData(): Trip | null {
     return null; // Migracja już wykonana
   }
 
+  // Jeśli nie ma podróży i migracja nie została wykonana, sprawdź czy są stare dane
+  // Jeśli nie ma starych danych, oznacza to że użytkownik celowo usunął wszystkie podróże
+  // W takim przypadku nie tworzymy demo podróży - tylko oznaczamy migrację jako wykonaną
+  const oldData = localStorage.getItem(OLD_STORAGE_KEY);
+  if (!oldData) {
+    // Brak starych danych - użytkownik celowo usunął wszystko, nie tworzymy demo
+    localStorage.setItem(MIGRATION_FLAG_KEY, "true");
+    return null;
+  }
+
   // Sprawdź czy istnieją stare dane
   try {
-    const oldData = localStorage.getItem(OLD_STORAGE_KEY);
+    // oldData już został pobrany wcześniej, użyj tej samej zmiennej
     let dataToUse: TravelWalletData | null = null;
 
     if (oldData) {
@@ -187,12 +200,11 @@ export function migrateOldData(): Trip | null {
       }
     }
 
-    // Jeśli nie ma starych danych, użyj defaultData jako demo
+    // Jeśli nie ma starych danych z krajami, NIE używaj demo danych
+    // Użytkownik celowo usunął wszystkie podróże - nie przywracaj ich
     if (!dataToUse) {
-      dataToUse = getTravelWalletData();
-    }
-
-    if (!dataToUse) {
+      // Oznacz migrację jako wykonaną, aby nie próbować ponownie
+      localStorage.setItem(MIGRATION_FLAG_KEY, "true");
       return null;
     }
 
@@ -274,13 +286,32 @@ function migrateTripsSlugs(): void {
   if (typeof window === "undefined") return;
 
   const tripsData = getTripsDataFromStorage();
+  
+  // Sprawdź czy wszystkie podróże mają slug - jeśli tak, nie rób nic
+  const allHaveSlugs = tripsData.trips.every(trip => trip.slug);
+  if (allHaveSlugs) {
+    return;
+  }
+  
+  // Utwórz głęboką kopię danych przed mutacją, aby uniknąć problemów z referencjami
+  const tripsDataCopy: TripsData = {
+    trips: tripsData.trips.map(trip => ({
+      ...trip,
+      data: {
+        ...trip.data,
+        countries: trip.data.countries.map(country => ({ ...country }))
+      }
+    })),
+    currentTripId: tripsData.currentTripId
+  };
+  
   let needsUpdate = false;
 
-  tripsData.trips.forEach((trip) => {
+  tripsDataCopy.trips.forEach((trip) => {
     if (!trip.slug) {
       // Generuj slug dla podróży bez slug
       const existingSlugs = new Set(
-        tripsData.trips.filter((t) => t.slug).map((t) => t.slug!)
+        tripsDataCopy.trips.filter((t) => t.slug).map((t) => t.slug!)
       );
       trip.slug = generateUniqueSlug(trip.name, existingSlugs);
       needsUpdate = true;
@@ -288,7 +319,7 @@ function migrateTripsSlugs(): void {
   });
 
   if (needsUpdate) {
-    saveTripsDataToStorage(tripsData);
+    saveTripsDataToStorage(tripsDataCopy);
   }
 }
 
@@ -358,38 +389,17 @@ function updateTripDatesFromCountries(trip: Trip): Trip {
 export function getAllTrips(): Trip[] {
   // Wykonaj migrację jeśli potrzeba
   migrateOldData();
+  
   // Migruj slug dla istniejących podróży
   migrateTripsSlugs();
   
   const tripsData = getTripsDataFromStorage();
   
-  // Migracja dashboardMode dla istniejących podróży
-  let needsDashboardModeUpdate = false;
-  tripsData.trips.forEach((trip) => {
-    if (!trip.data.dashboardMode) {
-      trip.data.dashboardMode = "auto";
-      needsDashboardModeUpdate = true;
-    }
-  });
-  
-  if (needsDashboardModeUpdate) {
-    saveTripsDataToStorage(tripsData);
-  }
-  
-  // Zaktualizuj daty podróży na podstawie dat krajów
-  let needsUpdate = false;
+  // Zaktualizuj daty podróży na podstawie dat krajów - tylko oblicz, nie zapisuj
+  // Nie zapisujemy tutaj, aby uniknąć pętli - daty będą zaktualizowane przy następnym zapisie
   const updatedTrips = tripsData.trips.map((trip) => {
-    const updatedTrip = updateTripDatesFromCountries(trip);
-    if (updatedTrip.startDate !== trip.startDate || updatedTrip.endDate !== trip.endDate) {
-      needsUpdate = true;
-    }
-    return updatedTrip;
+    return updateTripDatesFromCountries(trip);
   });
-  
-  if (needsUpdate) {
-    tripsData.trips = updatedTrips;
-    saveTripsDataToStorage(tripsData);
-  }
   
   return updatedTrips;
 }
@@ -444,11 +454,8 @@ export function createTrip(
 ): Trip {
   const now = new Date().toISOString();
   
-  // Upewnij się, że migracja została wykonana przed dodaniem nowej podróży
-  // Pobierz wszystkie podróże (to wywoła migrację jeśli potrzeba)
-  const allTrips = getAllTrips();
-  
-  // Pobierz aktualne dane z storage (po migracji)
+  // Pobierz aktualne dane z storage bezpośrednio (bez wywoływania getAllTrips, które może wywołać migracje)
+  // Migracje będą wykonane przy następnym odczycie przez getAllTrips
   const tripsData = getTripsDataFromStorage();
   
   // Generuj unikalny slug
@@ -519,7 +526,15 @@ export function deleteTrip(id: string): boolean {
   }
 
   tripsData.trips = filtered;
-  return saveTripsDataToStorage(tripsData);
+  const success = saveTripsDataToStorage(tripsData);
+  
+  // Jeśli wszystkie podróże zostały usunięte, upewnij się że flaga migracji jest ustawiona
+  // aby zapobiec automatycznemu tworzeniu demo podróży
+  if (success && filtered.length === 0 && typeof window !== "undefined") {
+    localStorage.setItem(MIGRATION_FLAG_KEY, "true");
+  }
+  
+  return success;
 }
 
 /**
@@ -532,6 +547,11 @@ export function setCurrentTrip(id: string): boolean {
   }
 
   const tripsData = getTripsDataFromStorage();
+  // Sprawdź czy aktualna podróż się nie zmieniła - unikaj niepotrzebnych zapisów
+  if (tripsData.currentTripId === id) {
+    return true; // Już jest ustawiona, nie trzeba zapisywać
+  }
+  
   tripsData.currentTripId = id;
   return saveTripsDataToStorage(tripsData);
 }

@@ -45,7 +45,7 @@ export default function DeleteLocationModal({
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-xl font-serif font-semibold text-gray-900 dark:text-gray-100">
-            Usuń lokalizację
+            Usuń miejsce
           </h2>
           <button
             onClick={onClose}
@@ -65,11 +65,11 @@ export default function DeleteLocationModal({
                 <AlertTriangle className="w-6 h-6 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
                 <div className="flex-1">
                   <p className="text-gray-900 dark:text-gray-100 font-medium mb-2">
-                    Nie można usunąć lokalizacji
+                    Nie można usunąć miejsca
                   </p>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Lokalizacja <strong>"{location}"</strong> jest używana w wydatkach.
-                    Aby ją usunąć, najpierw usuń lub zmień lokalizację we wszystkich
+                    Miejsce <strong>"{location}"</strong> jest używane w wydatkach.
+                    Aby je usunąć, najpierw usuń lub zmień miejsce we wszystkich
                     powiązanych wydatkach.
                   </p>
                 </div>
@@ -78,7 +78,7 @@ export default function DeleteLocationModal({
           ) : (
             <>
               <p className="text-gray-900 dark:text-gray-100">
-                Czy na pewno chcesz usunąć lokalizację <strong>"{location}"</strong>?
+                Czy na pewno chcesz usunąć miejsce <strong>"{location}"</strong>?
               </p>
               <p className="text-sm text-gray-600 dark:text-gray-400">
                 Ta operacja nie może być cofnięta.

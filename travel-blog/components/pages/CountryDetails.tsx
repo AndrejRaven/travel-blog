@@ -8,6 +8,7 @@ import {
   formatDateRange,
   calculatePlannedTotal,
 } from "@/lib/travel-wallet/countries";
+import { formatCurrency } from "@/lib/travel-wallet/formatters";
 
 // Funkcja do formatowania zakresu dat w formacie "21.02 - 25.02"
 const formatLocationDateRange = (startDate: string, endDate: string): string => {
@@ -191,12 +192,6 @@ export default function CountryDetails({
           return unassignedRanges;
         }, [country.startDate, country.endDate, country.locations]);
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("pl-PL", {
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
-
   const getStatusLabel = (status: Country["status"]) => {
     switch (status) {
       case "visited":
@@ -215,11 +210,7 @@ export default function CountryDetails({
       {/* Link powrotu */}
       <div>
         <Link
-          href={
-            slug
-              ? `/portfel-podrozniczy/${slug}/kraje`
-              : "/portfel-podrozniczy/kraje"
-          }
+          href={`/portfel-podrozniczy/${slug}/kraje`}
           variant="arrow"
           className="text-gray-600 dark:text-gray-400"
         >
@@ -247,11 +238,11 @@ export default function CountryDetails({
         </div>
       </div>
 
-      {/* Lokalizacje */}
+      {/* Miejsca */}
       <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
-            Lokalizacje
+            Miejsca
           </h2>
           {onAddLocation && (
             <button
@@ -353,7 +344,7 @@ export default function CountryDetails({
           </div>
         ) : (
           <p className="text-gray-600 dark:text-gray-400 text-center py-4">
-            Brak lokalizacji. Dodaj lokalizację, aby móc przypisywać wydatki do
+            Brak miejsc. Dodaj miejsce, aby móc przypisywać wydatki do
             konkretnych miejsc.
           </p>
         )}
@@ -375,7 +366,7 @@ export default function CountryDetails({
                       {formatLocationDateRange(range.startDate, range.endDate)}
                     </span>
                     <span className="text-xs text-amber-600 dark:text-amber-400 italic">
-                      (brak lokalizacji)
+                      (brak miejsc)
                     </span>
                   </div>
                 </div>
@@ -450,30 +441,6 @@ export default function CountryDetails({
         onEditExpense={onEditExpense}
         onDeleteExpense={onDeleteExpense}
       />
-
-      {/* Budżety według waluty */}
-      {country.budgets.length > 0 && (
-        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-            Budżety według waluty
-          </h2>
-          <div className="space-y-2">
-            {country.budgets.map((budget, index) => (
-              <div
-                key={index}
-                className="flex justify-between items-center text-sm"
-              >
-                <span className="text-gray-700 dark:text-gray-300">
-                  {budget.currency.toUpperCase()}
-                </span>
-                <span className="font-semibold text-gray-900 dark:text-gray-100">
-                  {formatCurrency(budget.amount)}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* Kategorie wydatków */}
       {calculatedCategories && calculatedCategories.length > 0 && (

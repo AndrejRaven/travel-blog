@@ -4,12 +4,13 @@ import { X, AlertTriangle } from "lucide-react";
 import Button from "@/components/ui/Button";
 import type { Expense } from "@/lib/travel-wallet/types";
 import { convertExpenseToPLN } from "@/lib/travel-wallet/expenses";
+import { formatCurrency } from "@/lib/travel-wallet/formatters";
 
 interface DeleteExpenseModalProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: () => void;
-  expense: Expense;
+  expense?: Expense;
 }
 
 export default function DeleteExpenseModal({
@@ -18,18 +19,6 @@ export default function DeleteExpenseModal({
   onConfirm,
   expense,
 }: DeleteExpenseModalProps) {
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("pl-PL", {
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
-
-  const amountInPLN = convertExpenseToPLN(expense);
-  const formattedDate = new Date(expense.date).toLocaleDateString("pl-PL", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
 
   const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget) {
@@ -43,7 +32,14 @@ export default function DeleteExpenseModal({
     }
   };
 
-  if (!isOpen) return null;
+  if (!isOpen || !expense) return null;
+
+  const amountInPLN = convertExpenseToPLN(expense);
+  const formattedDate = new Date(expense.date).toLocaleDateString("pl-PL", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
 
   return (
     <div

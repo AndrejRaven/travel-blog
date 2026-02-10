@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { X, ChevronDown, ChevronUp } from "lucide-react";
+import { X, ChevronDown, ChevronUp, ArrowLeft } from "lucide-react";
 import Button from "@/components/ui/Button";
 import DatePicker from "@/components/ui/DatePicker";
 import type { Country, Budget, TravelWalletData } from "@/lib/travel-wallet/types";
@@ -30,6 +30,7 @@ interface AddCountryModalProps {
   existingCountries?: Country[];
   tripData?: TravelWalletData;
   totalBudget?: number;
+  onBack?: () => void;
 }
 
 const AVAILABLE_CURRENCIES = ["PLN", "USD", "EUR", "GBP", "THB", "JPY", "KRW", "TWD"];
@@ -76,6 +77,7 @@ export default function AddCountryModal({
   existingCountries = [],
   tripData,
   totalBudget,
+  onBack,
 }: AddCountryModalProps) {
   const [name, setName] = useState("");
   const [startDate, setStartDate] = useState("");
@@ -370,7 +372,7 @@ export default function AddCountryModal({
     // Sprawdź czy lokacja już istnieje
     const existingNames = locations.map((loc) => loc.name.toLowerCase());
     if (existingNames.includes(trimmedName.toLowerCase())) {
-      newErrors.name = "Lokalizacja o tej nazwie już istnieje";
+      newErrors.name = "Miejsce o tej nazwie już istnieje";
       setLocationErrors(newErrors);
       return;
     }
@@ -406,10 +408,10 @@ export default function AddCountryModal({
       return;
     }
 
-    // Sprawdź czy zakres dat nakłada się na inne lokalizacje
+    // Sprawdź czy zakres dat nakłada się na inne miejsca
     if (hasDateOverlap(newLocationStartDate, newLocationEndDate, locations)) {
-      newErrors.startDate = "Zakres dat nakłada się na daty innej lokalizacji";
-      newErrors.endDate = "Zakres dat nakłada się na daty innej lokalizacji";
+      newErrors.startDate = "Zakres dat nakłada się na daty innego miejsca";
+      newErrors.endDate = "Zakres dat nakłada się na daty innego miejsca";
       setLocationErrors(newErrors);
       return;
     }
@@ -456,12 +458,23 @@ export default function AddCountryModal({
           <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
         </button>
 
-        <h2
-          id="add-country-modal-title"
-          className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-6"
-        >
-          Dodaj kraj
-        </h2>
+        <div className="flex items-center gap-3 mb-6">
+          {onBack && (
+            <button
+              onClick={onBack}
+              className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              aria-label="Wróć"
+            >
+              <ArrowLeft className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+            </button>
+          )}
+          <h2
+            id="add-country-modal-title"
+            className="text-xl font-bold text-gray-900 dark:text-gray-100"
+          >
+            Dodaj kraj
+          </h2>
+        </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -560,7 +573,7 @@ export default function AddCountryModal({
             </div>
           )}
 
-          {/* Lokalizacje - zwijana sekcja */}
+          {/* Miejsca - zwijana sekcja */}
           <div className="border border-gray-200 dark:border-gray-700 rounded-md">
             <button
               type="button"
@@ -568,7 +581,7 @@ export default function AddCountryModal({
               className="w-full flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors rounded-t-md"
             >
               <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                Dodaj lokalizację
+                Dodaj miejsce
               </span>
               {isLocationsExpanded ? (
                 <ChevronUp className="w-4 h-4 text-gray-500 dark:text-gray-400" />
@@ -583,7 +596,7 @@ export default function AddCountryModal({
                 {locations.length > 0 && (
                   <div className="space-y-2">
                     <h4 className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">
-                      Dodane lokalizacje
+                      Dodane miejsca
                     </h4>
                     <div className="space-y-2">
                       {locations.map((loc, index) => (
@@ -695,7 +708,7 @@ export default function AddCountryModal({
                   )}
                   {(!startDate || !endDate) && (
                     <p className="text-xs text-gray-500 dark:text-gray-400">
-                      Aby dodać lokalizacje, najpierw ustaw daty rozpoczęcia i zakończenia podróży w kraju.
+                      Aby dodać miejsca, najpierw ustaw daty rozpoczęcia i zakończenia podróży w kraju.
                     </p>
                   )}
                 </div>
@@ -718,6 +731,11 @@ export default function AddCountryModal({
                 + Dodaj budżet
               </Button>
             </div>
+            {totalBudget !== undefined && (
+              <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">
+                Budżet całkowity: <span className="font-semibold">{Math.round(totalBudget).toLocaleString("pl-PL")} zł</span>
+              </p>
+            )}
             {budgets.map((budget, index) => (
               <div key={index} className="flex gap-2 mb-2">
                 <select

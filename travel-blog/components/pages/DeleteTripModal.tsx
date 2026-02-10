@@ -100,7 +100,10 @@ export default function DeleteTripModal({
           <Button
             type="button"
             variant="primary"
-            onClick={onConfirm}
+            onClick={() => {
+              console.log('[AGENT-LOG] DeleteTripModal button clicked', { tripId: trip?.id, tripName: trip?.name, hypothesisId: 'G' });
+              onConfirm();
+            }}
             disabled={isDeleting}
             className="bg-red-600 hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-700 text-white"
           >

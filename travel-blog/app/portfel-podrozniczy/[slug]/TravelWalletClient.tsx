@@ -1,24 +1,46 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import PageLayout from "@/components/shared/PageLayout";
 import TravelWalletDashboard from "@/components/pages/TravelWalletDashboard";
 import AddCountryModal from "@/components/pages/AddCountryModal";
+import EditCountryModal from "@/components/pages/EditCountryModal";
 import DeleteCountryModal from "@/components/pages/DeleteCountryModal";
 import AddExpenseFromDashboardModal from "@/components/pages/AddExpenseFromDashboardModal";
 import EditTripModal from "@/components/pages/EditTripModal";
 import AddLocationModal from "@/components/pages/AddLocationModal";
 import EditLocationModal from "@/components/pages/EditLocationModal";
 import DeleteLocationModal from "@/components/pages/DeleteLocationModal";
-import { getTripBySlug, setCurrentTrip, updateTrip } from "@/lib/travel-wallet/trips-storage";
+import AddCurrencyTransactionModal from "@/components/pages/AddCurrencyTransactionModal";
+import ExchangeRateVerificationModal from "@/components/pages/ExchangeRateVerificationModal";
+import { useToast } from "@/components/ui/Toast";
+import { setCurrentTrip, updateTrip } from "@/lib/travel-wallet/trips-storage";
 import {
   addCountry,
+  updateCountry,
   deleteCountry,
 } from "@/lib/travel-wallet/countries-storage";
 import {
   addExpense,
+  saveExpense,
+  deleteExpense,
+  getExpenseById,
 } from "@/lib/travel-wallet/expenses";
+import {
+  logExpenseAdded,
+  logExpenseEdited,
+  logExpenseDeleted,
+  logCountryAdded,
+  logCountryEdited,
+  logCountryDeleted,
+  logLocationAdded,
+  logLocationEdited,
+  logLocationDeleted,
+  logTripEdited,
+  logCurrencyTransactionAdded,
+  logCurrencyTransactionDeleted,
+} from "@/lib/travel-wallet/activity-log";
 import {
   addLocationToCountry,
   updateLocationInCountry,
@@ -26,7 +48,17 @@ import {
   hasExpensesWithLocation,
 } from "@/lib/travel-wallet/countries-storage";
 import { updateExpenseLocation } from "@/lib/travel-wallet/expenses";
-import type { TravelWalletData, Country, Trip } from "@/lib/travel-wallet/types";
+import { addCurrencyTransaction, deleteCurrencyTransaction, updateCurrencyTransaction } from "@/lib/travel-wallet/currency-transactions";
+import { autoMigrateExpenses } from "@/lib/travel-wallet/migrate-expenses";
+import { autoMigrateToV2 } from "@/lib/travel-wallet/migrations/v2-wallet-migration";
+import { getBalancesWithBaseCurrency } from "@/lib/travel-wallet/wallet-operations";
+import { getTripBySlug } from "@/lib/travel-wallet/trips-storage";
+import { getEffectiveDashboardMode } from "@/lib/travel-wallet/dashboard-mode";
+import { getWalletCurrencies } from "@/lib/travel-wallet/wallet-helpers";
+import type { TravelWalletData, Country, CurrencyTransaction, Expense } from "@/lib/travel-wallet/types";
+import { useTripData } from "@/lib/travel-wallet/hooks/useTripData";
+import { useModalState } from "@/lib/travel-wallet/hooks/useModalState";
+import { useSessionNotification } from "@/lib/travel-wallet/hooks/useSessionNotification";
 
 interface TravelWalletClientProps {
   slug: string;
@@ -36,72 +68,99 @@ export default function TravelWalletClient({
   slug,
 }: TravelWalletClientProps) {
   const router = useRouter();
-  const [trip, setTrip] = useState<Trip | null>(null);
-  const [data, setData] = useState<TravelWalletData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isAddCountryModalOpen, setIsAddCountryModalOpen] = useState(false);
-  const [isDeleteCountryModalOpen, setIsDeleteCountryModalOpen] = useState(false);
-  const [countryToDelete, setCountryToDelete] = useState<Country | null>(null);
+  const { addToast } = useToast();
+  
+  // Use custom hooks
+  const { trip, isLoading, refreshTrip } = useTripData(slug);
+  useSessionNotification("newTripAdded", slug);
+  
+  const countryModal = useModalState<{
+    type: "add" | "delete";
+    country?: Country;
+    startDate?: string;
+    endDate?: string;
+  }>();
+  const editCountryModal = useModalState<Country>();
+  const locationModal = useModalState<{
+    type: "add" | "edit" | "delete";
+    location?: string;
+    countryId?: string;
+    date?: string;
+  }>();
+  const expenseModal = useModalState<{ date?: string; expense?: Expense }>();
+  const editTripModal = useModalState<void>();
+  const currencyTransactionModal = useModalState<CurrencyTransaction | void>();
+  const rateVerificationModal = useModalState<{
+    transactionData: Omit<CurrencyTransaction, "id" | "tripId" | "rate">;
+    verification: RateVerificationResult;
+  }>();
+  
   const [isDeleting, setIsDeleting] = useState(false);
-  const [isAddExpenseModalOpen, setIsAddExpenseModalOpen] = useState(false);
-  const [isEditTripModalOpen, setIsEditTripModalOpen] = useState(false);
-  const [isAddLocationModalOpen, setIsAddLocationModalOpen] = useState(false);
-  const [isEditLocationModalOpen, setIsEditLocationModalOpen] = useState(false);
-  const [isDeleteLocationModalOpen, setIsDeleteLocationModalOpen] = useState(false);
-  const [pendingLocationCountryId, setPendingLocationCountryId] = useState<string | undefined>(undefined);
-  const [pendingLocationDate, setPendingLocationDate] = useState<string | undefined>(undefined);
-  const [locationToEdit, setLocationToEdit] = useState<string>("");
-  const [locationToDelete, setLocationToDelete] = useState<string>("");
   const [isDeletingLocation, setIsDeletingLocation] = useState(false);
-  const [countryInitialStartDate, setCountryInitialStartDate] = useState<string | undefined>(undefined);
-  const [countryInitialEndDate, setCountryInitialEndDate] = useState<string | undefined>(undefined);
-
-  const loadTripData = () => {
-    const foundTrip = getTripBySlug(slug);
-    if (!foundTrip) {
-      router.push("/portfel-podrozniczy");
-      return;
-    }
-    
-    console.log('[TravelWalletClient] loadTripData - foundTrip.data:', foundTrip.data);
-    console.log('[TravelWalletClient] loadTripData - foundTrip.data.countries:', foundTrip.data.countries);
-    
-    if (foundTrip.data.countries.length > 0) {
-      const firstCountry = foundTrip.data.countries[0];
-      console.log('[TravelWalletClient] loadTripData - firstCountry:', firstCountry);
-      console.log('[TravelWalletClient] loadTripData - firstCountry.locations:', firstCountry.locations);
-      console.log('[TravelWalletClient] loadTripData - firstCountry.locations type:', typeof firstCountry.locations);
-      console.log('[TravelWalletClient] loadTripData - firstCountry.locations isArray:', Array.isArray(firstCountry.locations));
-    }
-    
-    setCurrentTrip(foundTrip.id);
-    setTrip(foundTrip);
-    // Utwórz głęboką kopię danych aby React wykrył zmianę
-    // Kopiuj również lokalizacje dla każdego kraju
-    const newData = {
-      ...foundTrip.data,
-      countries: foundTrip.data.countries.map(country => ({
+  
+  // Memoized data
+  const data = useMemo<TravelWalletData | null>(() => {
+    if (!trip) return null;
+    return {
+      ...trip.data,
+      countries: trip.data.countries.map(country => ({
         ...country,
         locations: country.locations ? country.locations.map(loc => 
           typeof loc === 'string' ? loc : { ...loc }
         ) : [],
       })),
     };
-    
-    console.log('[TravelWalletClient] loadTripData - newData:', newData);
-    if (newData.countries.length > 0) {
-      console.log('[TravelWalletClient] loadTripData - newData.countries[0].locations:', newData.countries[0].locations);
-    }
-    
-    setData(newData);
-    setIsLoading(false);
-  };
+  }, [trip]);
 
+  // Pobierz waluty dostępne w portfelu (z saldem > 0)
+  // Uwzględnia tryb dashboardu i opcjonalne countryId z modalu transakcji
+  const walletCurrencies = useMemo(() => {
+    if (!data) return [];
+    
+    const effectiveMode = getEffectiveDashboardMode(data);
+    const isMultiMode = effectiveMode === "multi-country";
+    
+    // W multi-country:
+    // - Jeśli edytujemy transakcję z countryId, użyj go do filtrowania
+    // - Jeśli dodajemy nową transakcję (brak countryId), użyj globalnych sald z portfela
+    //   (suma wszystkich walut z wszystkich krajów, które mają saldo > 0)
+    const countryIdForFilter = isMultiMode && currencyTransactionModal.data?.countryId
+      ? currencyTransactionModal.data.countryId
+      : undefined;
+    
+    const currencies = getWalletCurrencies(data, trip, countryIdForFilter);
+    
+    console.log('[TravelWalletClient] walletCurrencies calculated:', {
+      effectiveMode,
+      isMultiMode,
+      countryIdForFilter,
+      currencies,
+      hasWallet: !!data.wallet,
+      modalIsOpen: currencyTransactionModal.isOpen,
+      modalData: currencyTransactionModal.data,
+    });
+    
+    return currencies;
+  }, [data, trip, currencyTransactionModal.data?.countryId, currencyTransactionModal.isOpen]);
+
+  // Set current trip when trip changes and run migration
   useEffect(() => {
-    loadTripData();
-  }, [slug, router]);
+    if (isLoading) return; // Wait for loading to complete
+    if (!trip) {
+      router.push("/portfel-podrozniczy");
+      return;
+    }
+    setCurrentTrip(trip.id);
+    
+    // Run auto-migrations on first load
+    if (typeof window !== "undefined") {
+      autoMigrateExpenses();
+      autoMigrateToV2(); // Migrate to new wallet system
+    }
+  }, [trip, isLoading, router]);
 
-  const handleAddCountry = (countryData: {
+
+  const handleAddCountry = useCallback((countryData: {
     name: string;
     location?: string;
     days: number;
@@ -111,82 +170,111 @@ export default function TravelWalletClient({
     budgets: { currency: string; amount: number }[];
     locations?: Array<{ name: string; startDate: string; endDate: string }>;
   }) => {
-    console.log('[TravelWalletClient] handleAddCountry - countryData:', countryData);
-    console.log('[TravelWalletClient] handleAddCountry - locations:', countryData.locations);
-    
-    const trip = getTripBySlug(slug);
-    if (!trip) {
-      console.error('[TravelWalletClient] handleAddCountry - trip not found');
-      return;
-    }
+    if (!trip) return;
 
     const countryDataToSave = {
       ...countryData,
       location: countryData.location || "",
       locations: countryData.locations || [],
     };
-    
-    console.log('[TravelWalletClient] handleAddCountry - countryDataToSave:', countryDataToSave);
-    console.log('[TravelWalletClient] handleAddCountry - locations w countryDataToSave:', countryDataToSave.locations);
 
     const success = addCountry(trip.id, countryDataToSave);
     
-    console.log('[TravelWalletClient] handleAddCountry - addCountry success:', success);
-    
     if (success) {
-      // Użyj setTimeout aby upewnić się, że dane są zapisane do localStorage
-      setTimeout(() => {
-        console.log('[TravelWalletClient] handleAddCountry - wywołuję loadTripData');
-        loadTripData();
-      }, 0);
-      setIsAddCountryModalOpen(false);
-    } else {
-      console.error('[TravelWalletClient] handleAddCountry - addCountry failed');
+      // Znajdź dodany kraj (najnowszy)
+      const updatedTrip = trip.data.countries.length > 0 
+        ? trip.data.countries[trip.data.countries.length - 1]
+        : null;
+      const newCountry = updatedTrip || { id: "", name: countryData.name };
+      
+      logCountryAdded(
+        trip.id,
+        newCountry.id || "unknown",
+        countryData.name,
+        countryData.startDate,
+        countryData.endDate
+      );
+      addToast({
+        type: "success",
+        title: "Dodano kraj",
+        message: `${countryData.name} został dodany do podróży`,
+      });
+      refreshTrip();
+      countryModal.close();
     }
-  };
+  }, [trip, refreshTrip, countryModal, addToast]);
 
-  const handleEditCountry = (country: Country) => {
-    router.push(`/portfel-podrozniczy/${slug}/kraje/${country.slug}`);
-  };
+  const handleEditCountry = useCallback((country: Country) => {
+    editCountryModal.open(country);
+  }, [editCountryModal]);
 
-  const handleDeleteCountryRequest = (country: Country) => {
-    setCountryToDelete(country);
-    setIsDeleteCountryModalOpen(true);
-  };
-
-  const handleDeleteCountryConfirm = async () => {
-    if (!countryToDelete) return;
-
-    const trip = getTripBySlug(slug);
+  const handleSaveEditedCountry = useCallback((countryId: string, updates: Partial<Country>) => {
     if (!trip) return;
+
+    const country = data?.countries.find((c) => c.id === countryId);
+    if (!country) return;
+
+    // Przygotuj zmiany do logowania
+    const changes: Record<string, unknown> = {};
+    if (updates.name && updates.name !== country.name) changes.name = updates.name;
+    if (updates.startDate !== undefined && updates.startDate !== country.startDate) changes.startDate = updates.startDate;
+    if (updates.endDate !== undefined && updates.endDate !== country.endDate) changes.endDate = updates.endDate;
+    if (updates.budgets && JSON.stringify(updates.budgets) !== JSON.stringify(country.budgets)) {
+      changes.budgets = updates.budgets;
+    }
+
+    if (updateCountry(trip.id, countryId, updates)) {
+      if (Object.keys(changes).length > 0) {
+        logCountryEdited(trip.id, countryId, updates.name || country.name, changes);
+      }
+      addToast({
+        type: "success",
+        title: "Zaktualizowano kraj",
+        message: `${updates.name || country.name} został zaktualizowany`,
+      });
+      refreshTrip();
+      editCountryModal.close();
+    }
+  }, [trip, data, refreshTrip, editCountryModal, addToast]);
+
+  const handleDeleteCountryRequest = useCallback((country: Country) => {
+    countryModal.open({ type: "delete", country });
+  }, [countryModal]);
+
+  const handleDeleteCountryConfirm = useCallback(async () => {
+    if (!countryModal.data?.country || !trip) return;
 
     setIsDeleting(true);
     try {
-      if (deleteCountry(trip.id, countryToDelete.id)) {
-        loadTripData();
-        setIsDeleteCountryModalOpen(false);
-        setCountryToDelete(null);
+      const countryName = countryModal.data.country.name;
+      if (deleteCountry(trip.id, countryModal.data.country.id)) {
+        logCountryDeleted(trip.id, countryModal.data.country.id, countryName);
+        addToast({
+          type: "success",
+          title: "Usunięto kraj",
+          message: `${countryName} został usunięty z podróży`,
+        });
+        refreshTrip();
+        countryModal.close();
       }
     } finally {
       setIsDeleting(false);
     }
-  };
+  }, [countryModal, trip, refreshTrip, addToast]);
 
-  const handleAddBudget = (country: Country) => {
+  const handleAddBudget = useCallback((country: Country) => {
     // TODO: Implement AddBudgetModal
-    console.log("Add budget to country:", country);
-  };
+  }, []);
 
-  const handleReduceBudget = (country: Country) => {
+  const handleReduceBudget = useCallback((country: Country) => {
     // TODO: Implement EditBudgetModal
-    console.log("Reduce budget for country:", country);
-  };
+  }, []);
 
-  const handleAddExpense = () => {
-    setIsAddExpenseModalOpen(true);
-  };
+  const handleAddExpense = useCallback((date?: string) => {
+    expenseModal.open({ date });
+  }, [expenseModal]);
 
-  const handleSaveExpense = (expenseData: {
+  const handleSaveExpense = useCallback((expenseData: {
     id?: string;
     countryId: string;
     description: string;
@@ -198,19 +286,201 @@ export default function TravelWalletClient({
     location?: string;
     tripId?: string;
   }) => {
-    const foundTrip = getTripBySlug(slug);
-    if (!foundTrip) return;
+    if (!trip) return;
 
-    addExpense(expenseData, foundTrip.id);
-    loadTripData();
-    setIsAddExpenseModalOpen(false);
-  };
+    const country = data?.countries.find((c) => c.id === expenseData.countryId);
+    const countryName = country?.name || "Nieznany kraj";
 
-  const handleEditTrip = () => {
-    setIsEditTripModalOpen(true);
-  };
+    if (expenseData.id) {
+      // Edycja wydatku
+      const existingExpense = getExpenseById(expenseData.id, trip.id);
+      if (existingExpense) {
+        const changes: Record<string, unknown> = {};
+        if (existingExpense.amount !== expenseData.amount) changes.amount = expenseData.amount;
+        if (existingExpense.currency !== expenseData.currency) changes.currency = expenseData.currency;
+        if (existingExpense.category !== expenseData.category) changes.category = expenseData.category;
+        if (existingExpense.description !== expenseData.description) changes.description = expenseData.description;
+        if (existingExpense.date !== expenseData.date) changes.date = expenseData.date;
+        if (existingExpense.location !== expenseData.location) changes.location = expenseData.location;
 
-  const handleSaveTrip = (tripData: {
+        saveExpense({ ...expenseData, id: expenseData.id } as any, trip.id);
+        logExpenseEdited(trip.id, expenseData.id, countryName, changes);
+        addToast({
+          type: "success",
+          title: "Zaktualizowano",
+          message: `Wydatek został zaktualizowany`,
+        });
+      }
+    } else {
+      // Dodanie wydatku
+      const newExpense = addExpense(expenseData, trip.id);
+      logExpenseAdded(
+        trip.id,
+        newExpense.id,
+        countryName,
+        expenseData.amount,
+        expenseData.currency,
+        expenseData.description
+      );
+      addToast({
+        type: "success",
+        title: "Dodano wydatek",
+        message: `${expenseData.amount} ${expenseData.currency} - ${expenseData.description || expenseData.category}`,
+      });
+    }
+
+    refreshTrip();
+    expenseModal.close();
+  }, [trip, data, refreshTrip, expenseModal, addToast]);
+
+  const handleEditTrip = useCallback(() => {
+    editTripModal.open();
+  }, [editTripModal]);
+
+  const handleAddCurrencyTransaction = useCallback(() => {
+    currencyTransactionModal.open();
+  }, [currencyTransactionModal]);
+
+  const handleSaveCurrencyTransaction = useCallback((
+    transactionData: Omit<CurrencyTransaction, "id" | "tripId" | "rate">,
+    transactionId?: string
+  ) => {
+    if (!trip) return;
+
+    // Jeśli jest transactionId, to edycja
+    if (transactionId) {
+      const success = updateCurrencyTransaction(trip.id, transactionId, transactionData);
+      if (success) {
+        refreshTrip();
+        currencyTransactionModal.close();
+        addToast({
+          type: "success",
+          title: "Sukces",
+          message: "Transakcja walutowa została zaktualizowana",
+        });
+      }
+      return;
+    }
+
+    // Weryfikacja kursów jest teraz w AddCurrencyTransactionModal
+    // Tutaj tylko zapisujemy transakcję
+    const success = addCurrencyTransaction(trip.id, transactionData);
+    if (success) {
+      // Pobierz dodaną transakcję (najnowsza)
+      const transactions = require("@/lib/travel-wallet/currency-transactions").getCurrencyTransactions(trip.id);
+      const newTransaction = transactions[transactions.length - 1];
+      
+      if (newTransaction) {
+        logCurrencyTransactionAdded(
+          trip.id,
+          newTransaction.id,
+          transactionData.fromCurrency,
+          transactionData.fromAmount,
+          transactionData.toCurrency,
+          transactionData.toAmount
+        );
+      }
+      
+      refreshTrip();
+      currencyTransactionModal.close();
+      addToast({
+        type: "success",
+        title: "Sukces",
+        message: "Transakcja walutowa została dodana",
+      });
+    }
+  }, [trip, refreshTrip, currencyTransactionModal, addToast]);
+
+  const handleEditCurrencyTransaction = useCallback((transaction: CurrencyTransaction) => {
+    currencyTransactionModal.open(transaction);
+  }, [currencyTransactionModal]);
+
+  // Handler dla potwierdzenia weryfikacji - zapisz transakcję mimo ostrzeżenia
+  const handleConfirmRateVerification = useCallback(() => {
+    if (!rateVerificationModal.data) return;
+    if (!trip) return;
+
+    const { transactionData } = rateVerificationModal.data;
+    const success = addCurrencyTransaction(trip.id, transactionData);
+    
+    if (success) {
+      const transactions = require("@/lib/travel-wallet/currency-transactions").getCurrencyTransactions(trip.id);
+      const newTransaction = transactions[transactions.length - 1];
+      
+      if (newTransaction) {
+        logCurrencyTransactionAdded(
+          trip.id,
+          newTransaction.id,
+          transactionData.fromCurrency,
+          transactionData.fromAmount,
+          transactionData.toCurrency,
+          transactionData.toAmount
+        );
+      }
+      
+      refreshTrip();
+      currencyTransactionModal.close();
+      rateVerificationModal.close();
+      addToast({
+        type: "success",
+        title: "Sukces",
+        message: "Transakcja walutowa została dodana",
+      });
+    }
+  }, [trip, refreshTrip, currencyTransactionModal, rateVerificationModal, addToast]);
+
+  const handleDeleteCurrencyTransaction = useCallback((transactionId: string) => {
+    if (!trip) return;
+
+    // Pobierz transakcję przed usunięciem
+    const { getCurrencyTransactionById } = require("@/lib/travel-wallet/currency-transactions");
+    const transaction = getCurrencyTransactionById(trip.id, transactionId);
+    
+    const success = deleteCurrencyTransaction(trip.id, transactionId);
+    if (success) {
+      if (transaction) {
+        logCurrencyTransactionDeleted(
+          trip.id,
+          transactionId,
+          transaction.fromCurrency,
+          transaction.fromAmount,
+          transaction.toCurrency,
+          transaction.toAmount
+        );
+      }
+      
+      refreshTrip();
+      addToast({
+        type: "success",
+        title: "Usunięto",
+        message: "Transakcja walutowa została usunięta",
+      });
+    }
+  }, [trip, refreshTrip, addToast]);
+
+  const handleEditExpense = useCallback((expense: Expense) => {
+    expenseModal.open({ date: expense.date });
+    // TODO: Przekaż expense do modala (wymaga modyfikacji AddExpenseFromDashboardModal)
+  }, [expenseModal]);
+
+  const handleDeleteExpense = useCallback((expense: Expense) => {
+    if (!trip) return;
+
+    const country = data?.countries.find((c) => c.id === expense.countryId);
+    const countryName = country?.name || "Nieznany kraj";
+
+    if (deleteExpense(expense.id, trip.id)) {
+      logExpenseDeleted(trip.id, expense.id, countryName, expense.amount, expense.currency);
+      addToast({
+        type: "success",
+        title: "Usunięto wydatek",
+        message: `Wydatek ${expense.amount} ${expense.currency} został usunięty`,
+      });
+      refreshTrip();
+    }
+  }, [trip, data, refreshTrip, addToast]);
+
+  const handleSaveTrip = useCallback((tripData: {
     name: string;
     startDate?: string;
     endDate?: string;
@@ -218,19 +488,18 @@ export default function TravelWalletClient({
     userName?: string;
     dashboardMode?: "multi-country" | "single-country" | "single-location" | "auto";
   }) => {
-    const foundTrip = getTripBySlug(slug);
-    if (!foundTrip) return;
+    if (!trip) return;
 
     // Aktualizuj dane podróży
     const updatedData: TravelWalletData = {
-      ...foundTrip.data,
+      ...trip.data,
       totalBudget: tripData.totalBudget,
       userName: tripData.userName,
       dashboardMode: tripData.dashboardMode,
     };
 
-    // Przygotuj aktualizacje - upewnij się, że daty są przekazane (nawet jeśli undefined)
-    const updates: Partial<Trip> = {
+    // Przygotuj aktualizacje
+    const updates: Partial<typeof trip> = {
       name: tripData.name,
       data: updatedData,
     };
@@ -243,103 +512,162 @@ export default function TravelWalletClient({
       updates.endDate = tripData.endDate || undefined;
     }
 
-    if (updateTrip(foundTrip.id, updates)) {
-      loadTripData();
-      setIsEditTripModalOpen(false);
-    }
-  };
+    // Sprawdź zmiany
+    const changes: Record<string, unknown> = {};
+    if (trip.name !== tripData.name) changes.name = tripData.name;
+    if (trip.startDate !== tripData.startDate) changes.startDate = tripData.startDate;
+    if (trip.endDate !== tripData.endDate) changes.endDate = tripData.endDate;
+    if (trip.data.totalBudget !== tripData.totalBudget) changes.totalBudget = tripData.totalBudget;
+    if (trip.data.userName !== tripData.userName) changes.userName = tripData.userName;
 
-  const handleDeleteCountryFromTrip = (countryId: string) => {
-    const foundTrip = getTripBySlug(slug);
-    if (!foundTrip) return;
-
-    if (deleteCountry(foundTrip.id, countryId)) {
-      loadTripData();
-    }
-  };
-
-  const handleAddLocationFromExpense = (countryId: string, date: string) => {
-    setPendingLocationCountryId(countryId);
-    setPendingLocationDate(date);
-    setIsAddLocationModalOpen(true);
-    setIsAddExpenseModalOpen(false);
-  };
-
-  const handleAddLocation = () => {
-    // Jeśli jest tylko jeden kraj, użyj jego ID
-    if (data && data.countries.length === 1) {
-      setPendingLocationCountryId(data.countries[0].id);
-      setIsAddLocationModalOpen(true);
-    }
-  };
-
-  const handleSaveLocation = (location: string, startDate: string, endDate: string) => {
-    const foundTrip = getTripBySlug(slug);
-    if (!foundTrip || !pendingLocationCountryId) return;
-
-    if (addLocationToCountry(foundTrip.id, pendingLocationCountryId, location, startDate, endDate)) {
-      loadTripData();
-      setIsAddLocationModalOpen(false);
-      setPendingLocationCountryId(undefined);
-      setPendingLocationDate(undefined);
+    if (updateTrip(trip.id, updates)) {
+      if (Object.keys(changes).length > 0) {
+        logTripEdited(trip.id, tripData.name, changes);
+      }
       
-      // Wróć do modala wydatku z wybraną lokalizacją (jeśli był otwarty)
-      if (isAddExpenseModalOpen) {
-        setIsAddExpenseModalOpen(true);
-      }
+      // Sprawdź czy daty zostały rozszerzone i czy są niewybrane daty
+      const hasDateExtension = (tripData.startDate && trip.startDate && new Date(tripData.startDate) < new Date(trip.startDate)) ||
+        (tripData.endDate && trip.endDate && new Date(tripData.endDate) > new Date(trip.endDate));
+      
+      addToast({
+        type: "success",
+        title: "Zapisano zmiany",
+        message: hasDateExtension 
+          ? "Podróż została zaktualizowana. Możesz teraz dodać kraj w nowe dni."
+          : "Zmiany w podróży zostały zapisane",
+      });
+      
+      refreshTrip();
+      editTripModal.close();
     }
-  };
+  }, [trip, refreshTrip, editTripModal, addToast]);
 
-  const handleEditLocation = (location: string) => {
+  const handleDeleteCountryFromTrip = useCallback((countryId: string) => {
+    if (!trip) return;
+
+    if (deleteCountry(trip.id, countryId)) {
+      refreshTrip();
+    }
+  }, [trip, refreshTrip]);
+
+  const handleAddLocationFromExpense = useCallback((countryId: string, date: string) => {
+    locationModal.open({ type: "add", countryId, date });
+    expenseModal.close();
+  }, [locationModal, expenseModal]);
+
+  const handleAddLocation = useCallback(() => {
     // Jeśli jest tylko jeden kraj, użyj jego ID
     if (data && data.countries.length === 1) {
-      setPendingLocationCountryId(data.countries[0].id);
-      setLocationToEdit(location);
-      setIsEditLocationModalOpen(true);
+      locationModal.open({ type: "add", countryId: data.countries[0].id });
     }
-  };
+  }, [data, locationModal]);
 
-  const handleSaveEditedLocation = (newLocation: string, startDate: string, endDate: string) => {
-    const foundTrip = getTripBySlug(slug);
-    if (!foundTrip || !pendingLocationCountryId) return;
+  const handleSaveLocation = useCallback((location: string, startDate: string, endDate: string) => {
+    if (!trip || !locationModal.data?.countryId) return;
+
+    const country = data?.countries.find((c) => c.id === locationModal.data?.countryId);
+    const countryName = country?.name || "Nieznany kraj";
+
+    if (addLocationToCountry(trip.id, locationModal.data.countryId, location, startDate, endDate)) {
+      logLocationAdded(trip.id, locationModal.data.countryId, countryName, location, startDate, endDate);
+      addToast({
+        type: "success",
+        title: "Dodano miejsce",
+        message: `${location} został dodany do ${countryName}`,
+      });
+      refreshTrip();
+      const wasFromExpense = !!locationModal.data.date;
+      locationModal.close();
+      
+      // Wróć do modala wydatku (jeśli był otwarty)
+      if (wasFromExpense) {
+        expenseModal.open({ date: locationModal.data.date });
+      }
+    }
+  }, [trip, data, locationModal, refreshTrip, expenseModal, addToast]);
+
+  const handleEditLocation = useCallback((location: string) => {
+    // Jeśli jest tylko jeden kraj, użyj jego ID
+    if (data && data.countries.length === 1) {
+      locationModal.open({ type: "edit", location, countryId: data.countries[0].id });
+    }
+  }, [data, locationModal]);
+
+  const handleSaveEditedLocation = useCallback((newLocation: string, startDate: string, endDate: string) => {
+    if (!trip || !locationModal.data?.countryId || !locationModal.data?.location) return;
     
-    if (updateLocationInCountry(foundTrip.id, pendingLocationCountryId, locationToEdit, newLocation, startDate, endDate)) {
+    const country = data?.countries.find((c) => c.id === locationModal.data?.countryId);
+    const countryName = country?.name || "Nieznany kraj";
+    const oldLocationName = locationModal.data.location;
+    
+    if (updateLocationInCountry(trip.id, locationModal.data.countryId, locationModal.data.location, newLocation, startDate, endDate)) {
       // Zaktualizuj lokalizację w wydatkach (tylko jeśli zmieniono nazwę)
-      if (newLocation !== locationToEdit) {
-        updateExpenseLocation(foundTrip.id, pendingLocationCountryId, locationToEdit, newLocation);
+      if (newLocation !== locationModal.data.location) {
+        updateExpenseLocation(trip.id, locationModal.data.countryId, locationModal.data.location, newLocation);
       }
-      loadTripData();
-      setIsEditLocationModalOpen(false);
-      setLocationToEdit("");
-      setPendingLocationCountryId(undefined);
+      
+      const changes: Record<string, unknown> = {};
+      if (newLocation !== oldLocationName) changes.name = newLocation;
+      if (startDate) changes.startDate = startDate;
+      if (endDate) changes.endDate = endDate;
+      
+      logLocationEdited(trip.id, locationModal.data.countryId, countryName, oldLocationName, newLocation, changes);
+      addToast({
+        type: "success",
+        title: "Zaktualizowano miejsce",
+        message: `${oldLocationName} został zaktualizowany`,
+      });
+      refreshTrip();
+      locationModal.close();
     }
-  };
+  }, [trip, data, locationModal, refreshTrip, addToast]);
 
-  const handleDeleteLocation = (location: string) => {
+  const handleDeleteLocation = useCallback((location: string) => {
     // Jeśli jest tylko jeden kraj, użyj jego ID
     if (data && data.countries.length === 1) {
-      setPendingLocationCountryId(data.countries[0].id);
-      setLocationToDelete(location);
-      setIsDeleteLocationModalOpen(true);
+      locationModal.open({ type: "delete", location, countryId: data.countries[0].id });
     }
-  };
+  }, [data, locationModal]);
 
-  const handleDeleteLocationConfirm = () => {
-    const foundTrip = getTripBySlug(slug);
-    if (!foundTrip || !pendingLocationCountryId) return;
+  const handleDeleteLocationConfirm = useCallback(() => {
+    if (!trip || !locationModal.data?.countryId || !locationModal.data?.location) return;
+    
+    const country = data?.countries.find((c) => c.id === locationModal.data?.countryId);
+    const countryName = country?.name || "Nieznany kraj";
+    const locationName = locationModal.data.location;
     
     setIsDeletingLocation(true);
     try {
-      if (removeLocationFromCountry(foundTrip.id, pendingLocationCountryId, locationToDelete)) {
-        loadTripData();
-        setIsDeleteLocationModalOpen(false);
-        setLocationToDelete("");
-        setPendingLocationCountryId(undefined);
+      if (removeLocationFromCountry(trip.id, locationModal.data.countryId, locationModal.data.location)) {
+        logLocationDeleted(trip.id, locationModal.data.countryId, countryName, locationName);
+        addToast({
+          type: "success",
+          title: "Usunięto miejsce",
+          message: `${locationName} został usunięty z ${countryName}`,
+        });
+        refreshTrip();
+        locationModal.close();
       }
     } finally {
       setIsDeletingLocation(false);
     }
-  };
+  }, [trip, data, locationModal, refreshTrip, addToast]);
+
+  // Memoize pending country for location modals
+  const pendingCountry = useMemo(
+    () => data?.countries.find((c) => c.id === locationModal.data?.countryId),
+    [data, locationModal.data?.countryId]
+  );
+
+  // Memoize location data for edit modal
+  const editingLocationData = useMemo(() => {
+    if (!locationModal.data?.location || !pendingCountry) return null;
+    const loc = pendingCountry.locations?.find((loc) => {
+      const name = typeof loc === "string" ? loc : loc.name;
+      return name === locationModal.data.location;
+    });
+    return loc && typeof loc !== "string" ? loc : null;
+  }, [locationModal.data?.location, pendingCountry]);
 
   if (isLoading) {
     return (
@@ -369,39 +697,36 @@ export default function TravelWalletClient({
         <TravelWalletDashboard
           data={data}
           slug={slug}
+          tripId={trip?.id}
+          tripName={trip?.name}
           tripStartDate={trip?.startDate}
           tripEndDate={trip?.endDate}
           onAddCountry={(startDate, endDate) => {
-            setCountryInitialStartDate(startDate);
-            setCountryInitialEndDate(endDate);
-            setIsAddCountryModalOpen(true);
+            countryModal.open({ type: "add", startDate, endDate });
           }}
           onEditCountry={handleEditCountry}
           onDeleteCountry={handleDeleteCountryRequest}
           onAddBudget={handleAddBudget}
           onReduceBudget={handleReduceBudget}
           onAddExpense={handleAddExpense}
+          onEditExpense={handleEditExpense}
+          onDeleteExpense={handleDeleteExpense}
           onAddLocation={handleAddLocation}
           onEditLocation={handleEditLocation}
           onDeleteLocation={handleDeleteLocation}
           onEditTrip={handleEditTrip}
+          onAddCurrencyTransaction={handleAddCurrencyTransaction}
+          onDeleteCurrencyTransaction={handleDeleteCurrencyTransaction}
+          onEditCurrencyTransaction={handleEditCurrencyTransaction}
         />
       </PageLayout>
 
       <AddCountryModal
-        isOpen={isAddCountryModalOpen}
-        onClose={() => {
-          setIsAddCountryModalOpen(false);
-          setCountryInitialStartDate(undefined);
-          setCountryInitialEndDate(undefined);
-        }}
-        onSave={(countryData) => {
-          handleAddCountry(countryData);
-          setCountryInitialStartDate(undefined);
-          setCountryInitialEndDate(undefined);
-        }}
-        initialStartDate={countryInitialStartDate}
-        initialEndDate={countryInitialEndDate}
+        isOpen={countryModal.isOpen && countryModal.data?.type === "add"}
+        onClose={() => countryModal.close()}
+        onSave={handleAddCountry}
+        initialStartDate={countryModal.data?.startDate}
+        initialEndDate={countryModal.data?.endDate}
         tripStartDate={trip?.startDate}
         tripEndDate={trip?.endDate}
         existingCountries={data?.countries || []}
@@ -410,135 +735,135 @@ export default function TravelWalletClient({
       />
 
       <DeleteCountryModal
-        isOpen={isDeleteCountryModalOpen}
+        isOpen={countryModal.isOpen && countryModal.data?.type === "delete"}
         onClose={() => {
           if (!isDeleting) {
-            setIsDeleteCountryModalOpen(false);
-            setCountryToDelete(null);
+            countryModal.close();
           }
         }}
         onConfirm={handleDeleteCountryConfirm}
-        country={countryToDelete}
+        country={countryModal.data?.country || null}
         isDeleting={isDeleting}
+      />
+
+      <EditCountryModal
+        isOpen={editCountryModal.isOpen}
+        onClose={() => editCountryModal.close()}
+        onSave={handleSaveEditedCountry}
+        country={editCountryModal.data || null}
+        tripStartDate={trip?.startDate}
+        tripEndDate={trip?.endDate}
+        tripData={data || undefined}
+        totalBudget={trip?.data.totalBudget}
       />
 
       {data && (
         <>
           <AddExpenseFromDashboardModal
-            isOpen={isAddExpenseModalOpen}
-            onClose={() => {
-              setIsAddExpenseModalOpen(false);
-              setPendingLocationCountryId(undefined);
-              setPendingLocationDate(undefined);
-            }}
+            isOpen={expenseModal.isOpen}
+            onClose={() => expenseModal.close()}
             onSave={handleSaveExpense}
             data={data}
             tripId={trip?.id || ""}
+            initialDate={expenseModal.data?.date}
+            tripStartDate={trip?.startDate}
+            tripEndDate={trip?.endDate}
             onAddLocation={handleAddLocationFromExpense}
             onAddCountry={() => {
-              setIsAddExpenseModalOpen(false);
-              setIsAddCountryModalOpen(true);
+              expenseModal.close();
+              countryModal.open({ type: "add" });
             }}
           />
 
           <EditTripModal
-            isOpen={isEditTripModalOpen}
-            onClose={() => setIsEditTripModalOpen(false)}
+            isOpen={editTripModal.isOpen}
+            onClose={() => editTripModal.close()}
             onSave={handleSaveTrip}
             trip={trip}
             onDeleteCountry={handleDeleteCountryFromTrip}
             onAddCountry={(startDate, endDate) => {
-              setIsEditTripModalOpen(false);
-              setCountryInitialStartDate(startDate);
-              setCountryInitialEndDate(endDate);
-              setIsAddCountryModalOpen(true);
+              editTripModal.close();
+              countryModal.open({ type: "add", startDate, endDate });
             }}
           />
 
-          {pendingLocationCountryId && data && (
+          {locationModal.data?.countryId && pendingCountry && (
             <>
               <AddLocationModal
-                isOpen={isAddLocationModalOpen}
-                onClose={() => {
-                  setIsAddLocationModalOpen(false);
-                  setPendingLocationCountryId(undefined);
-                  setPendingLocationDate(undefined);
-                }}
+                isOpen={locationModal.isOpen && locationModal.data.type === "add"}
+                onClose={() => locationModal.close()}
                 onSave={handleSaveLocation}
-                existingLocations={(() => {
-                  const country = data.countries.find((c) => c.id === pendingLocationCountryId);
-                  return country?.locations || [];
-                })()}
-                countryStartDate={(() => {
-                  const country = data.countries.find((c) => c.id === pendingLocationCountryId);
-                  return country?.startDate;
-                })()}
-                countryEndDate={(() => {
-                  const country = data.countries.find((c) => c.id === pendingLocationCountryId);
-                  return country?.endDate;
-                })()}
-                initialDate={pendingLocationDate}
+                existingLocations={pendingCountry.locations || []}
+                countryStartDate={pendingCountry.startDate}
+                countryEndDate={pendingCountry.endDate}
+                initialDate={locationModal.data.date}
               />
               <EditLocationModal
-                isOpen={isEditLocationModalOpen}
-                onClose={() => {
-                  setIsEditLocationModalOpen(false);
-                  setLocationToEdit("");
-                  setPendingLocationCountryId(undefined);
-                }}
+                isOpen={locationModal.isOpen && locationModal.data.type === "edit"}
+                onClose={() => locationModal.close()}
                 onSave={handleSaveEditedLocation}
-                existingLocations={(() => {
-                  const country = data.countries.find((c) => c.id === pendingLocationCountryId);
-                  return country?.locations || [];
-                })()}
-                currentLocation={locationToEdit}
-                currentStartDate={(() => {
-                  const country = data.countries.find((c) => c.id === pendingLocationCountryId);
-                  if (!country) return undefined;
-                  const location = country.locations?.find((loc) => {
-                    const name = typeof loc === "string" ? loc : loc.name;
-                    return name === locationToEdit;
-                  });
-                  return location && typeof location !== "string" ? location.startDate : undefined;
-                })()}
-                currentEndDate={(() => {
-                  const country = data.countries.find((c) => c.id === pendingLocationCountryId);
-                  if (!country) return undefined;
-                  const location = country.locations?.find((loc) => {
-                    const name = typeof loc === "string" ? loc : loc.name;
-                    return name === locationToEdit;
-                  });
-                  return location && typeof location !== "string" ? location.endDate : undefined;
-                })()}
-                countryStartDate={(() => {
-                  const country = data.countries.find((c) => c.id === pendingLocationCountryId);
-                  return country?.startDate;
-                })()}
-                countryEndDate={(() => {
-                  const country = data.countries.find((c) => c.id === pendingLocationCountryId);
-                  return country?.endDate;
-                })()}
+                existingLocations={pendingCountry.locations || []}
+                currentLocation={locationModal.data.location || ""}
+                currentStartDate={editingLocationData?.startDate}
+                currentEndDate={editingLocationData?.endDate}
+                countryStartDate={pendingCountry.startDate}
+                countryEndDate={pendingCountry.endDate}
               />
               <DeleteLocationModal
-                isOpen={isDeleteLocationModalOpen}
+                isOpen={locationModal.isOpen && locationModal.data.type === "delete"}
                 onClose={() => {
                   if (!isDeletingLocation) {
-                    setIsDeleteLocationModalOpen(false);
-                    setLocationToDelete("");
-                    setPendingLocationCountryId(undefined);
+                    locationModal.close();
                   }
                 }}
                 onConfirm={handleDeleteLocationConfirm}
-                location={locationToDelete}
-                hasExpenses={(() => {
-                  const foundTrip = getTripBySlug(slug);
-                  if (!foundTrip || !pendingLocationCountryId) return false;
-                  return hasExpensesWithLocation(foundTrip.id, pendingLocationCountryId, locationToDelete);
-                })()}
+                location={locationModal.data.location || ""}
+                hasExpenses={
+                  trip
+                    ? hasExpensesWithLocation(trip.id, locationModal.data.countryId, locationModal.data.location || "")
+                    : false
+                }
                 isDeleting={isDeletingLocation}
               />
             </>
           )}
+
+          <AddCurrencyTransactionModal
+            isOpen={currencyTransactionModal.isOpen}
+            onClose={() => currencyTransactionModal.close()}
+            onSave={handleSaveCurrencyTransaction}
+            slug={slug}
+            transaction={currencyTransactionModal.data}
+            walletCurrencies={walletCurrencies}
+            tripId={trip?.id}
+            countryId={(() => {
+              // W trybie single-country, użyj ID pierwszego (i jedynego) kraju
+              const effectiveMode = getEffectiveDashboardMode(data);
+              if (effectiveMode === "single-country" && data.countries.length === 1) {
+                return data.countries[0].id;
+              }
+              // W trybie multi-country, użyj countryId z transakcji (jeśli edytujemy) lub undefined
+              return currencyTransactionModal.data?.countryId;
+            })()}
+          />
+
+          <ExchangeRateVerificationModal
+            isOpen={rateVerificationModal.isOpen}
+            onClose={() => rateVerificationModal.close()}
+            onConfirm={handleConfirmRateVerification}
+            verification={rateVerificationModal.data?.verification || {
+              isValid: true,
+              transactionRate: 0,
+              referenceRate: null,
+              differencePercent: null,
+              isAboveLimit: false,
+              isBelowLimit: false,
+            }}
+            fromCurrency={rateVerificationModal.data?.transactionData.fromCurrency || ""}
+            toCurrency={rateVerificationModal.data?.transactionData.toCurrency || ""}
+            fromAmount={rateVerificationModal.data?.transactionData.fromAmount || 0}
+            toAmount={rateVerificationModal.data?.transactionData.toAmount || 0}
+          />
         </>
       )}
     </>

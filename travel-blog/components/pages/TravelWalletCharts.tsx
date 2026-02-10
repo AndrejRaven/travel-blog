@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { formatCurrency } from "@/lib/travel-wallet/formatters";
 
 interface ProgressBarProps {
   value: number;
@@ -238,7 +239,7 @@ export function BudgetBreakdown({
               <div className="flex items-center gap-4">
                 <div className="text-right">
                   <div className="text-sm font-bold text-gray-900 dark:text-gray-100">
-                    {formatCurrency(budget.currency, budget.amount)}
+                    {formatCurrency(budget.amount, budget.currency)}
                   </div>
                   <div className="text-xs text-gray-500 dark:text-gray-400">
                     {percentage.toFixed(1)}%

@@ -5,6 +5,7 @@ import Link from "@/components/ui/Link";
 import CountryActionsMenu from "./CountryActionsMenu";
 import type { TravelWalletData, Country } from "@/lib/travel-wallet/types";
 import { calculateActualSpending } from "@/lib/travel-wallet/calculations";
+import { formatCurrency, formatDate } from "@/lib/travel-wallet/formatters";
 
 interface TravelWalletTimelineProps {
   data: TravelWalletData;
@@ -29,28 +30,12 @@ export default function TravelWalletTimeline({
   onDeleteCountry,
   onAddCountry,
 }: TravelWalletTimelineProps) {
-  const formatDate = (dateString?: string) => {
-    if (!dateString) return "—";
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) return "—";
-    return date.toLocaleDateString("pl-PL", {
-      day: "numeric",
-      month: "short",
-    });
-  };
-
   const formatDateRange = (startDate?: string, endDate?: string) => {
     if (!startDate || !endDate) return "—";
-    const start = formatDate(startDate);
-    const end = formatDate(endDate);
+    const start = formatDate(startDate, { day: "numeric", month: "short" });
+    const end = formatDate(endDate, { day: "numeric", month: "short" });
     if (start === "—" || end === "—") return "—";
     return `${start} - ${end}.`;
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("pl-PL", {
-      maximumFractionDigits: 0,
-    }).format(amount);
   };
 
   // Funkcja pomocnicza do formatowania daty na YYYY-MM-DD

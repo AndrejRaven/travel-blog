@@ -119,13 +119,13 @@ export default function EditLocationModal({
 
     const trimmedLocation = location.trim();
     if (!trimmedLocation) {
-      newErrors.location = "Nazwa lokalizacji jest wymagana";
+      newErrors.location = "Nazwa miejsca jest wymagana";
     } else if (trimmedLocation !== currentLocation) {
       const existingNames = (existingLocations || []).map((loc) =>
         typeof loc === "string" ? loc : loc.name
       );
       if (existingNames.includes(trimmedLocation)) {
-        newErrors.location = "Lokalizacja o tej nazwie już istnieje";
+        newErrors.location = "Miejsce o tej nazwie już istnieje";
       }
     }
 
@@ -145,12 +145,12 @@ export default function EditLocationModal({
       newErrors.endDate = "Data zakończenia nie może być wcześniejsza niż data rozpoczęcia";
     }
 
-    // Sprawdź czy zakres dat nakłada się na inne lokalizacje (pomijając aktualnie edytowaną)
+    // Sprawdź czy zakres dat nakłada się na inne miejsca (pomijając aktualnie edytowane)
     if (startDate && endDate && existingLocations) {
       const locationsArray = existingLocations.filter((loc) => typeof loc !== "string") as Array<{ name: string; startDate: string; endDate: string }>;
       if (hasDateOverlap(startDate, endDate, locationsArray, currentLocation)) {
-        newErrors.startDate = "Zakres dat nakłada się na daty innej lokalizacji";
-        newErrors.endDate = "Zakres dat nakłada się na daty innej lokalizacji";
+        newErrors.startDate = "Zakres dat nakłada się na daty innego miejsca";
+        newErrors.endDate = "Zakres dat nakłada się na daty innego miejsca";
       }
     }
 
@@ -182,7 +182,7 @@ export default function EditLocationModal({
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-xl font-serif font-semibold text-gray-900 dark:text-gray-100">
-            Edytuj lokalizację
+            Edytuj miejsce
           </h2>
           <button
             onClick={onClose}
@@ -195,13 +195,13 @@ export default function EditLocationModal({
 
         {/* Formularz */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          {/* Nazwa lokalizacji */}
+          {/* Nazwa miejsca */}
           <div>
             <label
               htmlFor="location"
               className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
             >
-              Nazwa lokalizacji *
+              Nazwa miejsca *
             </label>
             <input
               id="location"

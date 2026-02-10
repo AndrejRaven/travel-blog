@@ -97,6 +97,7 @@ const { theme } = useTheme();
 
 - `Button` - przyciski z wariantami (primary, secondary, outline, youtube)
 - `Link` - linki z wariantami (arrow, underline) - ZAWSZE używaj zamiast next/link
+- `Select` - custom dropdown select (ZAWSZE używaj zamiast natywnego `<select>`) - komponent z buttonem, listą opcji i animacją
 - `RichText` - renderowanie treści z Sanity CMS
 - `ThemeToggle` - przełącznik motywów
 - `Logo` - logo aplikacji

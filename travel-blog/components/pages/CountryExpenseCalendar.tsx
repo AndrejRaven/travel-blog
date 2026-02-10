@@ -12,6 +12,7 @@ import {
   formatDateToYYYYMMDD,
 } from "@/lib/travel-wallet/calendar";
 import { convertExpenseToPLN } from "@/lib/travel-wallet/expenses";
+import { formatCurrency } from "@/lib/travel-wallet/formatters";
 
 interface CountryExpenseCalendarProps {
   country: Country;

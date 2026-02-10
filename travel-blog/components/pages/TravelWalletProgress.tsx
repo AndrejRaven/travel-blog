@@ -8,23 +8,21 @@ import {
   calculateTotalSpent,
   calculateBurnRate,
 } from "@/lib/travel-wallet/calculations";
+import { formatCurrency } from "@/lib/travel-wallet/formatters";
 
 interface TravelWalletProgressProps {
   data: TravelWalletData;
+  tripId?: string;
 }
 
 export default function TravelWalletProgress({
   data,
+  tripId,
 }: TravelWalletProgressProps) {
-  const totalBudget = calculateTotalBudget(data);
-  const totalSpent = calculateTotalSpent(data);
-  const burnRate = calculateBurnRate(data);
+  const totalBudget = calculateTotalBudget(data, tripId);
+  const totalSpent = calculateTotalSpent(data, tripId);
+  const burnRate = calculateBurnRate(data, tripId);
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("pl-PL", {
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
 
   const percentage = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
 

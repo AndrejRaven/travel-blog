@@ -83,7 +83,7 @@ function CountryCard({
                     ? country.locations
                         .map((loc) => (typeof loc === "string" ? loc : loc.name))
                         .join(", ")
-                    : "Brak lokalizacji"}
+                    : "Brak miejsc"}
                 </span>
               </div>
               <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">

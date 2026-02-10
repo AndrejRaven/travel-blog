@@ -8,6 +8,7 @@ import {
   calculateActualSpending,
   calculateCategoryTotals,
 } from "@/lib/travel-wallet/calculations";
+import { formatCurrency } from "@/lib/travel-wallet/formatters";
 
 interface TravelWalletChartsSectionProps {
   data: TravelWalletData;

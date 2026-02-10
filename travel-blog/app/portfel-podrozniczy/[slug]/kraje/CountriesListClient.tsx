@@ -19,7 +19,6 @@ export default function CountriesListClient({
   const router = useRouter();
   const [countries, setCountries] = useState<Country[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [tripName, setTripName] = useState<string | null>(null);
 
   useEffect(() => {
     const trip = getTripBySlug(slug);
@@ -28,7 +27,6 @@ export default function CountriesListClient({
       return;
     }
 
-    setTripName(trip.name);
     const allCountries = getAllCountries(trip.id);
     setCountries(allCountries);
     setIsLoading(false);

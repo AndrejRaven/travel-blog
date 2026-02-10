@@ -16,6 +16,7 @@ import {
   filterExpensesByLocation,
   getUniqueLocationsFromExpenses,
 } from "@/lib/travel-wallet/expenses";
+import { formatCurrency, formatDate } from "@/lib/travel-wallet/formatters";
 
 interface CountryExpensesSectionProps {
   country: Country;
@@ -98,7 +99,7 @@ export default function CountryExpensesSection({
   const goToPreviousMonth = () => {
     if (!canGoToPreviousMonth) return;
     
-    // Sprawdź czy wybrana lokalizacja ma daty tylko w jednym miesiącu
+    // Sprawdź czy wybrane miejsce ma daty tylko w jednym miesiącu
     if (selectedLocation && country.locations) {
       const selectedLoc = country.locations.find((loc) => {
         const locName = typeof loc === "string" ? loc : loc.name;
@@ -121,18 +122,18 @@ export default function CountryExpensesSection({
         
         // Jeśli poprzedni miesiąc nie zawiera dat lokalizacji, zablokuj przełączanie
         if (!prevMonthContainsLocation) {
-          // Sprawdź czy lokalizacja jest tylko w jednym miesiącu
+          // Sprawdź czy miejsce jest tylko w jednym miesiącu
           const startMonth = { year: startDate.getFullYear(), month: startDate.getMonth() };
           const endMonth = { year: endDate.getFullYear(), month: endDate.getMonth() };
           const isSingleMonth = startMonth.year === endMonth.year && startMonth.month === endMonth.month;
           
           if (isSingleMonth) {
             const locationMonthName = startDate.toLocaleDateString("pl-PL", { month: "long", year: "numeric" });
-            setMonthChangeError(`Wybrana lokalizacja jest dostępna tylko w miesiącu ${locationMonthName}`);
+            setMonthChangeError(`Wybrane miejsce jest dostępne tylko w miesiącu ${locationMonthName}`);
           } else {
             // Lokalizacja jest w wielu miesiącach, ale poprzedni miesiąc jest poza zakresem
             const locationRange = `${startDate.toLocaleDateString("pl-PL", { day: "2-digit", month: "2-digit" })} - ${endDate.toLocaleDateString("pl-PL", { day: "2-digit", month: "2-digit" })}`;
-            setMonthChangeError(`Wybrana lokalizacja jest dostępna tylko w zakresie ${locationRange}`);
+            setMonthChangeError(`Wybrane miejsce jest dostępne tylko w zakresie ${locationRange}`);
           }
           setTimeout(() => setMonthChangeError(null), 3000); // Ukryj komunikat po 3 sekundach
           return;
@@ -153,7 +154,7 @@ export default function CountryExpensesSection({
   const goToNextMonth = () => {
     if (!canGoToNextMonth) return;
     
-    // Sprawdź czy wybrana lokalizacja ma daty tylko w jednym miesiącu
+    // Sprawdź czy wybrane miejsce ma daty tylko w jednym miesiącu
     if (selectedLocation && country.locations) {
       const selectedLoc = country.locations.find((loc) => {
         const locName = typeof loc === "string" ? loc : loc.name;
@@ -176,18 +177,18 @@ export default function CountryExpensesSection({
         
         // Jeśli następny miesiąc nie zawiera dat lokalizacji, zablokuj przełączanie
         if (!nextMonthContainsLocation) {
-          // Sprawdź czy lokalizacja jest tylko w jednym miesiącu
+          // Sprawdź czy miejsce jest tylko w jednym miesiącu
           const startMonth = { year: startDate.getFullYear(), month: startDate.getMonth() };
           const endMonth = { year: endDate.getFullYear(), month: endDate.getMonth() };
           const isSingleMonth = startMonth.year === endMonth.year && startMonth.month === endMonth.month;
           
           if (isSingleMonth) {
             const locationMonthName = startDate.toLocaleDateString("pl-PL", { month: "long", year: "numeric" });
-            setMonthChangeError(`Wybrana lokalizacja jest dostępna tylko w miesiącu ${locationMonthName}`);
+            setMonthChangeError(`Wybrane miejsce jest dostępne tylko w miesiącu ${locationMonthName}`);
           } else {
             // Lokalizacja jest w wielu miesiącach, ale następny miesiąc jest poza zakresem
             const locationRange = `${startDate.toLocaleDateString("pl-PL", { day: "2-digit", month: "2-digit" })} - ${endDate.toLocaleDateString("pl-PL", { day: "2-digit", month: "2-digit" })}`;
-            setMonthChangeError(`Wybrana lokalizacja jest dostępna tylko w zakresie ${locationRange}`);
+            setMonthChangeError(`Wybrane miejsce jest dostępne tylko w zakresie ${locationRange}`);
           }
           setTimeout(() => setMonthChangeError(null), 3000); // Ukryj komunikat po 3 sekundach
           return;
@@ -217,7 +218,7 @@ export default function CountryExpensesSection({
   // Automatycznie przełącz miesiąc tylko przy pierwszym wyborze lokalizacji
   // Nie resetuj miesiąca gdy użytkownik ręcznie przełącza miesiące
   useEffect(() => {
-    // Jeśli wybrano "Wszystkie lokalizacje" (pusta lokalizacja), nie resetuj miesiąca
+    // Jeśli wybrano "Wszystkie miejsca" (puste miejsce), nie resetuj miesiąca
     // Pozwól użytkownikowi swobodnie przełączać miesiące
     if (!selectedLocation) {
       return;
@@ -405,22 +406,6 @@ export default function CountryExpensesSection({
     return dates;
   }, [selectedLocation, country.locations, country.startDate, country.endDate]);
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("pl-PL", {
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("pl-PL", {
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-      weekday: "long",
-    });
-  };
-
   const handleDayClick = (date: Date) => {
     const dateString = formatDateToYYYYMMDD(date);
     if (selectedDate === dateString) {
@@ -460,7 +445,7 @@ export default function CountryExpensesSection({
                 onChange={(e) => setSelectedLocation(e.target.value)}
                 className="w-full px-3 py-2 border rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
               >
-                <option value="">Wszystkie lokalizacje</option>
+                <option value="">Wszystkie miejsca</option>
                 {availableLocations.map((location) => {
                   const dateRange = formatLocationDateRange(location.startDate, location.endDate);
                   const displayName = dateRange 
@@ -621,7 +606,7 @@ export default function CountryExpensesSection({
                         }
                       `}
                     >
-                      {formatCurrency(dayTotal)} zł
+                      {formatCurrency(dayTotal, "PLN")}
                     </span>
                   ) : isAvailable && !hasFilteredExpenses ? (
                     <span className="text-[7px] text-gray-400 dark:text-gray-500 leading-none">
@@ -640,7 +625,7 @@ export default function CountryExpensesSection({
         <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
           <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">
             {selectedDate
-              ? `${formatDate(selectedDate)}${selectedLocation ? ` - ${selectedLocation}` : ""}`
+              ? `${formatDate(selectedDate, { day: "numeric", month: "long", year: "numeric", weekday: "long" })}${selectedLocation ? ` - ${selectedLocation}` : ""}`
               : `Wszystkie wydatki${selectedLocation ? ` - ${selectedLocation}` : ""}`}
           </h3>
           {displayedExpenses.length > 0 ? (
@@ -667,11 +652,11 @@ export default function CountryExpensesSection({
                           {expense.category}
                         </span>
                         <span className="text-sm font-bold text-gray-700 dark:text-gray-300">
-                          {formatCurrency(amountInPLN)} zł
+                          {formatCurrency(amountInPLN, "PLN")}
                         </span>
                         {expense.currency !== "PLN" && (
                           <span className="text-xs text-gray-500 dark:text-gray-500">
-                            ({formatCurrency(expense.amount)} {expense.currency})
+                            ({formatCurrency(expense.amount, expense.currency)})
                           </span>
                         )}
                         {expense.location && (

@@ -57,12 +57,14 @@ export default function Toast({
   type,
   title,
   message,
-  duration = 5000,
+  duration = 1500,
   onClose,
   className = "",
 }: ToastProps) {
   const [isVisible, setIsVisible] = useState(true);
   const [isExiting, setIsExiting] = useState(false);
+  const [progress, setProgress] = useState(100);
+  const [isHovered, setIsHovered] = useState(false);
 
   const config = toastConfig[type];
   const Icon = config.icon;
@@ -76,14 +78,31 @@ export default function Toast({
   }, [onClose]);
 
   useEffect(() => {
-    if (duration > 0) {
-      const timer = setTimeout(() => {
-        handleClose();
-      }, duration);
+    if (duration > 0 && !isHovered) {
+      const startTime = Date.now();
+      let animationFrameId: number;
+      
+      const updateProgress = () => {
+        const elapsed = Date.now() - startTime;
+        const remaining = Math.max(0, 100 - (elapsed / duration) * 100);
+        setProgress(remaining);
 
-      return () => clearTimeout(timer);
+        if (remaining > 0) {
+          animationFrameId = requestAnimationFrame(updateProgress);
+        } else {
+          handleClose();
+        }
+      };
+
+      animationFrameId = requestAnimationFrame(updateProgress);
+
+      return () => {
+        if (animationFrameId) {
+          cancelAnimationFrame(animationFrameId);
+        }
+      };
     }
-  }, [duration, handleClose]);
+  }, [duration, handleClose, isHovered]);
 
   if (!isVisible) return null;
 
@@ -92,11 +111,14 @@ export default function Toast({
       className={`
         fixed top-20 right-4 z-50 max-w-sm w-full
         transform transition-all duration-300 ease-in-out
-        ${isExiting ? "translate-x-full opacity-0" : "translate-x-0 opacity-100"}
+        ${isExiting ? "translate-x-full opacity-0" : "translate-x-0 opacity-90"}
+        hover:opacity-100
         ${className}
       `}
       role="alert"
       aria-live="polite"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
       <div
         className={`
@@ -132,6 +154,27 @@ export default function Toast({
           </button>
         </div>
       </div>
+      
+      {/* Progress bar */}
+      {duration > 0 && (
+        <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-200/50 dark:bg-gray-700/50 rounded-b-lg overflow-hidden">
+          <div className="h-full w-full flex justify-end">
+            <div
+              className={`h-full ${
+                type === "success" ? "bg-green-600 dark:bg-green-400" :
+                type === "error" ? "bg-red-600 dark:bg-red-400" :
+                type === "warning" ? "bg-yellow-600 dark:bg-yellow-400" :
+                type === "info" ? "bg-blue-600 dark:bg-blue-400" :
+                "bg-orange-600 dark:bg-orange-400"
+              }`}
+              style={{
+                width: `${progress}%`,
+                transition: 'none',
+              }}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

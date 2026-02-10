@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import Button from "@/components/ui/Button";
+import { useToast } from "@/components/ui/Toast";
 
 interface DatePickerProps {
   value: string;
@@ -28,6 +29,10 @@ export default function DatePicker({
   id,
 }: DatePickerProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [position, setPosition] = useState<"bottom" | "top" | "left" | "right">("bottom");
+  const inputRef = useRef<HTMLInputElement>(null);
+  const calendarRef = useRef<HTMLDivElement>(null);
+  const { addToast } = useToast();
   
   // Funkcja pomocnicza do formatowania daty
   const formatDateToYYYYMMDD = (date: Date): string => {
@@ -247,12 +252,77 @@ export default function DatePicker({
     });
   };
 
+  // Funkcja do obliczania pozycji kalendarza
+  const calculatePosition = () => {
+    if (!inputRef.current || typeof window === "undefined") return "bottom";
+    
+    const inputRect = inputRef.current.getBoundingClientRect();
+    const viewportHeight = window.innerHeight;
+    const viewportWidth = window.innerWidth;
+    const calendarHeight = 280; // Przybliżona wysokość kalendarza
+    const calendarWidth = 240; // Szerokość kalendarza
+    
+    // Sprawdź czy jest miejsce na dole
+    const spaceBelow = viewportHeight - inputRect.bottom;
+    const spaceAbove = inputRect.top;
+    const spaceRight = viewportWidth - inputRect.left;
+    const spaceLeft = inputRect.left;
+    
+    // Priorytet: dół > góra > prawo > lewo
+    if (spaceBelow >= calendarHeight) {
+      return "bottom";
+    } else if (spaceAbove >= calendarHeight) {
+      return "top";
+    } else if (spaceRight >= calendarWidth) {
+      return "right";
+    } else if (spaceLeft >= calendarWidth) {
+      return "left";
+    }
+    
+    // Fallback: wybierz najlepszą dostępną opcję
+    if (spaceAbove > spaceBelow) {
+      return "top";
+    } else if (spaceRight > spaceLeft) {
+      return "right";
+    } else {
+      return "left";
+    }
+  };
+
+  // Aktualizuj pozycję gdy kalendarz się otwiera
+  useEffect(() => {
+    if (isOpen && inputRef.current) {
+      // Użyj setTimeout aby upewnić się, że DOM jest zaktualizowany
+      setTimeout(() => {
+        const newPosition = calculatePosition();
+        setPosition(newPosition);
+      }, 0);
+    }
+  }, [isOpen]);
+
   const handleDateClick = (date: Date) => {
     const dateString = formatDateToYYYYMMDD(date);
-    if (!isDateDisabled(date)) {
-      onChange(dateString);
-      setIsOpen(false);
+    if (isDateDisabled(date)) {
+      // Nie zamykaj kalendarza, tylko pokaż toast
+      if (isDateOccupied(date)) {
+        addToast({
+          type: "error",
+          title: "Data niedostępna",
+          message: "Ta data jest już zajęta przez inny kraj.",
+          duration: 3000,
+        });
+      } else if (isDateOutOfRange(date)) {
+        addToast({
+          type: "error",
+          title: "Data poza zakresem",
+          message: "Ta data jest poza zakresem podróży.",
+          duration: 3000,
+        });
+      }
+      return;
     }
+    onChange(dateString);
+    setIsOpen(false);
   };
 
   return (
@@ -269,6 +339,7 @@ export default function DatePicker({
       {/* Input z przyciskiem */}
       <div className="relative">
         <input
+          ref={inputRef}
           type="text"
           id={id}
           value={formatDateToDisplay(value)}
@@ -286,7 +357,18 @@ export default function DatePicker({
               className="fixed inset-0 z-10"
               onClick={() => setIsOpen(false)}
             />
-            <div className="absolute top-full left-0 mt-1 z-20 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 p-2 w-[240px]">
+            <div
+              ref={calendarRef}
+              className={`absolute z-20 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 p-2 w-[240px] ${
+                position === "top"
+                  ? "bottom-full left-0 mb-1"
+                  : position === "right"
+                  ? "top-0 left-full ml-1"
+                  : position === "left"
+                  ? "top-0 right-full mr-1"
+                  : "top-full left-0 mt-1"
+              }`}
+            >
               {/* Header kalendarza */}
               <div className="flex items-center justify-between mb-2">
                 <button
@@ -347,14 +429,14 @@ export default function DatePicker({
                       className={`
                         h-6 rounded text-[11px] transition-colors flex items-center justify-center
                         ${isOccupied
-                          ? "bg-red-200 dark:bg-red-900/40 text-red-700 dark:text-red-300 cursor-not-allowed font-medium"
+                          ? "bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 cursor-not-allowed font-medium"
                           : isOutOfRange
                           ? "bg-gray-100 dark:bg-gray-900 text-gray-400 dark:text-gray-600 cursor-not-allowed"
                           : isSelected
-                          ? "bg-blue-500 dark:bg-blue-600 text-white font-semibold"
+                          ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 font-semibold"
                           : isToday
-                          ? "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 font-semibold hover:bg-blue-200 dark:hover:bg-blue-900/50"
-                          : "bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700"
+                          ? "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 font-semibold hover:bg-green-100 dark:hover:bg-green-900/30"
+                          : "bg-green-50 dark:bg-green-900/20 text-gray-900 dark:text-gray-100 hover:bg-green-100 dark:hover:bg-green-900/30"
                         }
                       `}
                     >

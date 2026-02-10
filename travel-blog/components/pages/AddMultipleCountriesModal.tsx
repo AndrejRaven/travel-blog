@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { X, Plus, Trash2 } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import { X, Plus, Trash2, ArrowLeft } from "lucide-react";
 import Button from "@/components/ui/Button";
 import DatePicker from "@/components/ui/DatePicker";
 import type { Budget, TravelWalletData } from "@/lib/travel-wallet/types";
@@ -41,9 +41,41 @@ interface AddMultipleCountriesModalProps {
   tripEndDate?: string;
   tripData?: TravelWalletData;
   totalBudget?: number;
+  onBack?: () => void;
 }
 
 const AVAILABLE_CURRENCIES = ["PLN", "USD", "EUR", "GBP", "THB", "JPY", "KRW", "TWD"];
+
+/**
+ * Kursy walut do PLN (muszą być takie same jak w calculations.ts)
+ */
+const exchangeRates: Record<string, number> = {
+  PLN: 1,
+  USD: 4.0,
+  EUR: 4.3,
+  JPY: 0.027,
+  THB: 0.11,
+  GBP: 5.1,
+  KRW: 0.003,
+  TWD: 0.13,
+};
+
+/**
+ * Konwertuje kwotę w danej walucie na PLN
+ */
+function convertToPLN(amount: number, currency: string): number {
+  const rate = exchangeRates[currency.toUpperCase()] || 1;
+  return amount * rate;
+}
+
+/**
+ * Oblicza budżet kraju w PLN (suma wszystkich budżetów przeliczona na PLN)
+ */
+function calculateCountryBudgetInPLN(budgets: Budget[]): number {
+  return budgets.reduce((sum, budget) => {
+    return sum + convertToPLN(budget.amount, budget.currency);
+  }, 0);
+}
 
 export default function AddMultipleCountriesModal({
   isOpen,
@@ -54,6 +86,7 @@ export default function AddMultipleCountriesModal({
   tripEndDate,
   tripData,
   totalBudget,
+  onBack,
 }: AddMultipleCountriesModalProps) {
   const [countries, setCountries] = useState<CountryFormData[]>([
     {
@@ -65,7 +98,6 @@ export default function AddMultipleCountriesModal({
     },
   ]);
   const [errors, setErrors] = useState<Record<number, Record<string, string>>>({});
-  const [showSingleCountryWarning, setShowSingleCountryWarning] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -141,8 +173,36 @@ export default function AddMultipleCountriesModal({
     newCountries[index] = { ...newCountries[index], [field]: value };
     setCountries(newCountries);
     
-    // Wyczyść błędy dla tego pola
-    if (errors[index]) {
+    // Walidacja daty zakończenia w czasie rzeczywistym
+    if (field === "startDate" || field === "endDate") {
+      const country = newCountries[index];
+      if (country.startDate && country.endDate) {
+        if (new Date(country.startDate) > new Date(country.endDate)) {
+          const newErrors = { ...errors };
+          if (!newErrors[index]) {
+            newErrors[index] = {};
+          }
+          newErrors[index].endDate = "Data zakończenia nie może być wcześniejsza niż data rozpoczęcia";
+          setErrors(newErrors);
+        } else {
+          // Wyczyść błąd jeśli daty są poprawne
+          const newErrors = { ...errors };
+          if (newErrors[index]?.endDate) {
+            const countryErrors = { ...newErrors[index] };
+            delete countryErrors.endDate;
+            if (Object.keys(countryErrors).length === 0) {
+              delete newErrors[index];
+            } else {
+              newErrors[index] = countryErrors;
+            }
+            setErrors(newErrors);
+          }
+        }
+      }
+    }
+    
+    // Wyczyść błędy dla tego pola (jeśli nie jest to błąd daty)
+    if (errors[index] && field !== "startDate" && field !== "endDate") {
       const newErrors = { ...errors };
       const countryErrors = { ...newErrors[index] };
       delete countryErrors[field as string];
@@ -196,134 +256,84 @@ export default function AddMultipleCountriesModal({
         countryErrors.budgets = "Dodaj co najmniej jeden budżet z kwotą większą od zera";
       }
 
+      // Walidacja budżetu: sprawdź czy suma budżetów wszystkich krajów nie przekracza całkowitego budżetu
+      if (totalBudget !== undefined && validBudgets.length > 0) {
+        const currentCountryBudget = calculateCountryBudgetInPLN(validBudgets);
+        
+        // Oblicz sumę budżetów wszystkich innych krajów
+        const otherCountriesBudget = countries.reduce((sum, c, idx) => {
+          if (idx !== index) {
+            const otherValidBudgets = c.budgets.filter((b) => b.amount > 0);
+            return sum + calculateCountryBudgetInPLN(otherValidBudgets);
+          }
+          return sum;
+        }, 0);
+
+        const totalPlannedBudget = otherCountriesBudget + currentCountryBudget;
+        
+        if (totalPlannedBudget > totalBudget) {
+          const availableBudget = Math.max(0, totalBudget - otherCountriesBudget);
+          countryErrors.budgets = `Suma budżetów wszystkich krajów (${Math.round(totalPlannedBudget).toLocaleString("pl-PL")} zł) przekracza budżet całkowity (${Math.round(totalBudget).toLocaleString("pl-PL")} zł). Dla tego kraju możesz zaplanować maksymalnie ${Math.round(availableBudget).toLocaleString("pl-PL")} zł.`;
+        }
+      }
+
       if (Object.keys(countryErrors).length > 0) {
         newErrors[index] = countryErrors;
       }
     });
 
-    // Sprawdź czy jest minimum 2 wypełnione kraje (bez błędów)
-    const validCountries = countries.filter((c, index) => {
-      const hasName = c.name.trim();
-      const hasBudget = c.budgets.some(b => b.amount > 0);
-      const hasNoErrors = !newErrors[index];
-      return hasName && hasBudget && hasNoErrors;
-    });
-
-    if (validCountries.length < 2) {
-      // Pokaż modal z ostrzeżeniem tylko jeśli jest przynajmniej jeden wypełniony kraj
-      const filledCountries = countries.filter(c => c.name.trim() && c.budgets.some(b => b.amount > 0));
-      if (filledCountries.length > 0) {
-        setShowSingleCountryWarning(true);
-        return false;
-      }
-    }
-
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+
+    const isValid = Object.keys(newErrors).length === 0;
+    console.log('[AddMultipleCountriesModal] validate - isValid:', isValid, 'errors:', newErrors);
+    return isValid;
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validate()) {
+    const isValid = validate();
+    if (!isValid) {
+      console.log('[AddMultipleCountriesModal] handleSubmit - walidacja nie przeszła, errors:', errors);
       return;
     }
 
-    const countriesToSave = countries.map((country) => {
-      const validBudgets = country.budgets.filter((b) => b.amount > 0);
-      const calculatedDays = country.startDate && country.endDate 
-        ? calculateDays(country.startDate, country.endDate) 
-        : 0;
+    // Filtruj tylko wypełnione kraje (z nazwą i budżetem)
+    const countriesToSave = countries
+      .filter((country) => {
+        const hasName = country.name.trim();
+        const hasBudget = country.budgets.some(b => b.amount > 0);
+        return hasName && hasBudget;
+      })
+      .map((country) => {
+        const validBudgets = country.budgets.filter((b) => b.amount > 0);
+        const calculatedDays = country.startDate && country.endDate 
+          ? calculateDays(country.startDate, country.endDate) 
+          : 0;
 
-      // Automatycznie dodaj lokalizację jeśli są wypełnione dane
-      let finalLocations = [...(country.locations || [])];
-      // Tutaj można dodać logikę automatycznego dodawania lokalizacji jeśli są wypełnione dane
+        // Automatycznie dodaj lokalizację jeśli są wypełnione dane
+        let finalLocations = [...(country.locations || [])];
+        // Tutaj można dodać logikę automatycznego dodawania lokalizacji jeśli są wypełnione dane
 
-      return {
-        name: country.name.trim(),
-        location: "",
-        days: calculatedDays,
-        startDate: country.startDate || undefined,
-        endDate: country.endDate || undefined,
-        status: "upcoming" as const,
-        budgets: validBudgets,
-        locations: finalLocations,
-      };
-    });
+        return {
+          name: country.name.trim(),
+          location: "",
+          days: calculatedDays,
+          startDate: country.startDate || undefined,
+          endDate: country.endDate || undefined,
+          status: "upcoming" as const,
+          budgets: validBudgets,
+          locations: finalLocations,
+        };
+      });
 
+    console.log('[AddMultipleCountriesModal] handleSubmit - zapisuję kraje:', countriesToSave);
     onSave(countriesToSave);
-  };
-
-  const handleSwitchToSingleCountry = () => {
-    setShowSingleCountryWarning(false);
-    if (onSwitchToSingleCountry && countries.length > 0) {
-      // Przekaż pierwszy kraj do callbacka
-      const firstCountry = countries[0];
-      const validBudgets = firstCountry.budgets.filter((b) => b.amount > 0);
-      const calculatedDays = firstCountry.startDate && firstCountry.endDate 
-        ? calculateDays(firstCountry.startDate, firstCountry.endDate) 
-        : 0;
-
-      const countryData = {
-        name: firstCountry.name.trim(),
-        location: "",
-        days: calculatedDays,
-        startDate: firstCountry.startDate || undefined,
-        endDate: firstCountry.endDate || undefined,
-        status: "upcoming" as const,
-        budgets: validBudgets,
-        locations: firstCountry.locations || [],
-      };
-
-      onSwitchToSingleCountry(countryData);
-    }
   };
 
   if (!isOpen) return null;
 
   return (
     <>
-      {/* Modal z ostrzeżeniem o pojedynczym kraju */}
-      {showSingleCountryWarning && (
-        <div
-          className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) {
-              setShowSingleCountryWarning(false);
-            }
-          }}
-          role="dialog"
-          aria-modal="true"
-        >
-          <div className="relative w-full max-w-md rounded-lg shadow-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-6">
-            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">
-              Za mało krajów dla trybu "Wiele krajów"
-            </h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">
-              W trybie "Wiele krajów" musisz dodać co najmniej 2 kraje. Obecnie masz tylko {countries.filter(c => c.name.trim()).length} {countries.filter(c => c.name.trim()).length === 1 ? 'kraj' : 'kraje'}.
-            </p>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">
-              Czy chcesz zmienić tryb podróży na "Jeden kraj" i zapisać ten kraj?
-            </p>
-            <div className="flex justify-end gap-3">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setShowSingleCountryWarning(false)}
-              >
-                Anuluj
-              </Button>
-              <Button
-                type="button"
-                variant="primary"
-                onClick={handleSwitchToSingleCountry}
-              >
-                Zmień na tryb "Jeden kraj"
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Główny modal */}
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
@@ -343,12 +353,23 @@ export default function AddMultipleCountriesModal({
           <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
         </button>
 
-        <h2
-          id="add-multiple-countries-modal-title"
-          className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-6"
-        >
-          Dodaj kraje
-        </h2>
+        <div className="flex items-center gap-3 mb-6">
+          {onBack && (
+            <button
+              onClick={onBack}
+              className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              aria-label="Wróć"
+            >
+              <ArrowLeft className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+            </button>
+          )}
+          <h2
+            id="add-multiple-countries-modal-title"
+            className="text-xl font-bold text-gray-900 dark:text-gray-100"
+          >
+            Dodaj kraje
+          </h2>
+        </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {countries.map((country, countryIndex) => (
@@ -400,9 +421,34 @@ export default function AddMultipleCountriesModal({
                     id={`country-start-${countryIndex}`}
                     label="Data rozpoczęcia"
                     value={country.startDate}
-                    onChange={(date) => updateCountry(countryIndex, "startDate", date)}
+                    onChange={(date) => {
+                      updateCountry(countryIndex, "startDate", date);
+                      // Jeśli data zakończenia jest wcześniejsza niż nowa data rozpoczęcia, wyczyść ją
+                      if (country.endDate && date && new Date(date) > new Date(country.endDate)) {
+                        updateCountry(countryIndex, "endDate", "");
+                      }
+                    }}
                     min={tripStartDate}
                     max={tripEndDate}
+                    disabledDates={(() => {
+                      // Zbierz wszystkie daty z innych krajów
+                      const occupiedDates: string[] = [];
+                      countries.forEach((c, idx) => {
+                        if (idx !== countryIndex && c.startDate && c.endDate) {
+                          const start = new Date(c.startDate);
+                          const end = new Date(c.endDate);
+                          const current = new Date(start);
+                          while (current <= end) {
+                            const year = current.getFullYear();
+                            const month = String(current.getMonth() + 1).padStart(2, "0");
+                            const day = String(current.getDate()).padStart(2, "0");
+                            occupiedDates.push(`${year}-${month}-${day}`);
+                            current.setDate(current.getDate() + 1);
+                          }
+                        }
+                      });
+                      return occupiedDates;
+                    })()}
                     error={errors[countryIndex]?.startDate}
                   />
                 </div>
@@ -414,6 +460,25 @@ export default function AddMultipleCountriesModal({
                     onChange={(date) => updateCountry(countryIndex, "endDate", date)}
                     min={tripStartDate || country.startDate}
                     max={tripEndDate}
+                    disabledDates={(() => {
+                      // Zbierz wszystkie daty z innych krajów
+                      const occupiedDates: string[] = [];
+                      countries.forEach((c, idx) => {
+                        if (idx !== countryIndex && c.startDate && c.endDate) {
+                          const start = new Date(c.startDate);
+                          const end = new Date(c.endDate);
+                          const current = new Date(start);
+                          while (current <= end) {
+                            const year = current.getFullYear();
+                            const month = String(current.getMonth() + 1).padStart(2, "0");
+                            const day = String(current.getDate()).padStart(2, "0");
+                            occupiedDates.push(`${year}-${month}-${day}`);
+                            current.setDate(current.getDate() + 1);
+                          }
+                        }
+                      });
+                      return occupiedDates;
+                    })()}
                     error={errors[countryIndex]?.endDate}
                   />
                 </div>
@@ -434,6 +499,32 @@ export default function AddMultipleCountriesModal({
                     + Dodaj budżet
                   </Button>
                 </div>
+                {totalBudget !== undefined && (() => {
+                  // Oblicz sumę budżetów wszystkich innych krajów
+                  const otherCountriesBudget = countries.reduce((sum, c, idx) => {
+                    if (idx !== countryIndex) {
+                      const validBudgets = c.budgets.filter((b) => b.amount > 0);
+                      return sum + calculateCountryBudgetInPLN(validBudgets);
+                    }
+                    return sum;
+                  }, 0);
+                  
+                  const availableBudget = Math.max(0, totalBudget - otherCountriesBudget);
+                  
+                  return (
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">
+                      Budżet całkowity: <span className="font-semibold">{Math.round(totalBudget).toLocaleString("pl-PL")} zł</span>
+                      {otherCountriesBudget > 0 && (
+                        <>
+                          {" • "}
+                          Zaplanowane w innych krajach: <span className="font-semibold">{Math.round(otherCountriesBudget).toLocaleString("pl-PL")} zł</span>
+                          {" • "}
+                          Dostępne: <span className="font-semibold text-green-600 dark:text-green-400">{Math.round(availableBudget).toLocaleString("pl-PL")} zł</span>
+                        </>
+                      )}
+                    </p>
+                  );
+                })()}
                 {country.budgets.map((budget, budgetIndex) => (
                   <div key={budgetIndex} className="flex gap-2 mb-2">
                     <select

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useSearchParams } from "next/navigation";
 import PageLayout from "@/components/shared/PageLayout";
@@ -25,8 +25,9 @@ import {
   hasExpensesWithLocation,
 } from "@/lib/travel-wallet/countries-storage";
 import { updateExpenseLocation } from "@/lib/travel-wallet/expenses";
-import { getTripBySlug } from "@/lib/travel-wallet/trips-storage";
 import type { Country, Expense } from "@/lib/travel-wallet/types";
+import { useTripData } from "@/lib/travel-wallet/hooks/useTripData";
+import { useModalState } from "@/lib/travel-wallet/hooks/useModalState";
 
 interface CountryDetailsClientProps {
   countrySlug: string;
@@ -39,83 +40,68 @@ export default function CountryDetailsClient({
 }: CountryDetailsClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { trip, isLoading: isTripLoading } = useTripData(slug);
+  
   const [country, setCountry] = useState<Country | null>(null);
   const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedDate, setSelectedDate] = useState<string | undefined>(
-    undefined
-  );
-  const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
-  const [expenseToDelete, setExpenseToDelete] = useState<Expense | null>(null);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [isAddLocationModalOpen, setIsAddLocationModalOpen] = useState(false);
-  const [isEditLocationModalOpen, setIsEditLocationModalOpen] = useState(false);
-  const [isDeleteLocationModalOpen, setIsDeleteLocationModalOpen] = useState(false);
-  const [locationToEdit, setLocationToEdit] = useState<string>("");
-  const [locationToDelete, setLocationToDelete] = useState<string>("");
   const [isDeletingLocation, setIsDeletingLocation] = useState(false);
-  const [pendingExpenseDate, setPendingExpenseDate] = useState<string | undefined>(undefined);
+  
+  // Use custom hooks for modal states
+  const expenseModal = useModalState<{
+    expense?: Expense;
+    date?: string;
+  }>();
+  const deleteExpenseModal = useModalState<Expense>();
+  const locationModal = useModalState<{
+    type: "add" | "edit" | "delete";
+    location?: string;
+    date?: string;
+  }>();
 
   // Obsługa URL params - jeśli jest ?date=, otwórz modal
   useEffect(() => {
     const dateParam = searchParams.get("date");
     if (dateParam) {
-      setSelectedDate(dateParam);
-      setIsModalOpen(true);
+      expenseModal.open({ date: dateParam });
     }
-  }, [searchParams]);
+  }, [searchParams, expenseModal]);
 
-  const loadExpenses = () => {
-    if (!country) return;
-    const trip = getTripBySlug(slug);
-    if (!trip) return;
+  const loadExpenses = useCallback(() => {
+    if (!country || !trip) return;
     const countryExpenses = getExpensesByCountryId(country.id, trip.id);
     setExpenses(countryExpenses);
-  };
+  }, [country, trip]);
+
+  const loadCountry = useCallback(() => {
+    if (!trip) return;
+    const foundCountry = getCountryBySlug(countrySlug, trip.id);
+    setCountry(foundCountry);
+  }, [trip, countrySlug]);
 
   useEffect(() => {
-    const trip = getTripBySlug(slug);
+    if (isTripLoading) return; // Wait for trip to load
     if (!trip) {
       router.push("/portfel-podrozniczy");
       return;
     }
     const foundCountry = getCountryBySlug(countrySlug, trip.id);
     setCountry(foundCountry);
-    setIsLoading(false);
-  }, [countrySlug, slug, router]);
+  }, [countrySlug, trip, router, isTripLoading]);
 
   useEffect(() => {
-    if (country) {
-      loadExpenses();
-    }
-  }, [country, slug]);
+    loadExpenses();
+  }, [loadExpenses]);
 
 
-  const handleOpenModal = (date?: string, expense?: Expense) => {
+  const handleOpenModal = useCallback((date?: string, expense?: Expense) => {
     if (expense) {
-      setEditingExpense(expense);
-      setSelectedDate(undefined);
+      expenseModal.open({ expense });
     } else {
-      setEditingExpense(null);
-      setSelectedDate(date);
+      expenseModal.open({ date });
     }
-    setIsModalOpen(true);
-  };
+  }, [expenseModal]);
 
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
-    setSelectedDate(undefined);
-    setEditingExpense(null);
-    // Usuń parametr date z URL
-    if (typeof window !== "undefined") {
-      const url = new URL(window.location.href);
-      url.searchParams.delete("date");
-      window.history.replaceState({}, "", url.toString());
-    }
-  };
-
-  const handleSaveExpense = (expenseData: {
+  const handleSaveExpense = useCallback((expenseData: {
     id?: string;
     countryId: string;
     description: string;
@@ -127,7 +113,6 @@ export default function CountryDetailsClient({
     location?: string;
     tripId?: string;
   }) => {
-    const trip = getTripBySlug(slug);
     if (!trip) return;
     
     if (expenseData.id) {
@@ -150,100 +135,91 @@ export default function CountryDetailsClient({
       addExpense(expenseData, trip.id);
     }
     loadExpenses();
-  };
+    expenseModal.close();
+  }, [trip, loadExpenses, expenseModal]);
 
-  const handleEditExpense = (expense: Expense) => {
+  const handleEditExpense = useCallback((expense: Expense) => {
     handleOpenModal(undefined, expense);
-  };
+  }, [handleOpenModal]);
 
-  const handleDeleteExpenseRequest = (expense: Expense) => {
-    setExpenseToDelete(expense);
-    setIsDeleteModalOpen(true);
-  };
+  const handleDeleteExpenseRequest = useCallback((expense: Expense) => {
+    deleteExpenseModal.open(expense);
+  }, [deleteExpenseModal]);
 
-  const handleDeleteExpenseConfirm = () => {
-    if (!expenseToDelete) return;
-    const trip = getTripBySlug(slug);
-    if (!trip) return;
+  const handleDeleteExpenseConfirm = useCallback(() => {
+    if (!deleteExpenseModal.data || !trip) return;
     
-    deleteExpense(expenseToDelete.id, trip.id);
+    deleteExpense(deleteExpenseModal.data.id, trip.id);
     loadExpenses();
-    setIsDeleteModalOpen(false);
-    setExpenseToDelete(null);
-  };
+    deleteExpenseModal.close();
+  }, [deleteExpenseModal, trip, loadExpenses]);
 
-  const loadCountry = () => {
-    const trip = getTripBySlug(slug);
-    if (!trip) return;
-    const foundCountry = getCountryBySlug(countrySlug, trip.id);
-    setCountry(foundCountry);
-  };
+  const handleAddLocation = useCallback((date?: string) => {
+    locationModal.open({ type: "add", date });
+  }, [locationModal]);
 
-  const handleAddLocation = (date?: string) => {
-    setPendingExpenseDate(date);
-    setIsAddLocationModalOpen(true);
-  };
-
-  const handleSaveLocation = (location: string, startDate: string, endDate: string) => {
-    const trip = getTripBySlug(slug);
+  const handleSaveLocation = useCallback((location: string, startDate: string, endDate: string) => {
     if (!trip || !country) return;
     
     if (addLocationToCountry(trip.id, country.id, location, startDate, endDate)) {
       loadCountry();
-      setIsAddLocationModalOpen(false);
+      const wasFromExpense = !!locationModal.data?.date;
+      locationModal.close();
       
-      // Jeśli była otwarta z modala wydatku, wróć do modala wydatku z wybraną lokalizacją
-      if (pendingExpenseDate) {
-        setSelectedDate(pendingExpenseDate);
-        setIsModalOpen(true);
-        setPendingExpenseDate(undefined);
+      // Jeśli była otwarta z modala wydatku, wróć do modala wydatku
+      if (wasFromExpense) {
+        expenseModal.open({ date: locationModal.data?.date });
       }
     }
-  };
+  }, [trip, country, loadCountry, locationModal, expenseModal]);
 
-  const handleEditLocation = (location: string) => {
-    setLocationToEdit(location);
-    setIsEditLocationModalOpen(true);
-  };
+  const handleEditLocation = useCallback((location: string) => {
+    locationModal.open({ type: "edit", location });
+  }, [locationModal]);
 
-  const handleSaveEditedLocation = (newLocation: string, startDate: string, endDate: string) => {
-    const trip = getTripBySlug(slug);
-    if (!trip || !country) return;
+  const handleSaveEditedLocation = useCallback((newLocation: string, startDate: string, endDate: string) => {
+    if (!trip || !country || !locationModal.data?.location) return;
     
-    if (updateLocationInCountry(trip.id, country.id, locationToEdit, newLocation, startDate, endDate)) {
+    if (updateLocationInCountry(trip.id, country.id, locationModal.data.location, newLocation, startDate, endDate)) {
       // Zaktualizuj lokalizację w wydatkach (tylko jeśli zmieniono nazwę)
-      if (newLocation !== locationToEdit) {
-        updateExpenseLocation(trip.id, country.id, locationToEdit, newLocation);
+      if (newLocation !== locationModal.data.location) {
+        updateExpenseLocation(trip.id, country.id, locationModal.data.location, newLocation);
       }
       loadCountry();
       loadExpenses();
-      setIsEditLocationModalOpen(false);
-      setLocationToEdit("");
+      locationModal.close();
     }
-  };
+  }, [trip, country, locationModal, loadCountry, loadExpenses]);
 
-  const handleDeleteLocation = (location: string) => {
-    setLocationToDelete(location);
-    setIsDeleteLocationModalOpen(true);
-  };
+  const handleDeleteLocation = useCallback((location: string) => {
+    locationModal.open({ type: "delete", location });
+  }, [locationModal]);
 
-  const handleDeleteLocationConfirm = () => {
-    const trip = getTripBySlug(slug);
-    if (!trip || !country) return;
+  const handleDeleteLocationConfirm = useCallback(() => {
+    if (!trip || !country || !locationModal.data?.location) return;
     
     setIsDeletingLocation(true);
     try {
-      if (removeLocationFromCountry(trip.id, country.id, locationToDelete)) {
+      if (removeLocationFromCountry(trip.id, country.id, locationModal.data.location)) {
         loadCountry();
-        setIsDeleteLocationModalOpen(false);
-        setLocationToDelete("");
+        locationModal.close();
       }
     } finally {
       setIsDeletingLocation(false);
     }
-  };
+  }, [trip, country, locationModal, loadCountry]);
 
-  if (isLoading) {
+  // Memoize location data for edit modal
+  const editingLocationData = useMemo(() => {
+    if (!locationModal.data?.location || !country) return null;
+    const loc = country.locations?.find((loc) => {
+      const name = typeof loc === "string" ? loc : loc.name;
+      return name === locationModal.data.location;
+    });
+    return loc && typeof loc !== "string" ? loc : null;
+  }, [locationModal.data?.location, country]);
+
+  if (isTripLoading) {
     return (
       <PageLayout maxWidth="4xl">
         <PageHeader title="Kraj" subtitle="Szczegóły kraju" />
@@ -286,87 +262,59 @@ export default function CountryDetailsClient({
               onEditLocation={handleEditLocation}
               onDeleteLocation={handleDeleteLocation}
               slug={slug}
-              tripId={getTripBySlug(slug)?.id}
+              tripId={trip?.id}
             />
       </PageLayout>
       {country && (
         <>
           <AddExpenseModal
-            isOpen={isModalOpen}
-            onClose={handleCloseModal}
+            isOpen={expenseModal.isOpen}
+            onClose={() => expenseModal.close()}
             onSave={handleSaveExpense}
             country={country}
-            initialDate={selectedDate}
-            tripId={getTripBySlug(slug)?.id}
-            expense={editingExpense || undefined}
+            initialDate={expenseModal.data?.date}
+            tripId={trip?.id}
+            expense={expenseModal.data?.expense}
             onAddLocation={(date) => handleAddLocation(date)}
           />
-          {expenseToDelete && (
-            <DeleteExpenseModal
-              isOpen={isDeleteModalOpen}
-              onClose={() => {
-                setIsDeleteModalOpen(false);
-                setExpenseToDelete(null);
-              }}
-              onConfirm={handleDeleteExpenseConfirm}
-              expense={expenseToDelete}
-            />
-          )}
+          <DeleteExpenseModal
+            isOpen={deleteExpenseModal.isOpen}
+            onClose={() => deleteExpenseModal.close()}
+            onConfirm={handleDeleteExpenseConfirm}
+            expense={deleteExpenseModal.data || undefined}
+          />
           <AddLocationModal
-            isOpen={isAddLocationModalOpen}
-            onClose={() => {
-              setIsAddLocationModalOpen(false);
-              setPendingExpenseDate(undefined);
-            }}
+            isOpen={locationModal.isOpen && locationModal.data?.type === "add"}
+            onClose={() => locationModal.close()}
             onSave={handleSaveLocation}
             existingLocations={country.locations || []}
             countryStartDate={country.startDate}
             countryEndDate={country.endDate}
-            initialDate={pendingExpenseDate}
+            initialDate={locationModal.data?.date}
           />
           <EditLocationModal
-            isOpen={isEditLocationModalOpen}
-            onClose={() => {
-              setIsEditLocationModalOpen(false);
-              setLocationToEdit("");
-            }}
+            isOpen={locationModal.isOpen && locationModal.data?.type === "edit"}
+            onClose={() => locationModal.close()}
             onSave={handleSaveEditedLocation}
-            currentLocation={locationToEdit}
+            currentLocation={locationModal.data?.location || ""}
             existingLocations={country.locations || []}
             countryStartDate={country.startDate}
             countryEndDate={country.endDate}
-            currentStartDate={(() => {
-              const loc = country.locations?.find((loc) => {
-                const name = typeof loc === "string" ? loc : loc.name;
-                return name === locationToEdit;
-              });
-              return loc && typeof loc !== "string" ? loc.startDate : undefined;
-            })()}
-            currentEndDate={(() => {
-              const loc = country.locations?.find((loc) => {
-                const name = typeof loc === "string" ? loc : loc.name;
-                return name === locationToEdit;
-              });
-              return loc && typeof loc !== "string" ? loc.endDate : undefined;
-            })()}
+            currentStartDate={editingLocationData?.startDate}
+            currentEndDate={editingLocationData?.endDate}
           />
           <DeleteLocationModal
-            isOpen={isDeleteLocationModalOpen}
+            isOpen={locationModal.isOpen && locationModal.data?.type === "delete"}
             onClose={() => {
               if (!isDeletingLocation) {
-                setIsDeleteLocationModalOpen(false);
-                setLocationToDelete("");
+                locationModal.close();
               }
             }}
             onConfirm={handleDeleteLocationConfirm}
-            location={locationToDelete}
+            location={locationModal.data?.location || ""}
             hasExpenses={
-              country && getTripBySlug(slug)
-                ? hasExpensesWithLocation(
-                    getTripBySlug(slug)!.id,
-                    country.id,
-                    locationToDelete
-                  )
+              trip && country
+                ? hasExpensesWithLocation(trip.id, country.id, locationModal.data?.location || "")
                 : false
             }
             isDeleting={isDeletingLocation}

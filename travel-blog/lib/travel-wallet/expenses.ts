@@ -254,6 +254,19 @@ function getAllExpensesFromStorage(tripId?: string): Expense[] {
     let userExpenses: Expense[] = [];
     if (stored) {
       userExpenses = JSON.parse(stored) as Expense[];
+    }
+    
+    // Dla backward compatibility: jeśli tripId jest podane i nie znaleziono wydatków w kluczu z tripId,
+    // sprawdź stary klucz i przefiltruj po tripId
+    if (tripId && userExpenses.length === 0) {
+      const oldStored = localStorage.getItem(STORAGE_KEY);
+      if (oldStored) {
+        const oldExpenses = JSON.parse(oldStored) as Expense[];
+        // Filtruj wydatki po tripId lub wydatki bez tripId (backward compatibility)
+        userExpenses = oldExpenses.filter(
+          (e) => e.tripId === tripId || !e.tripId
+        );
+      }
     } else if (!tripId) {
       // Dla backward compatibility, sprawdź stary klucz jeśli tripId nie jest podane
       const oldStored = localStorage.getItem(STORAGE_KEY);
@@ -262,16 +275,21 @@ function getAllExpensesFromStorage(tripId?: string): Expense[] {
       }
     }
 
-    // Łączymy mock data z danymi z localStorage
-    // Mock expenses są wyświetlane zawsze jako przykładowe dane
+    // Jeśli tripId jest podane, zwróć tylko userExpenses (bez mock expenses)
+    // Mock expenses są tylko dla backward compatibility (gdy tripId nie jest podane)
+    if (tripId) {
+      return userExpenses;
+    }
+
+    // Łączymy mock data z danymi z localStorage tylko gdy tripId nie jest podane (backward compatibility)
     const storedIds = new Set(userExpenses.map((e) => e.id));
     const mockOnly = mockExpenses.filter((e) => !storedIds.has(e.id));
     
     return [...userExpenses, ...mockOnly];
   } catch (error) {
     console.error("Error reading expenses from localStorage:", error);
-    // W przypadku błędu zwracamy mock expenses
-    return mockExpenses;
+    // W przypadku błędu zwracamy mock expenses tylko gdy tripId nie jest podane
+    return tripId ? [] : mockExpenses;
   }
 }
 
@@ -308,7 +326,16 @@ function generateExpenseId(): string {
  * @param tripId - opcjonalne ID podróży do filtrowania
  */
 export function getAllExpenses(tripId?: string): Expense[] {
-  return getAllExpensesFromStorage(tripId);
+  const expenses = getAllExpensesFromStorage(tripId);
+  
+  // Jeśli tripId jest podane, dodatkowo filtruj po tripId w danych (dla bezpieczeństwa)
+  if (tripId) {
+    return expenses.filter(
+      (expense) => expense.tripId === tripId || !expense.tripId // Uwzględnij też wydatki bez tripId (backward compatibility)
+    );
+  }
+  
+  return expenses;
 }
 
 /**
@@ -358,11 +385,34 @@ export function addExpense(
   tripId?: string
 ): Expense {
   const finalTripId = tripId || expenseData.tripId;
+  if (!finalTripId) {
+    throw new Error("tripId is required");
+  }
+
   const newExpense: Expense = {
     ...expenseData,
     id: generateExpenseId(),
     tripId: finalTripId,
   };
+
+  // Try to update wallet if new system is available
+  try {
+    const { getWallet, updateWallet } = require("./wallet-storage");
+    const { executeExpense } = require("./expense-operations");
+    
+    const wallet = getWallet(finalTripId);
+    if (wallet) {
+      const result = executeExpense(wallet, expenseData);
+      if (result.success) {
+        updateWallet(finalTripId, result.newWallet);
+      } else {
+        throw new Error(result.error || "Failed to execute expense in wallet");
+      }
+    }
+  } catch (error) {
+    // If wallet system not available, continue with old system
+    console.warn("Wallet system not available, using legacy expense storage:", error);
+  }
 
   const allExpenses = getAllExpensesFromStorage(finalTripId);
   allExpenses.push(newExpense);
@@ -378,8 +428,59 @@ export function addExpense(
  */
 export function saveExpense(expense: Expense, tripId?: string): boolean {
   const finalTripId = tripId || expense.tripId;
+  if (!finalTripId) {
+    return false;
+  }
+
   const allExpenses = getAllExpensesFromStorage(finalTripId);
   const index = allExpenses.findIndex((e) => e.id === expense.id);
+  const oldExpense = index >= 0 ? allExpenses[index] : null;
+
+  // Try to update wallet if new system is available
+  if (oldExpense && finalTripId) {
+    try {
+      const { getWallet, updateWallet } = require("./wallet-storage");
+      const { adjustCurrencyBalance } = require("./wallet-operations");
+      
+      const wallet = getWallet(finalTripId);
+      if (wallet) {
+        // Reverse old expense
+        let updatedWallet = adjustCurrencyBalance(
+          wallet,
+          oldExpense.currency,
+          oldExpense.amount
+        );
+        // Apply new expense
+        const { executeExpense } = require("./expense-operations");
+        const result = executeExpense(updatedWallet, expense);
+        if (result.success) {
+          updateWallet(finalTripId, result.newWallet);
+        } else {
+          console.error("Failed to update expense in wallet:", result.error);
+        }
+      }
+    } catch (error) {
+      console.warn("Wallet system not available, using legacy expense storage:", error);
+    }
+  } else if (!oldExpense && finalTripId) {
+    // New expense - handle wallet update inline to avoid circular dependency
+    try {
+      const { getWallet, updateWallet } = require("./wallet-storage");
+      const { executeExpense } = require("./expense-operations");
+      
+      const wallet = getWallet(finalTripId);
+      if (wallet) {
+        const result = executeExpense(wallet, expense);
+        if (result.success) {
+          updateWallet(finalTripId, result.newWallet);
+        } else {
+          throw new Error(result.error || "Failed to execute expense in wallet");
+        }
+      }
+    } catch (error) {
+      console.warn("Wallet system not available, using legacy expense storage:", error);
+    }
+  }
 
   if (index >= 0) {
     // Aktualizuj istniejący
@@ -413,6 +514,9 @@ export function deleteExpense(id: string, tripId?: string): boolean {
  * Konwertuje expense na PLN
  */
 export function convertExpenseToPLN(expense: Expense): number {
+  if (!expense || typeof expense.amount !== 'number' || !expense.currency) {
+    return 0;
+  }
   return convertToPLN(expense.amount, expense.currency);
 }
 

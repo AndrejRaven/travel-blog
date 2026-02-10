@@ -10,10 +10,6 @@ import {
   calculateTotalSpent,
   calculateUnspentPlannedSpending,
 } from "@/lib/travel-wallet/calculations";
-import {
-  detectDashboardMode,
-  getEffectiveDashboardMode,
-} from "@/lib/travel-wallet/dashboard-mode";
 
 // Funkcja do formatowania zakresu dat w formacie "21.02 - 25.02"
 const formatCountryDateRange = (startDate?: string, endDate?: string): string => {
@@ -66,7 +62,6 @@ export default function EditTripModal({
   const [endDate, setEndDate] = useState("");
   const [totalBudget, setTotalBudget] = useState("");
   const [userName, setUserName] = useState("");
-  const [dashboardMode, setDashboardMode] = useState<"multi-country" | "single-country" | "single-location" | "auto">("auto");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [countryToDelete, setCountryToDelete] = useState<string | null>(null);
 
@@ -78,23 +73,10 @@ export default function EditTripModal({
       setEndDate(trip.endDate || "");
       setTotalBudget(trip.data.totalBudget?.toString() || "");
       setUserName(trip.data.userName || "");
-      setDashboardMode(trip.data.dashboardMode || "auto");
       setErrors({});
       setCountryToDelete(null);
     }
   }, [isOpen, trip]);
-
-  // Oblicz aktualnie wykryty tryb
-  const detectedMode = useMemo(() => {
-    if (!trip) return "multi-country";
-    return detectDashboardMode(trip.data);
-  }, [trip]);
-
-  // Oblicz efektywny tryb
-  const effectiveMode = useMemo(() => {
-    if (!trip) return "multi-country";
-    return getEffectiveDashboardMode(trip.data);
-  }, [trip]);
 
   const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget) {
@@ -153,7 +135,7 @@ export default function EditTripModal({
       endDate: endDate || undefined,
       totalBudget: totalBudget ? parseFloat(totalBudget) : undefined,
       userName: userName.trim() || undefined,
-      dashboardMode: dashboardMode || "auto",
+      dashboardMode: "auto",
     });
 
     onClose();
@@ -359,32 +341,6 @@ export default function EditTripModal({
               className="w-full px-3 py-2 border rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
               placeholder="np. Sarah"
             />
-          </div>
-
-          {/* Tryb dashboardu */}
-          <div>
-            <label
-              htmlFor="dashboardMode"
-              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-            >
-              Tryb dashboardu
-            </label>
-            <select
-              id="dashboardMode"
-              value={dashboardMode}
-              onChange={(e) => setDashboardMode(e.target.value as "multi-country" | "single-country" | "single-location" | "auto")}
-              className="w-full px-3 py-2 border rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
-            >
-              <option value="auto">Automatyczny (wykrywany na podstawie danych)</option>
-              <option value="multi-country">Wiele krajów</option>
-              <option value="single-country">Jeden kraj</option>
-              <option value="single-location">Jedna lokalizacja</option>
-            </select>
-            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-              {dashboardMode === "auto" 
-                ? `Aktualnie wykryty tryb: ${effectiveMode === "multi-country" ? "Wiele krajów" : effectiveMode === "single-country" ? "Jeden kraj" : "Jedna lokalizacja"}`
-                : "Wybierz sposób wyświetlania dashboardu. Tryb automatyczny dostosuje się do liczby krajów i lokalizacji."}
-            </p>
           </div>
 
           {/* Lista krajów */}
