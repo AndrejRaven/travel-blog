@@ -50,7 +50,7 @@ interface Props {
 }
 
 export default async function Articles({ data }: Props) {
-  const { container, title, showViewAll, viewAllHref, maxArticles } = data || {};
+  const { container, title, showViewAll, viewAllHref, maxArticles, layoutVersion } = data || {};
 
   if (!data || !container) {
     console.error("Articles: Missing container data", { container: data?.container });
@@ -95,6 +95,7 @@ export default async function Articles({ data }: Props) {
         showViewAll={showViewAll}
         viewAllHref={viewAllHref}
         articles={articleCards}
+        layoutVersion={layoutVersion || 'grid'}
       />
     </SectionContainer>
   );

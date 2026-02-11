@@ -173,6 +173,7 @@ const componentMap = {
           articlesType: articles.articlesType || "latest",
           selectedArticles: articles.selectedArticles || [],
           maxArticles: articles.maxArticles || 3,
+          layoutVersion: articles.layoutVersion || 'grid',
         }}
         {...animationProps}
       />

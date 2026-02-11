@@ -666,7 +666,8 @@ export const QUERIES = {
       selectedArticles[] {
         _ref
       },
-      maxArticles
+      maxArticles,
+      layoutVersion
     }`
   },
 
