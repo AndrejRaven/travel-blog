@@ -59,6 +59,7 @@ export default function BackgroundHeroBanner({ data }: Props) {
             priority
             sizes="100vw"
           />
+          {/* priority daje next/image automatyczny preload dla LCP */}
         </div>
 
         <div

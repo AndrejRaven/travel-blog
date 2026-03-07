@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Inter, Playfair_Display, Source_Code_Pro } from "next/font/google";
-import Script from "next/script";
 import { draftMode } from "next/headers";
 import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
@@ -28,10 +27,10 @@ const playfairDisplay = Playfair_Display({
   display: "swap",
 });
 
-// Font monospace - Source Code Pro - dla kodu
+// Font monospace – tylko latin (mniej plików woff2), optional żeby nie blokować LCP
 const sourceCodePro = Source_Code_Pro({
   variable: "--font-source-code",
-  subsets: ["latin", "latin-ext"],
+  subsets: ["latin"],
   display: "optional",
 });
 
@@ -118,7 +117,12 @@ export default async function RootLayout({
         />
         {/* DNS prefetch dla Sanity CDN */}
         <link rel="dns-prefetch" href="https://cdn.sanity.io" />
-        <Script src="/scripts/theme-init.js" strategy="beforeInteractive" />
+        {/* Inline theme init – bez osobnego requestu, brak blokowania parsera */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem("theme")||(window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");document.documentElement.classList.toggle("dark",t==="dark");}catch(e){document.documentElement.classList.remove("dark");}})();`,
+          }}
+        />
       </head>
       <body
         className={`${inter.variable} ${playfairDisplay.variable} ${sourceCodePro.variable} antialiased bg-white dark:bg-gray-900`}

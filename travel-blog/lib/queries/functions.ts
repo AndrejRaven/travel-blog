@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import { fetchGroq } from '@/lib/sanity';
 import { QUERIES } from './index';
 import type { 
@@ -37,7 +38,8 @@ function handleSanityError(error: unknown, context: string): never {
 
 // ===== CONFIG FUNCTIONS =====
 
-export async function getSiteConfig(): Promise<SiteConfig | null> {
+/** Cached per-request to avoid duplicate fetches in generateMetadata + page. */
+export const getSiteConfig = cache(async function getSiteConfig(): Promise<SiteConfig | null> {
   try {
     return await fetchGroq<SiteConfig>(
       QUERIES.CONFIG.SITE,
@@ -47,7 +49,7 @@ export async function getSiteConfig(): Promise<SiteConfig | null> {
   } catch (error) {
     handleSanityError(error, 'Error fetching site config');
   }
-}
+});
 
 // ===== POST FUNCTIONS =====
 
@@ -261,9 +263,10 @@ export async function getHomePageComponents(): Promise<PostComponent[]> {
 }
 
 /**
- * Pobierz dane strony głównej z Sanity
+ * Pobierz dane strony głównej z Sanity.
+ * Cached per-request to avoid duplicate fetches in generateMetadata + page.
  */
-export async function getHomepageData(): Promise<unknown | null> {
+export const getHomepageData = cache(async function getHomepageData(): Promise<unknown | null> {
   try {
     return await fetchGroq<unknown>(
       QUERIES.HOME.HOMEPAGE_DATA, 
@@ -273,4 +276,4 @@ export async function getHomepageData(): Promise<unknown | null> {
   } catch (error) {
     handleSanityError(error, 'Error fetching homepage data');
   }
-}
+});
