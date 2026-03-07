@@ -1,6 +1,10 @@
+import { unstable_cache } from 'next/cache';
 import { HeaderData, MenuItem, SuperCategory, MainCategory, Category } from '@/lib/sanity';
 import { fetchGroq } from '@/lib/sanity';
 import { QUERIES } from '@/lib/queries';
+
+const HIERARCHICAL_CATEGORIES_CACHE_KEY = ['hierarchical-categories'];
+const HIERARCHICAL_CATEGORIES_REVALIDATE = 3600; // 1h – kategorie rzadko się zmieniają
 
 export type LegacyMenuItem = {
   label: string;
@@ -33,42 +37,50 @@ export type HierarchicalSection = {
   }>;
 };
 
-// Funkcja do pobierania hierarchicznych kategorii
+async function fetchHierarchicalCategoriesUncached(): Promise<HierarchicalSection[]> {
+  const [superCategories, mainCategories, allCategories] = await Promise.all([
+    fetchGroq<SuperCategory[]>(QUERIES.SUPER_CATEGORY.ALL, {}, "CATEGORIES"),
+    fetchGroq<MainCategory[]>(QUERIES.MAIN_CATEGORY.ALL, {}, "CATEGORIES"),
+    fetchGroq<Category[]>(QUERIES.CATEGORY.ALL, {}, "CATEGORIES")
+  ]);
+
+  return superCategories.map(superCategory => {
+    const relatedMainCategories = mainCategories.filter(mainCat =>
+      mainCat.superCategory?._id === superCategory._id
+    );
+
+    return {
+      key: superCategory.slug.current,
+      title: superCategory.name,
+      emoji: getCategoryEmoji(superCategory.name),
+      items: relatedMainCategories.map(mainCategory => {
+        const subcategories = allCategories.filter(cat =>
+          cat.mainCategory?._id === mainCategory._id
+        );
+
+        return {
+          label: mainCategory.name,
+          href: `/${superCategory.slug.current}/${mainCategory.slug.current}`,
+          isExternal: false,
+          subcategories: subcategories.map(sub => ({
+            label: sub.name,
+            href: `/${superCategory.slug.current}/${mainCategory.slug.current}/${sub.slug.current}`,
+            isExternal: false,
+          }))
+        };
+      })
+    };
+  });
+}
+
+// Funkcja do pobierania hierarchicznych kategorii (cache 1h – mniej zapytań Sanity na żądanie)
 export async function getHierarchicalCategories(): Promise<HierarchicalSection[]> {
   try {
-    const [superCategories, mainCategories, allCategories] = await Promise.all([
-      fetchGroq<SuperCategory[]>(QUERIES.SUPER_CATEGORY.ALL, {}, "CATEGORIES"),
-      fetchGroq<MainCategory[]>(QUERIES.MAIN_CATEGORY.ALL, {}, "CATEGORIES"),
-      fetchGroq<Category[]>(QUERIES.CATEGORY.ALL, {}, "CATEGORIES")
-    ]);
-
-    return superCategories.map(superCategory => {
-      const relatedMainCategories = mainCategories.filter(mainCat => 
-        mainCat.superCategory?._id === superCategory._id
-      );
-
-      return {
-        key: superCategory.slug.current,
-        title: superCategory.name,
-        emoji: getCategoryEmoji(superCategory.name),
-        items: relatedMainCategories.map(mainCategory => {
-          const subcategories = allCategories.filter(cat => 
-            cat.mainCategory?._id === mainCategory._id
-          );
-
-          return {
-            label: mainCategory.name,
-            href: `/${superCategory.slug.current}/${mainCategory.slug.current}`,
-            isExternal: false,
-            subcategories: subcategories.map(sub => ({
-              label: sub.name,
-              href: `/${superCategory.slug.current}/${mainCategory.slug.current}/${sub.slug.current}`,
-              isExternal: false,
-            }))
-          };
-        })
-      };
-    });
+    return await unstable_cache(
+      fetchHierarchicalCategoriesUncached,
+      HIERARCHICAL_CATEGORIES_CACHE_KEY,
+      { revalidate: HIERARCHICAL_CATEGORIES_REVALIDATE }
+    )();
   } catch (error) {
     console.error('Error fetching hierarchical categories:', error);
     return [];

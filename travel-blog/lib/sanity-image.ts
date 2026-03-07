@@ -36,6 +36,7 @@ type ImageProfile =
   | "square"
   | "thumbnail";
 
+// Profile „hero”/„feature” dla LCP: w Sanity uploaduj assety hero max 1920px szerokości
 const IMAGE_PROFILES: Record<ImageProfile, Omit<BuildOptionsBase, "alt">> = {
   hero: { width: 1920, height: 1080, fit: "fillmax", quality: 85 },
   feature: { width: 1440, height: 810, fit: "fillmax", quality: 80 },

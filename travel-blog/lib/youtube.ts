@@ -64,33 +64,6 @@ function normalizeIsoDate(dateString?: string | null): string | null {
   return parsed.toISOString();
 }
 
-async function fetchWatchPagePublishedDate(videoId: string): Promise<string | null> {
-  try {
-    const response = await fetch(`https://www.youtube.com/watch?v=${videoId}`, {
-      next: { revalidate: 3600 },
-      headers: {
-        "accept-language": "en-US,en;q=0.9",
-      },
-    });
-
-    if (!response.ok) {
-      return null;
-    }
-
-    const html = await response.text();
-    const publishDateMatch = html.match(/"publishDate":"([^"]+)"/);
-    const uploadDateMatch = html.match(/"uploadDate":"([^"]+)"/);
-
-    const resolved =
-      normalizeIsoDate(publishDateMatch?.[1]) || normalizeIsoDate(uploadDateMatch?.[1]);
-
-    return resolved;
-  } catch (error) {
-    console.error("Error fetching YouTube watch page publish date:", error);
-    return null;
-  }
-}
-
 function entryContainsShort(entryTitle: string, videoUrl: string | null): boolean {
   const normalizedTitle = entryTitle.toLowerCase();
   return (
@@ -103,7 +76,9 @@ function entryContainsShort(entryTitle: string, videoUrl: string | null): boolea
 
 async function resolvePublishedDateFromEntry(
   entry: string,
-  videoId: string
+  // videoId nieużywany – datę bierzemy tylko z RSS (bez fetchWatchPagePublishedDate)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _videoId: string
 ): Promise<string | null> {
   const publishedMatch = entry.match(/<published>([^<]+)<\/published>/);
   const updatedMatch = entry.match(/<updated>([^<]+)<\/updated>/);
@@ -115,7 +90,8 @@ async function resolvePublishedDateFromEntry(
     return resolved;
   }
 
-  return fetchWatchPagePublishedDate(videoId);
+  // Nie pobieramy strony watch – unikamy blokowania generowania HTML.
+  return null;
 }
 
 /**
@@ -180,7 +156,6 @@ export async function getLatestYouTubeVideo(): Promise<YouTubeVideo | null> {
     const fallbackPublishedAt =
       normalizeIsoDate(publishedMatch?.[1]) ||
       normalizeIsoDate(updatedMatch?.[1]) ||
-      (await fetchWatchPagePublishedDate(fallbackVideoId)) ||
       "";
 
     return {
@@ -251,14 +226,15 @@ export async function getYouTubeVideoById(
 
       if (!entryVideoId) continue;
 
-      // Jeśli znaleziono film o podanym ID, zwróć datę publikacji
+      // Jeśli znaleziono film o podanym ID, zwróć datę publikacji z RSS
       if (entryVideoId === videoId) {
         return resolvePublishedDateFromEntry(entry, videoId);
       }
     }
 
-    // Film nie został znaleziony w RSS feed - spróbuj pobrać datę bezpośrednio z YouTube
-    return fetchWatchPagePublishedDate(videoId);
+    // Film nie w RSS – nie pobieramy strony watch, żeby nie blokować generowania HTML.
+    // Datę można uzupełnić w Sanity (videoPublishedAt).
+    return null;
   } catch (error) {
     console.error("Error fetching YouTube video by ID:", error);
     return null;
