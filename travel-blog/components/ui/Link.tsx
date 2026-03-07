@@ -2,7 +2,7 @@
 
 import React from "react";
 import NextLink from "next/link";
-import { useNavigationProgress } from "@/components/providers/NavigationProgressProvider";
+import { useOptionalNavigationProgress } from "@/components/providers/NavigationProgressProvider";
 
 type LinkVariant = "default" | "arrow" | "underline" | "unstyled";
 
@@ -13,6 +13,7 @@ type LinkProps = {
   className?: string;
   external?: boolean;
   title?: string;
+  onClick?: (e: React.MouseEvent<HTMLAnchorElement>) => void;
 };
 
 const variantStyles = {
@@ -32,18 +33,21 @@ export default function Link({
   className = "",
   external = false,
   title,
+  onClick,
 }: LinkProps) {
-  const { setNavigating, setActiveElement, activeElement } =
-    useNavigationProgress();
+  const progress = useOptionalNavigationProgress();
+  const setNavigating = progress?.setNavigating;
+  const setActiveElement = progress?.setActiveElement;
+  const activeElement = progress?.activeElement ?? null;
   const variantStyle = variantStyles[variant];
   const [isActive, setIsActive] = React.useState(false);
-  const linkRef = React.useRef<HTMLAnchorElement>(null);
 
   const combinedClassName =
     `${variantStyle} ${className} ${isActive ? "opacity-70" : ""}`.trim();
 
   const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    if (!external && href && href.trim() !== "") {
+    onClick?.(e);
+    if (!external && href && href.trim() !== "" && setNavigating && setActiveElement) {
       setNavigating(true);
       setActiveElement(e.currentTarget);
       setIsActive(true);
@@ -86,6 +90,30 @@ export default function Link({
         onClick={handleClick}
         title={title}
       >
+        <span className="inline-flex items-center relative">
+          {children}
+          {variant === "arrow" && (
+            <span className="group-hover:translate-x-1 transition-transform duration-200 ease-out">
+              →
+            </span>
+          )}
+          {variant === "underline" && (
+            <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-current group-hover:w-full transition-all duration-300 ease-out" />
+          )}
+        </span>
+      </a>
+    );
+  }
+
+  // Next.js Link przyjmuje tylko jedno dziecko – wszystko w jednym wrapperze
+  return (
+    <NextLink
+      href={href}
+      className={combinedClassName}
+      onClick={handleClick}
+      title={title}
+    >
+      <span className="inline-flex items-center relative">
         {children}
         {variant === "arrow" && (
           <span className="group-hover:translate-x-1 transition-transform duration-200 ease-out">
@@ -93,29 +121,9 @@ export default function Link({
           </span>
         )}
         {variant === "underline" && (
-          <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-current group-hover:w-full transition-all duration-300 ease-out"></span>
+          <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-current group-hover:w-full transition-all duration-300 ease-out" />
         )}
-      </a>
-    );
-  }
-
-  return (
-    <NextLink
-      href={href}
-      className={combinedClassName}
-      onClick={handleClick}
-      ref={linkRef}
-      title={title}
-    >
-      {children}
-      {variant === "arrow" && (
-        <span className="group-hover:translate-x-1 transition-transform duration-200 ease-out">
-          →
-        </span>
-      )}
-      {variant === "underline" && (
-        <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-current group-hover:w-full transition-all duration-300 ease-out"></span>
-      )}
+      </span>
     </NextLink>
   );
 }

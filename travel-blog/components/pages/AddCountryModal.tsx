@@ -1,9 +1,11 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
-import { X, ChevronDown, ChevronUp, ArrowLeft } from "lucide-react";
+import { useState, useEffect, useMemo, useRef } from "react";
+import { createPortal } from "react-dom";
+import { X, ChevronDown, ChevronUp, ArrowLeft, Search } from "lucide-react";
 import Button from "@/components/ui/Button";
 import DatePicker from "@/components/ui/DatePicker";
+import { getCurrencyName } from "@/lib/travel-wallet/currency-names";
 import type { Country, Budget, TravelWalletData } from "@/lib/travel-wallet/types";
 import {
   calculateTotalSpent,
@@ -30,13 +32,12 @@ interface AddCountryModalProps {
   existingCountries?: Country[];
   tripData?: TravelWalletData;
   totalBudget?: number;
+  baseCurrency?: string;
   onBack?: () => void;
 }
 
-const AVAILABLE_CURRENCIES = ["PLN", "USD", "EUR", "GBP", "THB", "JPY", "KRW", "TWD"];
-
 /**
- * Kursy walut do PLN (muszą być takie same jak w calculations.ts)
+ * W Add Country do wyboru są wyłącznie waluty z podróży (initialBudgets).
  */
 const exchangeRates: Record<string, number> = {
   PLN: 1,
@@ -47,6 +48,7 @@ const exchangeRates: Record<string, number> = {
   GBP: 5.1,
   KRW: 0.003,
   TWD: 0.13,
+  NOK: 0.36,
 };
 
 /**
@@ -77,6 +79,7 @@ export default function AddCountryModal({
   existingCountries = [],
   tripData,
   totalBudget,
+  baseCurrency = "PLN",
   onBack,
 }: AddCountryModalProps) {
   const [name, setName] = useState("");
@@ -91,16 +94,82 @@ export default function AddCountryModal({
   const [locationErrors, setLocationErrors] = useState<Record<string, string>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLocationsExpanded, setIsLocationsExpanded] = useState(false);
+  const [assignAllRemaining, setAssignAllRemaining] = useState(false);
+  const [openCurrencyDropdownIndex, setOpenCurrencyDropdownIndex] = useState<number | null>(null);
+  const [currencyFilterText, setCurrencyFilterText] = useState("");
+  const [dropdownPosition, setDropdownPosition] = useState<{ top: number; left: number; width: number } | null>(null);
+  const currencyDropdownRef = useRef<HTMLDivElement>(null);
+  const currencyTriggerRef = useRef<HTMLInputElement>(null);
 
-  // Oblicz maksymalną możliwą kwotę do zaplanowania
+  // Wyłącznie waluty z podróży (do wyboru przy budżecie kraju)
+  const tripCurrencies = useMemo(
+    () => tripData?.initialBudgets?.map((b) => b.currency) ?? (baseCurrency ? [baseCurrency] : ["PLN"]),
+    [tripData?.initialBudgets, baseCurrency]
+  );
+
+  // Pozostały budżet do zaplanowania per waluta (initialBudgets minus już przypisane do krajów)
+  const remainingByCurrency = useMemo(() => {
+    const initial = tripData?.initialBudgets ?? [];
+    if (initial.length === 0) return [];
+    return initial.map((ib) => {
+      const planned = (existingCountries ?? []).reduce(
+        (sum, c) => sum + (c.budgets?.filter((b) => b.currency === ib.currency).reduce((s, b) => s + b.amount, 0) ?? 0),
+        0
+      );
+      return { currency: ib.currency, amount: Math.max(0, ib.amount - planned) };
+    });
+  }, [tripData?.initialBudgets, existingCountries]);
+
+  // Lista walut do wyboru = wyłącznie waluty z podróży (bez innych)
+  const orderedCurrencies = useMemo(() => [...tripCurrencies], [tripCurrencies]);
+
+  const filteredCurrencies = useMemo(() => {
+    const q = currencyFilterText.trim().toLowerCase();
+    if (!q) return orderedCurrencies;
+    return orderedCurrencies.filter(
+      (code) => `${code} ${getCurrencyName(code)}`.toLowerCase().includes(q)
+    );
+  }, [orderedCurrencies, currencyFilterText]);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as Node;
+      if (currencyDropdownRef.current?.contains(target)) return;
+      if (target && (target as Element).nodeType === 1 && (target as Element).closest?.("[data-currency-dropdown]")) return;
+      setOpenCurrencyDropdownIndex(null);
+    };
+    if (openCurrencyDropdownIndex !== null) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => document.removeEventListener("mousedown", handleClickOutside);
+    }
+  }, [openCurrencyDropdownIndex]);
+
+  useEffect(() => {
+    if (openCurrencyDropdownIndex === null) {
+      setDropdownPosition(null);
+      return;
+    }
+    const measure = () => {
+      const el = currencyTriggerRef.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      setDropdownPosition({
+        top: rect.bottom + 4,
+        left: rect.left,
+        width: rect.width,
+      });
+    };
+    measure();
+    const raf = requestAnimationFrame(measure);
+    return () => cancelAnimationFrame(raf);
+  }, [openCurrencyDropdownIndex]);
+
+  // Oblicz maksymalną możliwą kwotę do zaplanowania (w walucie bazowej)
   const maxAvailableBudget = useMemo(() => {
     if (totalBudget === undefined || !tripData) return undefined;
-    
     const totalSpent = calculateTotalSpent(tripData);
     const totalPlanned = calculateTotalPlannedSpending(tripData);
     const remainingBudget = totalBudget - totalSpent;
-    
-    // Maksymalna możliwa kwota = pozostały budżet - już zaplanowane wydatki
     return Math.max(0, remainingBudget - totalPlanned);
   }, [totalBudget, tripData]);
 
@@ -116,14 +185,19 @@ export default function AddCountryModal({
 
   useEffect(() => {
     if (isOpen) {
-      console.log('[AddCountryModal] useEffect - resetowanie formularza, isOpen:', isOpen, 'initialStartDate:', initialStartDate, 'initialEndDate:', initialEndDate);
       setName("");
       setStartDate(initialStartDate || "");
       setEndDate(initialEndDate || "");
-      setBudgets([{ currency: "PLN", amount: 0 }]);
-      setBudgetInputValues([""]);
+      const initial = tripData?.initialBudgets;
+      if (initial && initial.length > 0) {
+        setBudgets(initial.map((b) => ({ currency: b.currency, amount: 0 })));
+        setBudgetInputValues(initial.map(() => ""));
+      } else {
+        setBudgets([{ currency: baseCurrency || "PLN", amount: 0 }]);
+        setBudgetInputValues([""]);
+      }
+      setAssignAllRemaining(false);
       setLocations([]);
-      console.log('[AddCountryModal] useEffect - locations zresetowane do []');
       setNewLocationName("");
       setNewLocationStartDate("");
       setNewLocationEndDate("");
@@ -207,7 +281,7 @@ export default function AddCountryModal({
       const calculatedDays = startDate && endDate ? calculateDays(startDate, endDate) : 0;
       
       // Sprawdź czy są wypełnione dane lokalizacji, które nie zostały jeszcze dodane
-      let finalLocations = [...(locations || [])];
+      const finalLocations = [...(locations || [])];
       
       const trimmedLocationName = newLocationName.trim();
       if (trimmedLocationName && newLocationStartDate && newLocationEndDate) {
@@ -232,15 +306,8 @@ export default function AddCountryModal({
                 endDate: newLocationEndDate,
               };
               finalLocations.push(autoLocation);
-              console.log('[AddCountryModal] handleSubmit - automatycznie dodano lokalizację:', autoLocation);
-            } else {
-              console.log('[AddCountryModal] handleSubmit - pominięto automatyczne dodanie lokalizacji (błędne daty lub nakładanie się)');
             }
-          } else {
-            console.log('[AddCountryModal] handleSubmit - pominięto automatyczne dodanie lokalizacji (data zakończenia wcześniejsza niż rozpoczęcia)');
           }
-        } else {
-          console.log('[AddCountryModal] handleSubmit - pominięto automatyczne dodanie lokalizacji (lokalizacja o tej nazwie już istnieje)');
         }
       }
       
@@ -255,16 +322,14 @@ export default function AddCountryModal({
         locations: finalLocations,
       };
       
-      console.log('[AddCountryModal] handleSubmit - locations przed zapisem:', locations);
-      console.log('[AddCountryModal] handleSubmit - finalLocations:', finalLocations);
-      console.log('[AddCountryModal] handleSubmit - countryData:', countryData);
-      
       onSave(countryData);
     }
   };
 
   const handleAddBudget = () => {
-    setBudgets([...budgets, { currency: "PLN", amount: 0 }]);
+    const used = new Set(budgets.map((b) => b.currency));
+    const nextCurrency = tripCurrencies.find((c) => !used.has(c)) ?? tripCurrencies[0] ?? baseCurrency ?? "PLN";
+    setBudgets([...budgets, { currency: nextCurrency, amount: 0 }]);
     setBudgetInputValues([...budgetInputValues, ""]);
   };
 
@@ -354,12 +419,6 @@ export default function AddCountryModal({
   }, [existingCountries]);
 
   const handleAddLocation = () => {
-    console.log('[AddCountryModal] handleAddLocation - wywołane');
-    console.log('[AddCountryModal] handleAddLocation - newLocationName:', newLocationName);
-    console.log('[AddCountryModal] handleAddLocation - newLocationStartDate:', newLocationStartDate);
-    console.log('[AddCountryModal] handleAddLocation - newLocationEndDate:', newLocationEndDate);
-    console.log('[AddCountryModal] handleAddLocation - current locations:', locations);
-    
     const newErrors: Record<string, string> = {};
     const trimmedName = newLocationName.trim();
 
@@ -423,9 +482,6 @@ export default function AddCountryModal({
       endDate: newLocationEndDate,
     };
     const updatedLocations = [...locations, newLocation];
-    console.log('[AddCountryModal] handleAddLocation - dodaję lokalizację:', newLocation);
-    console.log('[AddCountryModal] handleAddLocation - locations przed:', locations);
-    console.log('[AddCountryModal] handleAddLocation - updatedLocations:', updatedLocations);
     setLocations(updatedLocations);
     setNewLocationName("");
     setNewLocationStartDate("");
@@ -528,8 +584,9 @@ export default function AddCountryModal({
                       setErrors({ ...errors, endDate: "" });
                     }
                   }}
-                  min={tripStartDate || startDate}
+                  min={tripStartDate}
                   max={tripEndDate}
+                  relatedDate={startDate ? { type: 'end', value: startDate } : undefined}
                   disabledDates={occupiedCountryDates}
                   error={errors.endDate}
                 />
@@ -717,7 +774,7 @@ export default function AddCountryModal({
           </div>
 
 
-          <div>
+          <div ref={currencyDropdownRef}>
             <div className="flex items-center justify-between mb-2">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Planowany budżet *
@@ -733,24 +790,61 @@ export default function AddCountryModal({
             </div>
             {totalBudget !== undefined && (
               <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">
-                Budżet całkowity: <span className="font-semibold">{Math.round(totalBudget).toLocaleString("pl-PL")} zł</span>
+                Budżet całkowity: <span className="font-semibold">{Math.round(totalBudget).toLocaleString("pl-PL")} {baseCurrency}</span>
               </p>
+            )}
+            {remainingByCurrency.length > 0 && (
+              <label className="flex items-center gap-2 mb-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={assignAllRemaining}
+                  onChange={(e) => {
+                    const checked = e.target.checked;
+                    setAssignAllRemaining(checked);
+                    if (checked) {
+                      setBudgets(remainingByCurrency.map((r) => ({ currency: r.currency, amount: r.amount })));
+                      setBudgetInputValues(
+                        remainingByCurrency.map((r) => (r.amount === 0 ? "" : r.amount.toString()))
+                      );
+                    } else {
+                      const initial = tripData?.initialBudgets;
+                      if (initial && initial.length > 0) {
+                        setBudgets(initial.map((b) => ({ currency: b.currency, amount: 0 })));
+                        setBudgetInputValues(initial.map(() => ""));
+                      } else {
+                        setBudgets([{ currency: baseCurrency || "PLN", amount: 0 }]);
+                        setBudgetInputValues([""]);
+                      }
+                    }
+                  }}
+                  className="rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500"
+                />
+                <span className="text-sm text-gray-700 dark:text-gray-300">
+                  Przydziel cały pozostały budżet (wszystkie niezaplanowane pieniądze na ten kraj)
+                </span>
+              </label>
             )}
             {budgets.map((budget, index) => (
               <div key={index} className="flex gap-2 mb-2">
-                <select
-                  value={budget.currency}
-                  onChange={(e) =>
-                    handleBudgetChange(index, "currency", e.target.value)
-                  }
-                  className="flex-1 p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-blue-500 focus:border-blue-500"
-                >
-                  {AVAILABLE_CURRENCIES.map((curr) => (
-                    <option key={curr} value={curr}>
-                      {curr}
-                    </option>
-                  ))}
-                </select>
+                <div className="flex-1 relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none z-[1]" />
+                  <input
+                    type="text"
+                    ref={openCurrencyDropdownIndex === index ? currencyTriggerRef : undefined}
+                    readOnly={openCurrencyDropdownIndex !== index}
+                    value={openCurrencyDropdownIndex === index ? currencyFilterText : `${budget.currency} - ${getCurrencyName(budget.currency)}`}
+                    onChange={(e) => {
+                      setCurrencyFilterText(e.target.value);
+                      setOpenCurrencyDropdownIndex(index);
+                    }}
+                    onFocus={() => {
+                      setOpenCurrencyDropdownIndex(index);
+                      setCurrencyFilterText("");
+                    }}
+                    placeholder="Wpisz kod lub nazwę waluty..."
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
                 <input
                   type="number"
                   value={budgetInputValues[index] || ""}
@@ -767,7 +861,15 @@ export default function AddCountryModal({
                       handleBudgetChange(index, "amount", numValue);
                     }
                   }}
-                  className="flex-1 p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-blue-500 focus:border-blue-500"
+                  onKeyDown={(e) => {
+                    if (e.key === "ArrowUp" || e.key === "ArrowDown" || e.key === "PageUp" || e.key === "PageDown") {
+                      e.preventDefault();
+                    }
+                  }}
+                  onWheel={(e) => {
+                    e.currentTarget.blur();
+                  }}
+                  className="flex-1 p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-blue-500 focus:border-blue-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   step="0.01"
                   min="0"
                   placeholder="Kwota"
@@ -804,6 +906,37 @@ export default function AddCountryModal({
           </div>
         </form>
       </div>
+      {typeof document !== "undefined" &&
+        dropdownPosition &&
+        openCurrencyDropdownIndex !== null &&
+        createPortal(
+          <div
+            data-currency-dropdown
+            className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg max-h-60 overflow-auto z-[9999]"
+            style={{
+              position: "fixed",
+              top: dropdownPosition.top,
+              left: dropdownPosition.left,
+              width: dropdownPosition.width,
+              minWidth: 200,
+            }}
+          >
+            {filteredCurrencies.map((code) => (
+              <button
+                key={code}
+                type="button"
+                onClick={() => {
+                  handleBudgetChange(openCurrencyDropdownIndex, "currency", code);
+                  setOpenCurrencyDropdownIndex(null);
+                }}
+                className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm"
+              >
+                {code} - {getCurrencyName(code)}
+              </button>
+            ))}
+          </div>,
+          document.body
+        )}
     </div>
   );
 }

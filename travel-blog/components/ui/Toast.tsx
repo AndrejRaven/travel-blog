@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import { X, Clock, AlertCircle, CheckCircle, Info } from "lucide-react";
 
 export type ToastType = "success" | "error" | "warning" | "info" | "rate-limit";
@@ -179,12 +179,23 @@ export default function Toast({
   );
 }
 
+const TOAST_DEDUPE_MS = 5000;
+
 // Toast Container for managing multiple toasts
 export function ToastContainer() {
   const [toasts, setToasts] = useState<ToastProps[]>([]);
+  const lastToastsRef = useRef<{ key: string; at: number }[]>([]);
 
   const addToast = (toast: Omit<ToastProps, "id">) => {
-    const id = Math.random().toString(36).substr(2, 9);
+    const now = Date.now();
+    const key = `${toast.type}:${toast.title}:${toast.message ?? ""}`;
+    lastToastsRef.current = lastToastsRef.current.filter((t) => now - t.at < TOAST_DEDUPE_MS);
+    if (lastToastsRef.current.some((t) => t.key === key)) {
+      return "";
+    }
+    lastToastsRef.current.push({ key, at: now });
+
+    const id = Math.random().toString(36).substring(2, 11);
     const newToast = { ...toast, id };
 
     setToasts((prev) => [...prev, newToast]);
@@ -224,14 +235,14 @@ export function ToastContainer() {
 type AddToastFunction = (toast: Omit<ToastProps, "id">) => void;
 
 export function useToast() {
-  const addToast: AddToastFunction = (toast: Omit<ToastProps, "id">) => {
+  const addToast = useCallback<AddToastFunction>((toast) => {
     if (
       typeof window !== "undefined" &&
       (window as Window & { addToast?: AddToastFunction }).addToast
     ) {
       (window as Window & { addToast?: AddToastFunction }).addToast?.(toast);
     }
-  };
+  }, []);
 
   return { addToast };
 }

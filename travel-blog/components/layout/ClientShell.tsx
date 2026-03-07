@@ -6,6 +6,9 @@ import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { AnalyticsProvider } from "@/components/providers/AnalyticsProvider";
 import NavigationProgressProvider from "@/components/providers/NavigationProgressProvider";
 import NotificationProvider from "@/components/providers/NotificationProvider";
+import AuthProvider from "@/components/providers/AuthProvider";
+import AbortErrorHandler from "@/components/providers/AbortErrorHandler";
+import SyncOnPageUnload from "@/components/providers/SyncOnPageUnload";
 import TopLoadingBar from "@/components/ui/TopLoadingBar";
 import { ToastContainer } from "@/components/ui/Toast";
 import { SpeedInsights } from "@vercel/speed-insights/next";
@@ -20,12 +23,28 @@ const ScrollToTop = dynamic(() => import("@/components/ui/ScrollToTop"), {
   loading: () => null,
 });
 
+const OfflineIndicator = dynamic(
+  () => import("@/components/ui/OfflineIndicator"),
+  {
+    ssr: false,
+    loading: () => null,
+  },
+);
+
+const BackgroundSyncProvider = dynamic(
+  () => import("@/components/providers/BackgroundSyncProvider"),
+  {
+    ssr: false,
+    loading: () => null,
+  },
+);
+
 const VisualEditing = dynamic(
   () => import("next-sanity").then((mod) => ({ default: mod.VisualEditing })),
   {
     ssr: false,
     loading: () => null,
-  }
+  },
 );
 
 function LazyClientWidgets() {
@@ -33,6 +52,7 @@ function LazyClientWidgets() {
     <Suspense fallback={null}>
       <CookieBanner />
       <ScrollToTop />
+      <OfflineIndicator />
     </Suspense>
   );
 }
@@ -60,20 +80,24 @@ export default function ClientShell({
   return (
     <ThemeProvider>
       <AnalyticsProvider>
-        <Suspense fallback={null}>
-          <NavigationProgressProvider>
-            <NotificationProvider>
-              <TopLoadingBar />
-              {children}
-              <LazyClientWidgets />
-              <ToastContainer />
-              <SpeedInsights />
-              <DraftVisualEditing isDraftMode={isDraftMode} />
-            </NotificationProvider>
-          </NavigationProgressProvider>
-        </Suspense>
+        <AuthProvider>
+          <Suspense fallback={null}>
+            <NavigationProgressProvider>
+              <NotificationProvider>
+                <AbortErrorHandler />
+                <TopLoadingBar />
+                {children}
+                <LazyClientWidgets />
+                <SyncOnPageUnload />
+                <ToastContainer />
+                <SpeedInsights />
+                <DraftVisualEditing isDraftMode={isDraftMode} />
+                <BackgroundSyncProvider />
+              </NotificationProvider>
+            </NavigationProgressProvider>
+          </Suspense>
+        </AuthProvider>
       </AnalyticsProvider>
     </ThemeProvider>
   );
 }
-

@@ -32,6 +32,8 @@ export const buildContentSecurityPolicy = () => {
     "https://*.googlevideo.com",
     "https://i.ytimg.com",
     "https://s.ytimg.com",
+    "https://*.supabase.co",
+    "wss://*.supabase.co",
   ];
   const frameSrc = [
     "'self'",
@@ -50,18 +52,25 @@ export const buildContentSecurityPolicy = () => {
 
   if (ENABLE_VERCEL_ANALYTICS) {
     scriptSrc.push("https://va.vercel-scripts.com");
+    scriptSrc.push("https://vitals.vercel-insights.com");
     connectSrc.push("https://va.vercel-scripts.com");
+    connectSrc.push("https://vitals.vercel-insights.com");
   }
 
   connectSrc.push(...SANITY_PREVIEW_ORIGINS);
 
+  // script-src-elem musi zawierać wszystkie źródła skryptów, w tym Vercel Analytics
+  // Tworzymy kopię scriptSrc PO dodaniu wszystkich źródeł
+  const scriptSrcElem = [...scriptSrc];
+
   return [
     "default-src 'self'",
     `script-src ${scriptSrc.join(" ")}`,
+    `script-src-elem ${scriptSrcElem.join(" ")}`, // Dla dynamicznych skryptów (Vercel Analytics)
     "script-src-attr 'none'",
     `style-src ${styleSrc.join(" ")}`,
     "font-src 'self' data:",
-    "img-src 'self' data: blob: https://cdn.sanity.io https://img.youtube.com https://i.ytimg.com https://s.ytimg.com https://yt3.ggpht.com",
+    "img-src 'self' data: blob: https://cdn.sanity.io https://img.youtube.com https://i.ytimg.com https://s.ytimg.com https://yt3.ggpht.com https://*.supabase.co",
     `connect-src ${connectSrc.join(" ")}`,
     `frame-src ${frameSrc.join(" ")}`,
     `child-src ${childSrc.join(" ")}`,

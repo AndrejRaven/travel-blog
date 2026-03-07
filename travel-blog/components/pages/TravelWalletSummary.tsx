@@ -195,11 +195,7 @@ export default function TravelWalletSummary({
   // Formatuj budżet jako lista walut
   const budgetList = Array.from(budgetMap.entries())
     .map(([currency, amount]) => {
-      // Formatuj liczby z separatorami tysięcy
-      const formattedAmount = new Intl.NumberFormat("pl-PL", {
-        maximumFractionDigits: 0,
-      }).format(amount);
-      return { currency, amount: formattedAmount };
+      return { currency, amount };
     })
     .sort((a, b) => a.currency.localeCompare(b.currency));
 
@@ -208,20 +204,6 @@ export default function TravelWalletSummary({
     : budgetList.slice(0, 4);
   const hasMoreCurrencies = budgetList.length > 4;
 
-  const formatCurrency = (currency: string, amount: string) => {
-    const currencyLower = currency.toLowerCase();
-    if (currencyLower === "pln") {
-      return `${amount} zł`;
-    } else if (currencyLower === "jpy" || currencyLower === "yen") {
-      return `${amount} ¥`;
-    } else if (currencyLower === "usd") {
-      return `${amount} USD`;
-    } else if (currencyLower === "eur") {
-      return `${amount} EUR`;
-    } else {
-      return `${amount} ${currency.toUpperCase()}`;
-    }
-  };
 
   // Przygotuj dane dla wykresu budżetu - neutralne odcienie szarości
   const defaultColors = [

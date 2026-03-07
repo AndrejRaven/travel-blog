@@ -44,6 +44,7 @@ export interface RateLimitConfig {
 
 /**
  * Sprawdza rate limit dla danego identyfikatora
+ * Z timeout dla Redis (2 sekundy)
  */
 async function incrementMemoryStore(
   identifier: string,
@@ -74,24 +75,33 @@ async function incrementRedisStore(
   const now = Date.now();
 
   try {
-    const existing = (await redisClient.get<RateLimitEntry>(key)) || null;
+    // Timeout dla Redis operations (2 sekundy)
+    const redisPromise = (async () => {
+      const existing = (await redisClient.get<RateLimitEntry>(key)) || null;
 
-    if (!existing || existing.resetTime < now) {
-      const resetTime = now + windowMs;
-      const entry = { count: 1, resetTime };
-      await redisClient.set(key, entry, { px: windowMs });
-      return entry;
-    }
+      if (!existing || existing.resetTime < now) {
+        const resetTime = now + windowMs;
+        const entry = { count: 1, resetTime };
+        await redisClient.set(key, entry, { px: windowMs });
+        return entry;
+      }
 
-    const ttl = Math.max(existing.resetTime - now, 0);
-    const updatedEntry = {
-      count: existing.count + 1,
-      resetTime: existing.resetTime,
-    };
-    await redisClient.set(key, updatedEntry, { px: ttl || 1 });
-    return updatedEntry;
+      const ttl = Math.max(existing.resetTime - now, 0);
+      const updatedEntry = {
+        count: existing.count + 1,
+        resetTime: existing.resetTime,
+      };
+      await redisClient.set(key, updatedEntry, { px: ttl || 1 });
+      return updatedEntry;
+    })();
+
+    const timeoutPromise = new Promise<RateLimitEntry>((_, reject) => {
+      setTimeout(() => reject(new Error('Redis timeout')), 2000);
+    });
+
+    return await Promise.race([redisPromise, timeoutPromise]);
   } catch (error) {
-    console.error("RateLimit redis error:", error);
+    // Fallback do memory store jeśli Redis timeout lub error
     return incrementMemoryStore(identifier, windowMs);
   }
 }

@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { X, ArrowRight, Search } from "lucide-react";
+import { X, ArrowRight, Search, ChevronDown, ChevronUp, Info, Star, CheckCircle2 } from "lucide-react";
 import Button from "@/components/ui/Button";
+import Select from "@/components/ui/Select";
 import ExchangeRateVerificationModal from "./ExchangeRateVerificationModal";
 import { useToast } from "@/components/ui/Toast";
 import type { CurrencyTransaction } from "@/lib/travel-wallet/types";
@@ -15,7 +16,8 @@ import { calculateCurrencyBalances, getBalanceForCurrency } from "@/lib/travel-w
 import { getTripBySlug } from "@/lib/travel-wallet/trips-storage";
 import { formatCurrency } from "@/lib/travel-wallet/formatters";
 import { getWallet } from "@/lib/travel-wallet/wallet-storage";
-import { getCurrencyBalance } from "@/lib/travel-wallet/wallet-operations";
+import { getCurrencyBalance, getBalancesForCountry } from "@/lib/travel-wallet/wallet-operations";
+import { CURRENCY_NAMES } from "@/lib/travel-wallet/currency-names";
 
 interface AddCurrencyTransactionModalProps {
   isOpen: boolean;
@@ -28,192 +30,6 @@ interface AddCurrencyTransactionModalProps {
   walletCurrencies?: string[]; // Waluty dostępne w portfelu (z saldem > 0)
   tripId?: string; // ID podróży dla walidacji sald
 }
-
-// Pełna lista nazw walut ISO 4217 w języku polskim (skopiowane z kursy/page.tsx)
-const currencyNames: Record<string, string> = {
-  // Główne waluty
-  PLN: "Polski złoty",
-  USD: "Dolar amerykański",
-  EUR: "Euro",
-  GBP: "Funt brytyjski",
-  JPY: "Jen japoński",
-  CHF: "Frank szwajcarski",
-  AUD: "Dolar australijski",
-  CAD: "Dolar kanadyjski",
-  CNY: "Yuan chiński",
-  HKD: "Dolar hongkoński",
-  NZD: "Dolar nowozelandzki",
-  SGD: "Dolar singapurski",
-  MOP: "Pataca makauńska",
-  
-  // Azja
-  THB: "Baht tajski",
-  KRW: "Won południowokoreański",
-  TWD: "Dolar tajwański",
-  INR: "Rupia indyjska",
-  IDR: "Rupia indonezyjska",
-  PHP: "Peso filipińskie",
-  MYR: "Ringgit malezyjski",
-  VND: "Dong wietnamski",
-  PKR: "Rupia pakistańska",
-  BDT: "Taka bengalska",
-  LKR: "Rupia lankijska",
-  NPR: "Rupia nepalska",
-  MMK: "Kiat birmański",
-  KHR: "Riel kambodżański",
-  LAK: "Kip laotański",
-  MNT: "Tugrik mongolski",
-  MVR: "Rufija malediwska",
-  
-  // Europa
-  SEK: "Korona szwedzka",
-  NOK: "Korona norweska",
-  DKK: "Korona duńska",
-  ISK: "Korona islandzka",
-  CZK: "Korona czeska",
-  HUF: "Forint węgierski",
-  RON: "Lej rumuński",
-  BGN: "Lew bułgarski",
-  HRK: "Kuna chorwacka",
-  RSD: "Dinar serbski",
-  BAM: "Marka zamienna Bośni i Hercegowiny",
-  MKD: "Denar macedoński",
-  ALL: "Lek albański",
-  MDL: "Lej mołdawski",
-  UAH: "Hrywna ukraińska",
-  BYN: "Rubel białoruski",
-  RUB: "Rubel rosyjski",
-  GEL: "Lari gruziński",
-  AMD: "Dram armeński",
-  AZN: "Manat azerski",
-  KZT: "Tenge kazachski",
-  KGS: "Som kirgiski",
-  UZS: "Som uzbecki",
-  TJS: "Somoni tadżycki",
-  TMT: "Manat turkmeński",
-  
-  // Bliski Wschód
-  ILS: "Szekel izraelski",
-  AED: "Dirham ZEA",
-  SAR: "Rijal saudyjski",
-  QAR: "Rijal katarski",
-  KWD: "Dinar kuwejcki",
-  BHD: "Dinar bahrajński",
-  OMR: "Rial omański",
-  JOD: "Dinar jordański",
-  LBP: "Funt libański",
-  SYP: "Funt syryjski",
-  IQD: "Dinar iracki",
-  IRR: "Rial irański",
-  AFN: "Afgani afgański",
-  YER: "Rial jemeński",
-  
-  // Afryka
-  ZAR: "Rand południowoafrykański",
-  EGP: "Funt egipski",
-  NGN: "Naira nigeryjska",
-  KES: "Szyling kenijski",
-  UGX: "Szyling ugandyjski",
-  TZS: "Szyling tanzański",
-  ETB: "Birr etiopski",
-  GHS: "Cedi ghański",
-  XOF: "Frank CFA BCEAO",
-  XAF: "Frank CFA BEAC",
-  MAD: "Dirham marokański",
-  TND: "Dinar tunezyjski",
-  DZD: "Dinar algierski",
-  LYD: "Dinar libijski",
-  SDG: "Funt sudański",
-  SSP: "Funt południowosudański",
-  AOA: "Kwanza angolska",
-  MZN: "Metical mozambicki",
-  ZMW: "Kwacha zambijska",
-  BWP: "Pula botswańska",
-  MUR: "Rupia maurytyjska",
-  SCR: "Rupia seszelska",
-  MGA: "Ariary malgaska",
-  
-  // Ameryka Północna i Środkowa
-  MXN: "Peso meksykańskie",
-  GTQ: "Quetzal gwatemalski",
-  BZD: "Dolar belizeński",
-  HNL: "Lempira honduraska",
-  NIO: "Córdoba nikaraguańska",
-  CRC: "Colón kostarykański",
-  PAB: "Balboa panamska",
-  DOP: "Peso dominikańskie",
-  HTG: "Gourde haitański",
-  JMD: "Dolar jamajski",
-  BBD: "Dolar barbadoski",
-  BSD: "Dolar bahamski",
-  XCD: "Dolar wschodniokaraibski",
-  TTD: "Dolar trynidadzki",
-  AWG: "Florin arubański",
-  ANG: "Gulden antylski",
-  CUP: "Peso kubańskie",
-  
-  // Ameryka Południowa
-  BRL: "Real brazylijski",
-  ARS: "Peso argentyńskie",
-  CLP: "Peso chilijskie",
-  COP: "Peso kolumbijskie",
-  PEN: "Sol peruwiański",
-  UYU: "Peso urugwajskie",
-  PYG: "Guarani paragwajski",
-  BOB: "Boliviano",
-  VES: "Bolívar wenezuelski",
-  GYD: "Dolar gujański",
-  SRD: "Dolar surinamski",
-  FKP: "Funt falklandzki",
-  
-  // Oceania
-  FJD: "Dolar fidżyjski",
-  PGK: "Kina papuaska",
-  SBD: "Dolar Wysp Salomona",
-  TOP: "Pa'anga tongijska",
-  WST: "Tala samoańska",
-  VUV: "Vatu vanuackie",
-  XPF: "Frank CFP",
-  
-  // Inne
-  TRY: "Lira turecka",
-  BND: "Dolar brunejski",
-  KYD: "Dolar kajmański",
-  BMD: "Dolar bermudzki",
-  GIP: "Funt gibraltarski",
-  SHP: "Funt Świętej Heleny",
-  ERN: "Nakfa erytrejska",
-  DJF: "Frank dżibutyjski",
-  SOS: "Szyling somalijski",
-  KMF: "Frank komoryjski",
-  RWF: "Frank rwandyjski",
-  BIF: "Frank burundyjski",
-  MWK: "Kwacha malawijska",
-  ZWL: "Dolar Zimbabwe",
-  STN: "Dobra Wysp Świętego Tomasza i Książęcej",
-  CVE: "Escudo zielonoprzylądkowe",
-  GMD: "Dalasi gambijska",
-  GNF: "Frank gwinejski",
-  SLL: "Leone sierraleoński",
-  SLE: "Leone sierraleoński",
-  LRD: "Dolar liberyjski",
-  CDF: "Frank kongijski",
-  SZL: "Lilangeni suazyjski",
-  LSL: "Loti lesotyjski",
-  NAD: "Dolar namibijski",
-  BTN: "Ngultrum bhutański",
-  CLF: "Unidad de Fomento chilijska",
-  CNH: "Yuan chiński (offshore)",
-  FOK: "Korona Wysp Owczych",
-  GGP: "Funt Guernsey",
-  IMP: "Funt Man",
-  JEP: "Funt Jersey",
-  KID: "Dolar kiribatyjski",
-  MRU: "Ugija mauretańska",
-  TVD: "Dolar tuvalu",
-  XCG: "Korona wschodniokaraibska",
-  ZWG: "Dolar Zimbabwe (2009)",
-};
 
 const FALLBACK_CURRENCIES = [
   "PLN", "USD", "EUR", "GBP", "THB", "JPY", "KRW", "TWD", "AUD", "CAD",
@@ -260,7 +76,7 @@ function loadSelectedPairs(slug: string): CurrencyPair[] {
 }
 
 function getCurrencySearchText(currency: string): string {
-  const name = currencyNames[currency] || currency;
+  const name = CURRENCY_NAMES[currency] || currency;
   return `${currency} ${name}`.toLowerCase();
 }
 
@@ -277,13 +93,6 @@ export default function AddCurrencyTransactionModal({
 }: AddCurrencyTransactionModalProps) {
   const { addToast } = useToast();
   
-  console.log('[AddCurrencyTransactionModal] Props received:', {
-    walletCurrencies,
-    walletCurrenciesLength: walletCurrencies.length,
-    availableCurrencies: propAvailableCurrencies?.length,
-  });
-  
-  const [type, setType] = useState<"exchange" | "withdrawal" | "initial">("exchange");
   const [fromCurrency, setFromCurrency] = useState("");
   const [fromAmount, setFromAmount] = useState("");
   const [toCurrency, setToCurrency] = useState("");
@@ -306,6 +115,9 @@ export default function AddCurrencyTransactionModal({
   const [isDropdownOpenFrom, setIsDropdownOpenFrom] = useState(false);
   const [isDropdownOpenTo, setIsDropdownOpenTo] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0); // Trigger do odświeżania balance
+  const [selectedCountryId, setSelectedCountryId] = useState<string>("");
+  const [expandedDetails, setExpandedDetails] = useState(true); // Sekcja "Szczegóły" domyślnie rozwinięta
+  const [expandedAdditional, setExpandedAdditional] = useState(false); // Sekcja "Dodatkowe" domyślnie zwinięta
 
   // Pobierz dostępne waluty z API
   useEffect(() => {
@@ -314,17 +126,22 @@ export default function AddCurrencyTransactionModal({
       const currenciesWithPLN = propAvailableCurrencies.includes('PLN') 
         ? propAvailableCurrencies 
         : ['PLN', ...propAvailableCurrencies];
-      console.log('[AddCurrencyTransactionModal] Using propAvailableCurrencies:', {
-        count: currenciesWithPLN.length,
-        hasPLN: currenciesWithPLN.includes('PLN'),
-        currencies: currenciesWithPLN.slice(0, 10), // pierwsze 10 dla debugowania
-      });
       setAvailableCurrencies(currenciesWithPLN);
       setIsLoadingCurrencies(false);
       return;
     }
 
     const fetchCurrencies = async () => {
+      // Sprawdź cache najpierw
+      const { getCachedCurrencies, setCachedCurrencies } = await import("@/lib/currencies-cache");
+      const cached = getCachedCurrencies();
+      
+      if (cached) {
+        setAvailableCurrencies(cached);
+        setIsLoadingCurrencies(false);
+        return;
+      }
+
       try {
         const response = await fetch("/api/currencies");
         if (response.ok) {
@@ -336,16 +153,17 @@ export default function AddCurrencyTransactionModal({
             const currenciesWithPLN = currencyCodes.includes('PLN') 
               ? currencyCodes 
               : ['PLN', ...currencyCodes];
-            console.log('[AddCurrencyTransactionModal] Fetched currencies from API:', {
-              count: currenciesWithPLN.length,
-              hasPLN: currenciesWithPLN.includes('PLN'),
-              currencies: currenciesWithPLN.slice(0, 10), // pierwsze 10 dla debugowania
-            });
             setAvailableCurrencies(currenciesWithPLN);
+            // Zapisz do cache
+            setCachedCurrencies(currenciesWithPLN, data.date);
           }
         }
       } catch (error) {
         console.error("Error fetching currencies:", error);
+        // Jeśli błąd, użyj cache nawet jeśli wygasł
+        if (cached) {
+          setAvailableCurrencies(cached);
+        }
       } finally {
         setIsLoadingCurrencies(false);
       }
@@ -364,11 +182,6 @@ export default function AddCurrencyTransactionModal({
         const response = await fetch("/api/exchange-rates");
         if (response.ok) {
           const data = await response.json();
-          console.log("[AddCurrencyTransactionModal] Fetched exchange rates:", {
-            success: data.success,
-            ratesCount: data.rates?.length || 0,
-            rates: data.rates?.slice(0, 5), // pierwsze 5 dla debugowania
-          });
           if (data.success && data.rates && Array.isArray(data.rates)) {
             setExchangeRates(data.rates);
           }
@@ -385,17 +198,12 @@ export default function AddCurrencyTransactionModal({
     fetchRates();
   }, [isOpen]);
 
-  // Filtruj dostępne waluty dla "Z waluty" (fromCurrency) - tylko waluty z portfela (dla exchange/withdrawal)
+  // Filtruj dostępne waluty dla "Z waluty" (fromCurrency) - tylko waluty z portfela
   const filteredAvailableCurrenciesFrom = useMemo(() => {
-    // Dla typu "initial" - pokaż wszystkie waluty
-    if (type === "initial") {
-      return availableCurrencies;
-    }
-    
-    // Dla exchange/withdrawal - tylko waluty z portfela
+    // Tylko waluty z portfela
     // Jeśli brak walletCurrencies, nie pokazuj żadnych walut (użytkownik musi najpierw dodać budżet)
     if (!walletCurrencies || walletCurrencies.length === 0) {
-      console.warn('[AddCurrencyTransactionModal] walletCurrencies is empty or undefined, type:', type);
+      console.warn('[AddCurrencyTransactionModal] walletCurrencies is empty or undefined');
       return [];
     }
     
@@ -409,22 +217,9 @@ export default function AddCurrencyTransactionModal({
         currenciesToShow.push(code);
       }
     });
-    
-    console.log('[AddCurrencyTransactionModal] Filtering currencies:', {
-      type,
-      walletCurrenciesCount: walletCurrencies.length,
-      walletCurrencies,
-      availableCurrenciesCount: availableCurrencies.length,
-      availableCurrenciesHasPLN: availableCurrencies.includes('PLN'),
-      availableCurrenciesHasEUR: availableCurrencies.includes('EUR'),
-      filteredCount: currenciesToShow.length,
-      filtered: currenciesToShow,
-      filteredHasPLN: currenciesToShow.includes('PLN'),
-      filteredHasEUR: currenciesToShow.includes('EUR'),
-    });
-    
+
     return currenciesToShow;
-  }, [type, availableCurrencies, walletCurrencies]);
+  }, [availableCurrencies, walletCurrencies]);
 
   // Filtruj dostępne waluty dla "Na walutę" (toCurrency) - wszystkie dostępne (dla exchange/withdrawal)
   const filteredAvailableCurrenciesTo = useMemo(() => {
@@ -437,7 +232,7 @@ export default function AddCurrencyTransactionModal({
     if (!slug) {
       return filteredAvailableCurrenciesFrom.map(code => ({
         code,
-        name: currencyNames[code] || code,
+        name: CURRENCY_NAMES[code] || code,
         symbol: CURRENCY_SYMBOLS[code] || code,
       }));
     }
@@ -453,7 +248,7 @@ export default function AddCurrencyTransactionModal({
       .filter(code => preferredCurrencies.has(code))
       .map(code => ({
         code,
-        name: currencyNames[code] || code,
+        name: CURRENCY_NAMES[code] || code,
         symbol: CURRENCY_SYMBOLS[code] || code,
         isPreferred: true,
       }));
@@ -462,7 +257,7 @@ export default function AddCurrencyTransactionModal({
       .filter(code => !preferredCurrencies.has(code))
       .map(code => ({
         code,
-        name: currencyNames[code] || code,
+        name: CURRENCY_NAMES[code] || code,
         symbol: CURRENCY_SYMBOLS[code] || code,
         isPreferred: false,
       }));
@@ -475,7 +270,7 @@ export default function AddCurrencyTransactionModal({
     if (!slug) {
       return filteredAvailableCurrenciesTo.map(code => ({
         code,
-        name: currencyNames[code] || code,
+        name: CURRENCY_NAMES[code] || code,
         symbol: CURRENCY_SYMBOLS[code] || code,
       }));
     }
@@ -491,7 +286,7 @@ export default function AddCurrencyTransactionModal({
       .filter(code => preferredCurrencies.has(code))
       .map(code => ({
         code,
-        name: currencyNames[code] || code,
+        name: CURRENCY_NAMES[code] || code,
         symbol: CURRENCY_SYMBOLS[code] || code,
         isPreferred: true,
       }));
@@ -500,7 +295,7 @@ export default function AddCurrencyTransactionModal({
       .filter(code => !preferredCurrencies.has(code))
       .map(code => ({
         code,
-        name: currencyNames[code] || code,
+        name: CURRENCY_NAMES[code] || code,
         symbol: CURRENCY_SYMBOLS[code] || code,
         isPreferred: false,
       }));
@@ -514,7 +309,7 @@ export default function AddCurrencyTransactionModal({
       const from = parseFloat(fromAmount);
       const to = parseFloat(toAmount);
       if (from > 0 && to > 0) {
-        const rate = to / from;
+        const _rate = to / from;
         // Rate is calculated, no need to store separately
       }
     }
@@ -562,9 +357,8 @@ export default function AddCurrencyTransactionModal({
       to = roundedTo;
     }
 
-    // Walidacja walut w portfelu (dla exchange/withdrawal)
-    if (type === "exchange" || type === "withdrawal") {
-      if (walletCurrencies.length > 0) {
+    // Walidacja walut w portfelu
+    if (walletCurrencies.length > 0) {
         // Sprawdź czy fromCurrency jest w portfelu (tylko "z waluty" musi być w portfelu)
         if (!walletCurrencies.includes(fromCurrency)) {
           addToast({
@@ -576,119 +370,111 @@ export default function AddCurrencyTransactionModal({
         }
         
         // Sprawdź czy masz wystarczające środki w portfelu
-        if (tripId && slug) {
-          const trip = getTripBySlug(slug);
-          if (trip) {
-            const balances = calculateCurrencyBalances(trip, countryId);
-            const balance = getBalanceForCurrency(balances, fromCurrency);
-            
-            if (balance) {
-              const availableAmount = balance.amount;
-              if (from > availableAmount) {
+        // Użyj tego samego systemu co do wyświetlania dostępnych środków (nowy system wallet)
+        if (tripId) {
+          try {
+            // Dla nowego systemu wallet, użyj danych z portfela bezpośrednio
+            const wallet = getWallet(tripId);
+            if (wallet) {
+              // Użyj tej samej logiki co w availableBalance
+              let balance: number;
+              if (countryId) {
+                const countryBalances = getBalancesForCountry(wallet, tripId, countryId);
+                const countryBalance = countryBalances.find(b => b.currency === fromCurrency);
+                balance = countryBalance ? countryBalance.amount : 0;
+              } else {
+                balance = getCurrencyBalance(wallet, fromCurrency);
+              }
+              if (balance < from) {
                 addToast({
                   type: "error",
                   title: "Niewystarczające środki",
-                  message: `Masz ${availableAmount.toFixed(2)} ${fromCurrency}, a próbujesz wymienić ${from.toFixed(2)} ${fromCurrency}.`,
+                  message: `Masz ${balance.toFixed(2)} ${fromCurrency}, a próbujesz wymienić ${from.toFixed(2)} ${fromCurrency}.`,
                 });
                 return;
               }
             } else {
-              // Jeśli nie ma salda, sprawdź budżet początkowy
-              console.warn(`[AddCurrencyTransactionModal] No balance found for ${fromCurrency}, checking initial balances`);
+              // Fallback do starego systemu jeśli nie ma wallet
+              if (slug) {
+                const trip = getTripBySlug(slug);
+                if (trip) {
+                  const balances = calculateCurrencyBalances(trip, countryId);
+                  const balance = getBalanceForCurrency(balances, fromCurrency);
+                  
+                  if (balance) {
+                    const availableAmount = balance.amount;
+                    if (from > availableAmount) {
+                      addToast({
+                        type: "error",
+                        title: "Niewystarczające środki",
+                        message: `Masz ${availableAmount.toFixed(2)} ${fromCurrency}, a próbujesz wymienić ${from.toFixed(2)} ${fromCurrency}.`,
+                      });
+                      return;
+                    }
+                  } else {
+                    console.warn(`[AddCurrencyTransactionModal] No balance found for ${fromCurrency}, checking initial balances`);
+                  }
+                }
+              }
             }
+          } catch (error) {
+            console.error("[AddCurrencyTransactionModal] Error validating balance:", error);
+            // W przypadku błędu, pozwól na kontynuację (walidacja w executeExchange sprawdzi to ponownie)
           }
         }
         // "Na walutę" może być dowolna - nie sprawdzamy
       }
-    }
 
     const transactionData: Omit<CurrencyTransaction, "id" | "tripId" | "rate"> = {
-      type,
+      type: "exchange",
       date,
       time: time || undefined,
       fromCurrency,
       fromAmount: from,
       toCurrency,
       toAmount: to,
-      rate: to / from,
       fee: feeValue,
       feeCurrency: feeValue ? feeCurrency : undefined,
       note: note || undefined,
       location: location || undefined,
-      countryId,
+      countryId: selectedCountryId || undefined,
     };
 
-    // Weryfikacja kursu tylko dla wymiany i wypłaty (nie dla stanu początkowego)
-    if (type === "exchange" || type === "withdrawal") {
-      // Jeśli kursy są jeszcze ładowane, poczekaj
-      if (isLoadingRates) {
-        console.warn("[AddCurrencyTransactionModal] Exchange rates are still loading, please wait...");
-        return;
-      }
-
-      // Jeśli nie ma kursów, nie można zweryfikować - wymagaj kursów
-      if (exchangeRates.length === 0) {
-        console.error("[AddCurrencyTransactionModal] No exchange rates available, cannot verify transaction");
-        return;
-      }
-
-      const transactionRate = to / from;
-      
-      // Sprawdź czy mamy kurs dla tej pary walut
-      const usdToPlnRate = exchangeRates.find(r => r.fromCurrency === fromCurrency && r.toCurrency === toCurrency);
-      const reverseRate = exchangeRates.find(r => r.fromCurrency === toCurrency && r.toCurrency === fromCurrency);
-      console.log("[AddCurrencyTransactionModal] Verifying rate:", {
-        transactionRate: `${transactionRate.toFixed(4)} ${toCurrency} za 1 ${fromCurrency}`,
-        fromCurrency,
-        toCurrency,
-        fromAmount: from,
-        toAmount: to,
-        exchangeRatesCount: exchangeRates.length,
-        date,
-        directRate: usdToPlnRate ? `${usdToPlnRate.rate} ${usdToPlnRate.toCurrency} za 1 ${usdToPlnRate.fromCurrency}` : "not found",
-        reverseRate: reverseRate ? `${(1/reverseRate.rate).toFixed(4)} ${reverseRate.fromCurrency} za 1 ${reverseRate.toCurrency}` : "not found",
-        sampleRates: exchangeRates.slice(0, 5).map(r => `${r.fromCurrency}/${r.toCurrency}: ${r.rate}`),
-      });
-      
-      const verification = verifyExchangeRate(
-        transactionRate,
-        fromCurrency,
-        toCurrency,
-        exchangeRates,
-        date
-      );
-
-      console.log("[AddCurrencyTransactionModal] Verification result:", {
-        isValid: verification.isValid,
-        transactionRate: verification.transactionRate,
-        referenceRate: verification.referenceRate,
-        differencePercent: verification.differencePercent,
-        isAboveLimit: verification.isAboveLimit,
-        isBelowLimit: verification.isBelowLimit,
-      });
-
-      // Jeśli kurs jest poza granicami ±10%, pokaż modal weryfikacji
-      // Również jeśli nie znaleziono kursu referencyjnego (referenceRate === null), 
-      // ale to nie powinno się zdarzyć jeśli mamy kursy w API
-      if (!verification.isValid) {
-        console.log("[AddCurrencyTransactionModal] Rate is invalid, showing verification modal");
-        setPendingTransactionData(transactionData);
-        setVerificationResult(verification);
-        setIsVerificationModalOpen(true);
-        return;
-      } else {
-        console.log("[AddCurrencyTransactionModal] Rate is valid, proceeding with save");
-      }
-    } else {
-      console.log("[AddCurrencyTransactionModal] Skipping verification:", {
-        type,
-        exchangeRatesLength: exchangeRates.length,
-        isLoadingRates,
-        shouldVerify: (type === "exchange" || type === "withdrawal") && !isLoadingRates && exchangeRates.length > 0,
-      });
+    // Weryfikacja kursu
+    // Jeśli kursy są jeszcze ładowane, poczekaj
+    if (isLoadingRates) {
+      console.warn("[AddCurrencyTransactionModal] Exchange rates are still loading, please wait...");
+      return;
     }
 
-    // Jeśli kurs jest OK lub to stan początkowy, zapisz bezpośrednio
+    // Jeśli nie ma kursów, nie można zweryfikować - wymagaj kursów
+    if (exchangeRates.length === 0) {
+      console.error("[AddCurrencyTransactionModal] No exchange rates available, cannot verify transaction");
+      return;
+    }
+
+    const transactionRate = to / from;
+    
+    // Sprawdź czy mamy kurs dla tej pary walut
+    const verification = verifyExchangeRate(
+      transactionRate,
+      fromCurrency,
+      toCurrency,
+      exchangeRates,
+      date
+    );
+
+    // Jeśli kurs jest poza granicami ±10%, pokaż modal weryfikacji
+    // Również jeśli nie znaleziono kursu referencyjnego (referenceRate === null), 
+    // ale to nie powinno się zdarzyć jeśli mamy kursy w API
+    if (!verification.isValid) {
+      setPendingTransactionData(transactionData);
+      setVerificationResult(verification);
+      setIsVerificationModalOpen(true);
+      return;
+    }
+
+    // Jeśli kurs jest OK, zapisz bezpośrednio
     onSave(transactionData, transaction?.id);
     // Odśwież balance po zapisaniu transakcji (małe opóźnienie aby portfel był zaktualizowany)
     setTimeout(() => {
@@ -724,6 +510,7 @@ export default function AddCurrencyTransactionModal({
     setNote("");
     setLocation("");
     setTime("");
+    setSelectedCountryId(countryId || "");
     setSearchQueryFrom("");
     setSearchQueryTo("");
     setIsDropdownOpenFrom(false);
@@ -741,7 +528,7 @@ export default function AddCurrencyTransactionModal({
 
   // Pobierz kurs z API dla wybranej pary walut
   const getApiRate = (): number | null => {
-    if (type === "initial" || exchangeRates.length === 0) {
+    if (exchangeRates.length === 0) {
       return null;
     }
     
@@ -754,18 +541,9 @@ export default function AddCurrencyTransactionModal({
 
   // Filtrowanie walut na podstawie zapytania wyszukiwania
   const filteredCurrenciesFrom = useMemo(() => {
-    console.log('[AddCurrencyTransactionModal] filteredCurrenciesFrom calculation:', {
-      sortedCurrenciesFromCount: sortedCurrenciesFrom.length,
-      sortedCurrenciesFrom: sortedCurrenciesFrom.map(c => c.code),
-      searchQueryFrom,
-    });
     const filtered = sortedCurrenciesFrom.filter((curr) => {
       const searchText = getCurrencySearchText(curr.code);
       return searchText.includes(searchQueryFrom.toLowerCase());
-    });
-    console.log('[AddCurrencyTransactionModal] filteredCurrenciesFrom result:', {
-      filteredCount: filtered.length,
-      filtered: filtered.map(c => c.code),
     });
     return filtered;
   }, [sortedCurrenciesFrom, searchQueryFrom]);
@@ -781,16 +559,24 @@ export default function AddCurrencyTransactionModal({
   // Użyj bezpośrednio getWallet aby zawsze mieć aktualne dane
   // Dodaj refreshTrigger do zależności aby odświeżać po zapisaniu transakcji
   const availableBalance = useMemo(() => {
-    if (!fromCurrency || type === "initial" || !tripId) {
+    if (!fromCurrency || !tripId) {
       return null;
     }
 
     try {
-      // Dla nowego systemu wallet, użyj danych z portfela bezpośrednio
+      // Dla nowego systemu wallet
       const wallet = getWallet(tripId);
       if (wallet) {
+        // Jeśli countryId jest dostępne, użyj sald dla kraju (podobnie jak w AddExpenseFromDashboardModal)
+        if (countryId) {
+          const countryBalances = getBalancesForCountry(wallet, tripId, countryId);
+          const balance = countryBalances.find(b => b.currency === fromCurrency);
+          const balanceAmount = balance ? balance.amount : 0;
+          return balanceAmount;
+        }
+        
+        // W przeciwnym razie użyj globalnych sald
         const balance = getCurrencyBalance(wallet, fromCurrency);
-        console.log(`[AddCurrencyTransactionModal] Available balance for ${fromCurrency}:`, balance, 'refreshTrigger:', refreshTrigger);
         return balance;
       }
 
@@ -810,18 +596,19 @@ export default function AddCurrencyTransactionModal({
       console.error("[AddCurrencyTransactionModal] Error calculating balance:", error);
       return null;
     }
-  }, [fromCurrency, type, tripId, slug, countryId, refreshTrigger]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- refreshTrigger intentional for manual refresh
+  }, [fromCurrency, tripId, slug, countryId, refreshTrigger]);
 
   // Odśwież balance gdy modal się otwiera lub zmienia się fromCurrency
   useEffect(() => {
-    if (isOpen && fromCurrency && type !== "initial") {
+    if (isOpen && fromCurrency) {
       // Małe opóźnienie aby upewnić się że portfel jest zaktualizowany
       const timer = setTimeout(() => {
         setRefreshTrigger(prev => prev + 1);
       }, 100);
       return () => clearTimeout(timer);
     }
-  }, [isOpen, fromCurrency, type]);
+  }, [isOpen, fromCurrency]);
 
   // Zamknij dropdown po kliknięciu poza nim
   useEffect(() => {
@@ -838,10 +625,87 @@ export default function AddCurrencyTransactionModal({
     }
   }, [isDropdownOpenFrom, isDropdownOpenTo]);
 
+  // Pobierz listę krajów z podróży
+  const countries = useMemo(() => {
+    if (!slug) return [];
+    const trip = getTripBySlug(slug);
+    return trip?.data?.countries || [];
+  }, [slug]);
+
+  // Przygotuj opcje dla Select (z opcją "Brak przypisania")
+  const countryOptions = useMemo(() => {
+    return [
+      { value: "", label: "Brak przypisania" },
+      ...countries.map((country) => ({
+        value: country.id,
+        label: country.name,
+      })),
+    ];
+  }, [countries]);
+
+  // Funkcja sugerująca kraj na podstawie daty transakcji
+  const suggestCountryByDate = useMemo(() => {
+    if (!date || !slug) return null;
+    const trip = getTripBySlug(slug);
+    if (!trip) return null;
+    
+    const transactionDate = new Date(date);
+    transactionDate.setHours(0, 0, 0, 0);
+    
+    for (const country of trip.data.countries) {
+      if (country.startDate && country.endDate) {
+        const startDate = new Date(country.startDate);
+        const endDate = new Date(country.endDate);
+        startDate.setHours(0, 0, 0, 0);
+        endDate.setHours(0, 0, 0, 0);
+        
+        if (transactionDate >= startDate && transactionDate <= endDate) {
+          return country.id;
+        }
+      }
+    }
+    return null;
+  }, [date, slug]);
+
+  // Oblicz progress wypełnienia formularza (0-100%)
+  const formProgress = useMemo(() => {
+    let filled = 0;
+    const total = 6; // waluty (2), kwoty (2), data (1), kraj (1)
+    
+    if (fromCurrency) filled++;
+    if (toCurrency) filled++;
+    if (fromAmount) filled++;
+    if (toAmount) filled++;
+    if (date) filled++;
+    if (selectedCountryId) filled++;
+    
+    return Math.round((filled / total) * 100);
+  }, [fromCurrency, toCurrency, fromAmount, toAmount, date, selectedCountryId]);
+
+  // Pobierz miejsca z wybranego kraju dla sugestii
+  const countryLocations = useMemo(() => {
+    if (!selectedCountryId || !slug) return [];
+    const trip = getTripBySlug(slug);
+    if (!trip) return [];
+    
+    const country = trip.data.countries.find(c => c.id === selectedCountryId);
+    if (!country || !country.locations) return [];
+    
+    return country.locations
+      .filter(loc => typeof loc !== "string" && loc.name)
+      .map(loc => typeof loc === "string" ? loc : loc.name);
+  }, [selectedCountryId, slug]);
+
+  // Automatycznie sugeruj kraj na podstawie daty (tylko jeśli kraj nie jest jeszcze wybrany)
+  useEffect(() => {
+    if (!selectedCountryId && suggestCountryByDate && isOpen && !transaction) {
+      setSelectedCountryId(suggestCountryByDate);
+    }
+  }, [suggestCountryByDate, selectedCountryId, isOpen, transaction]);
+
   // Wypełnij formularz danymi transakcji w trybie edycji
   useEffect(() => {
     if (transaction && isOpen) {
-      setType(transaction.type);
       setFromCurrency(transaction.fromCurrency);
       setFromAmount(transaction.fromAmount.toString());
       setToCurrency(transaction.toCurrency);
@@ -852,11 +716,11 @@ export default function AddCurrencyTransactionModal({
       setTime(transaction.time || "");
       setLocation(transaction.location || "");
       setNote(transaction.note || "");
-      setSearchQueryFrom(`${transaction.fromCurrency} - ${currencyNames[transaction.fromCurrency] || transaction.fromCurrency}`);
-      setSearchQueryTo(`${transaction.toCurrency} - ${currencyNames[transaction.toCurrency] || transaction.toCurrency}`);
+      setSelectedCountryId(transaction.countryId || "");
+      setSearchQueryFrom(`${transaction.fromCurrency} - ${CURRENCY_NAMES[transaction.fromCurrency] || transaction.fromCurrency}`);
+      setSearchQueryTo(`${transaction.toCurrency} - ${CURRENCY_NAMES[transaction.toCurrency] || transaction.toCurrency}`);
     } else if (!transaction && isOpen) {
       // Reset formularza gdy nie ma transakcji (tryb dodawania)
-      setType("exchange");
       // Pola walut pozostają puste domyślnie
       setFromCurrency("");
       setFromAmount("");
@@ -868,31 +732,27 @@ export default function AddCurrencyTransactionModal({
       setTime("");
       setLocation("");
       setNote("");
+      setSelectedCountryId(countryId || "");
       setSearchQueryFrom("");
       setSearchQueryTo("");
     }
-  }, [transaction, isOpen, walletCurrencies]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [transaction, isOpen, walletCurrencies, countryId]);
 
   // Resetuj waluty gdy zmienia się typ transakcji (jeśli nie są dostępne w portfelu)
   useEffect(() => {
-    if (type === "initial") {
-      // Dla initial - wszystkie waluty są dostępne, nie resetuj
-      return;
-    }
-    
     // Nie ustawiamy domyślnych wartości - pola pozostają puste
     // Użytkownik musi wybrać waluty ręcznie
-  }, [type, walletCurrencies, fromCurrency]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [walletCurrencies, fromCurrency]);
 
   // Ustaw wartość wyszukiwania gdy zmienia się waluta (tylko jeśli waluta jest wybrana)
+  // W trybie edycji (transaction) nie czyścimy pól – wypełnia je efekt wyżej
   useEffect(() => {
     if (fromCurrency && !transaction) {
-      const expectedValue = `${fromCurrency} - ${currencyNames[fromCurrency] || fromCurrency}`;
+      const expectedValue = `${fromCurrency} - ${CURRENCY_NAMES[fromCurrency] || fromCurrency}`;
       if (searchQueryFrom !== expectedValue) {
         setSearchQueryFrom(expectedValue);
       }
-    } else if (!fromCurrency) {
-      // Jeśli waluta jest pusta, wyczyść też pole wyszukiwania
+    } else if (!fromCurrency && !transaction) {
       setSearchQueryFrom("");
     }
   }, [fromCurrency, transaction]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -900,19 +760,18 @@ export default function AddCurrencyTransactionModal({
   // Ustaw wartość wyszukiwania dla "Na walutę" gdy zmienia się waluta
   useEffect(() => {
     if (toCurrency && !transaction) {
-      const expectedValue = `${toCurrency} - ${currencyNames[toCurrency] || toCurrency}`;
+      const expectedValue = `${toCurrency} - ${CURRENCY_NAMES[toCurrency] || toCurrency}`;
       if (searchQueryTo !== expectedValue) {
         setSearchQueryTo(expectedValue);
       }
-    } else if (!toCurrency) {
-      // Jeśli waluta jest pusta, wyczyść też pole wyszukiwania
+    } else if (!toCurrency && !transaction) {
       setSearchQueryTo("");
     }
   }, [toCurrency, transaction]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (toCurrency && !transaction) {
-      const expectedValue = `${toCurrency} - ${currencyNames[toCurrency] || toCurrency}`;
+      const expectedValue = `${toCurrency} - ${CURRENCY_NAMES[toCurrency] || toCurrency}`;
       if (searchQueryTo === "" || searchQueryTo !== expectedValue) {
         setSearchQueryTo(expectedValue);
       }
@@ -928,66 +787,52 @@ export default function AddCurrencyTransactionModal({
     >
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-          <h2 className="text-xl font-serif font-semibold text-gray-900 dark:text-gray-100">
-            {transaction ? "Edytuj transakcję walutową" : "Dodaj transakcję walutową"}
-          </h2>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
+        <div className="border-b border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-between p-6">
+            <h2 className="text-xl font-serif font-semibold text-gray-900 dark:text-gray-100">
+              {transaction ? "Edytuj transakcję walutową" : "Dodaj transakcję walutową"}
+            </h2>
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+          {/* Progress Bar */}
+          <div className="px-6 pb-4">
+            <div className="flex items-center gap-2">
+              <div className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-blue-500 dark:bg-blue-400 transition-all duration-300 rounded-full"
+                  style={{ width: `${formProgress}%` }}
+                />
+              </div>
+              <span className="text-xs font-medium text-gray-600 dark:text-gray-400 min-w-[3rem] text-right">
+                {formProgress}%
+              </span>
+            </div>
+          </div>
         </div>
 
         {/* Content */}
         <div className="p-6 space-y-6">
-          {/* Type */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Typ transakcji
-            </label>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setType("exchange")}
-                className={`flex-1 px-4 py-2 rounded-md border transition-colors ${
-                  type === "exchange"
-                    ? "bg-blue-50 dark:bg-blue-900/20 border-blue-500 text-blue-700 dark:text-blue-300"
-                    : "border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700"
-                }`}
-              >
-                Wymiana
-              </button>
-              <button
-                onClick={() => setType("withdrawal")}
-                className={`flex-1 px-4 py-2 rounded-md border transition-colors ${
-                  type === "withdrawal"
-                    ? "bg-blue-50 dark:bg-blue-900/20 border-blue-500 text-blue-700 dark:text-blue-300"
-                    : "border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700"
-                }`}
-              >
-                Wypłata z bankomatu
-              </button>
-              <button
-                onClick={() => setType("initial")}
-                className={`flex-1 px-4 py-2 rounded-md border transition-colors ${
-                  type === "initial"
-                    ? "bg-blue-50 dark:bg-blue-900/20 border-blue-500 text-blue-700 dark:text-blue-300"
-                    : "border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700"
-                }`}
-              >
-                Stan początkowy
-              </button>
+          {/* Główne informacje - zawsze widoczne */}
+          <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-5 space-y-4">
+            <div className="flex items-center gap-2 mb-2">
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Główne informacje</h3>
+              {fromCurrency && toCurrency && fromAmount && toAmount && (
+                <CheckCircle2 className="w-4 h-4 text-green-500" />
+              )}
             </div>
-          </div>
-
-          {/* From/To Currencies */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+            
+            {/* From/To Currencies */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
             <div className="relative currency-select-from">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                {type === "initial" ? "Waluta" : "Z waluty"}
+                Z waluty
               </label>
-              {availableBalance !== null && fromCurrency && type !== "initial" && (
+              {availableBalance !== null && fromCurrency && (
                 <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
                   Dostępne środki: {formatCurrency(availableBalance, fromCurrency)}
                 </p>
@@ -1036,104 +881,112 @@ export default function AddCurrencyTransactionModal({
                 value={fromAmount}
                 onChange={(e) => handleFromAmountChange(e.target.value)}
                 placeholder="0.00"
-                step="0.01"
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md mt-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                onKeyDown={(e) => {
+                  if (e.key === "ArrowUp" || e.key === "ArrowDown" || e.key === "PageUp" || e.key === "PageDown") {
+                    e.preventDefault();
+                  }
+                }}
+                onWheel={(e) => {
+                  e.currentTarget.blur();
+                }}
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md mt-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               />
             </div>
 
-            {type !== "initial" && (
-              <>
-                <div className="flex justify-center pb-8">
-                  <ArrowRight className="w-6 h-6 text-gray-400" />
-                </div>
+            <div className="flex justify-center pb-8">
+              <ArrowRight className="w-5 h-5 text-gray-400" />
+            </div>
 
-                <div className="relative currency-select-to">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Na walutę
-                  </label>
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                    <input
-                      type="text"
-                      placeholder="Wpisz kod lub nazwę (np. THB, baht)..."
-                      value={searchQueryTo}
-                      onChange={(e) => {
-                        setSearchQueryTo(e.target.value);
-                        setIsDropdownOpenTo(true);
-                      }}
-                      onFocus={() => setIsDropdownOpenTo(true)}
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      disabled={isLoadingCurrencies}
-                    />
-                    {isDropdownOpenTo && filteredCurrenciesTo.length > 0 && (
-                      <div 
-                        className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg max-h-60 overflow-auto"
-                        onClick={(e) => e.stopPropagation()}
+            <div className="relative currency-select-to">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Na walutę
+              </label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Wpisz kod lub nazwę (np. THB, baht)..."
+                  value={searchQueryTo}
+                  onChange={(e) => {
+                    setSearchQueryTo(e.target.value);
+                    setIsDropdownOpenTo(true);
+                  }}
+                  onFocus={() => setIsDropdownOpenTo(true)}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  disabled={isLoadingCurrencies}
+                />
+                {isDropdownOpenTo && filteredCurrenciesTo.length > 0 && (
+                  <div 
+                    className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg max-h-60 overflow-auto"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {filteredCurrenciesTo.map((curr) => (
+                      <button
+                        key={curr.code}
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setToCurrency(curr.code);
+                          setSearchQueryTo(`${curr.code} - ${curr.name}`);
+                          setIsDropdownOpenTo(false);
+                        }}
+                        className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-900 dark:text-gray-100"
                       >
-                        {filteredCurrenciesTo.map((curr) => (
-                          <button
-                            key={curr.code}
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setToCurrency(curr.code);
-                              setSearchQueryTo(`${curr.code} - ${curr.name}`);
-                              setIsDropdownOpenTo(false);
-                            }}
-                            className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-900 dark:text-gray-100"
-                          >
-                            <div className="font-medium">
-                              {curr.code} - {curr.name}
-                            </div>
-                          </button>
-                        ))}
-                      </div>
-                    )}
+                        <div className="font-medium">
+                          {curr.code} - {curr.name}
+                        </div>
+                      </button>
+                    ))}
                   </div>
-                  <input
-                    type="number"
-                    value={toAmount}
-                    onChange={(e) => setToAmount(e.target.value)}
-                    placeholder="0.00"
-                    step="0.01"
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md mt-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                  />
-                </div>
-              </>
-            )}
+                )}
+              </div>
+              <input
+                type="number"
+                value={toAmount}
+                onChange={(e) => setToAmount(e.target.value)}
+                placeholder="0.00"
+                onKeyDown={(e) => {
+                  if (e.key === "ArrowUp" || e.key === "ArrowDown" || e.key === "PageUp" || e.key === "PageDown") {
+                    e.preventDefault();
+                  }
+                }}
+                onWheel={(e) => {
+                  e.currentTarget.blur();
+                }}
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md mt-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              />
+            </div>
           </div>
 
           {/* Exchange Rate */}
-          {type !== "initial" && (
-            <div className="space-y-2">
-              {fromAmount && toAmount && (
-                <div className="bg-blue-50 dark:bg-blue-900/20 rounded-md p-3">
-                  <p className="text-sm text-gray-700 dark:text-gray-300">
-                    Kurs wymiany: 1 {fromCurrency} = {calculateRate()} {toCurrency}
+          <div className="space-y-2">
+            {fromAmount && toAmount && (
+              <div className="bg-blue-50 dark:bg-blue-900/20 rounded-md p-3">
+                <p className="text-sm text-gray-700 dark:text-gray-300">
+                  Kurs wymiany: 1 {fromCurrency} = {calculateRate()} {toCurrency}
+                </p>
+              </div>
+            )}
+            {apiRate !== null && (
+              <div className="bg-green-50 dark:bg-green-900/20 rounded-md p-3 border border-green-200 dark:border-green-800">
+                <p className="text-sm font-medium text-green-800 dark:text-green-200">
+                  Kurs z API: 1 {fromCurrency} = {apiRate.toFixed(4)} {toCurrency}
+                </p>
+                {fromCurrency !== toCurrency && (
+                  <p className="text-xs text-green-700 dark:text-green-300 mt-1">
+                    (1 {toCurrency} = {(1 / apiRate).toFixed(4)} {fromCurrency})
                   </p>
-                </div>
-              )}
-              {apiRate !== null && (
-                <div className="bg-green-50 dark:bg-green-900/20 rounded-md p-3 border border-green-200 dark:border-green-800">
-                  <p className="text-sm font-medium text-green-800 dark:text-green-200">
-                    Kurs z API: 1 {fromCurrency} = {apiRate.toFixed(4)} {toCurrency}
-                  </p>
-                  {fromCurrency !== toCurrency && (
-                    <p className="text-xs text-green-700 dark:text-green-300 mt-1">
-                      (1 {toCurrency} = {(1 / apiRate).toFixed(4)} {fromCurrency})
-                    </p>
-                  )}
-                </div>
-              )}
-              {apiRate === null && exchangeRates.length > 0 && !isLoadingRates && (
-                <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-md p-3 border border-yellow-200 dark:border-yellow-800">
-                  <p className="text-xs text-yellow-700 dark:text-yellow-300">
-                    ⚠️ Nie znaleziono kursu z API dla pary {fromCurrency}/{toCurrency}
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
+                )}
+              </div>
+            )}
+            {apiRate === null && exchangeRates.length > 0 && !isLoadingRates && fromCurrency && toCurrency && (
+              <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-md p-3 border border-yellow-200 dark:border-yellow-800">
+                <p className="text-xs text-yellow-700 dark:text-yellow-300">
+                  ⚠️ Nie znaleziono kursu z API dla pary {fromCurrency}/{toCurrency}
+                </p>
+              </div>
+            )}
+          </div>
 
           {/* Fee */}
           <div>
@@ -1146,8 +999,15 @@ export default function AddCurrencyTransactionModal({
                 value={fee}
                 onChange={(e) => setFee(e.target.value)}
                 placeholder="0.00"
-                step="0.01"
-                className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                onKeyDown={(e) => {
+                  if (e.key === "ArrowUp" || e.key === "ArrowDown" || e.key === "PageUp" || e.key === "PageDown") {
+                    e.preventDefault();
+                  }
+                }}
+                onWheel={(e) => {
+                  e.currentTarget.blur();
+                }}
+                className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               />
               <select
                 value={feeCurrency}
@@ -1163,70 +1023,177 @@ export default function AddCurrencyTransactionModal({
               </select>
             </div>
           </div>
-
-          {/* Date and Time */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Data
-              </label>
-              <input
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Godzina (opcjonalna)
-              </label>
-              <input
-                type="time"
-                value={time}
-                onChange={(e) => setTime(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-              />
-            </div>
           </div>
 
-          {/* Location */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Miejsce (opcjonalne)
-            </label>
-            <input
-              type="text"
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              placeholder="np. Bangkok, kantor na Sukhumvit"
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-            />
+          {/* Przypisanie do kraju - wyróżnione */}
+          {countries.length > 0 && (
+            <div className="bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg p-5 space-y-3">
+              <div className="flex items-center gap-2">
+                <Star className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                <label className="block text-sm font-medium text-gray-900 dark:text-gray-100">
+                  Przypisz do kraju
+                </label>
+                {selectedCountryId && (
+                  <CheckCircle2 className="w-4 h-4 text-green-500 ml-auto" />
+                )}
+              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Pomaga w organizacji wydatków według kraju
+              </p>
+              <Select
+                value={selectedCountryId}
+                onChange={setSelectedCountryId}
+                options={countryOptions}
+                placeholder="Wybierz kraj"
+              />
+              {selectedCountryId && (
+                <div className="flex items-center gap-2 text-sm text-green-700 dark:text-green-300 mt-2">
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span>Przypisano do {countries.find(c => c.id === selectedCountryId)?.name}</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Szczegóły - rozwijana sekcja */}
+          <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setExpandedDetails(!expandedDetails)}
+              className="w-full flex items-center justify-between p-4 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+            >
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Szczegóły</h3>
+                {date && (
+                  <CheckCircle2 className="w-4 h-4 text-green-500" />
+                )}
+              </div>
+              {expandedDetails ? (
+                <ChevronUp className="w-5 h-5 text-gray-400" />
+              ) : (
+                <ChevronDown className="w-5 h-5 text-gray-400" />
+              )}
+            </button>
+            
+            {expandedDetails && (
+              <div className="p-5 space-y-4 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-200 dark:border-gray-700">
+                {/* Date and Time */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Data
+                    </label>
+                    <input
+                      type="date"
+                      value={date}
+                      onChange={(e) => setDate(e.target.value)}
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Godzina (opcjonalna)
+                    </label>
+                    <input
+                      type="time"
+                      value={time}
+                      onChange={(e) => setTime(e.target.value)}
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                    />
+                  </div>
+                </div>
+
+                {/* Location */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Miejsce (opcjonalne)
+                  </label>
+                  <input
+                    type="text"
+                    value={location}
+                    onChange={(e) => setLocation(e.target.value)}
+                    placeholder="np. Bangkok, kantor na Sukhumvit"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                  />
+                  {countryLocations.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {countryLocations.slice(0, 3).map((loc, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => setLocation(loc)}
+                          className="text-xs px-2 py-1 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded-md hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
+                        >
+                          {loc}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* Note */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Notatka (opcjonalna)
-            </label>
-            <textarea
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              rows={3}
-              placeholder="Dodatkowe informacje..."
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-            />
+          {/* Dodatkowe - rozwijana sekcja */}
+          <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setExpandedAdditional(!expandedAdditional)}
+              className="w-full flex items-center justify-between p-4 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+            >
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Dodatkowe informacje</h3>
+                {note && (
+                  <CheckCircle2 className="w-4 h-4 text-green-500" />
+                )}
+              </div>
+              {expandedAdditional ? (
+                <ChevronUp className="w-5 h-5 text-gray-400" />
+              ) : (
+                <ChevronDown className="w-5 h-5 text-gray-400" />
+              )}
+            </button>
+            
+            {expandedAdditional && (
+              <div className="p-5 space-y-4 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-200 dark:border-gray-700">
+                {/* Note */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Notatka (opcjonalna)
+                  </label>
+                  <textarea
+                    value={note}
+                    onChange={(e) => setNote(e.target.value)}
+                    rows={3}
+                    placeholder="Dodatkowe informacje..."
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                  />
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
         {/* Footer */}
-        <div className="flex gap-3 p-6 border-t border-gray-200 dark:border-gray-700">
-          <Button variant="outline" onClick={onClose} className="flex-1">
-            Anuluj
-          </Button>
-          <Button variant="primary" onClick={handleSave} className="flex-1">
-            {transaction ? "Zapisz zmiany" : "Zapisz transakcję"}
-          </Button>
+        <div className="border-t border-gray-200 dark:border-gray-700">
+          {!selectedCountryId && countries.length > 0 && (
+            <div className="px-6 pt-4">
+              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 flex items-start gap-2">
+                <Info className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-blue-800 dark:text-blue-200">
+                  💡 Przypisanie do kraju pomoże w lepszej organizacji wydatków
+                </p>
+              </div>
+            </div>
+          )}
+          <div className="flex gap-3 p-6">
+            <Button variant="outline" onClick={onClose} className="flex-1">
+              Anuluj
+            </Button>
+            <Button variant="primary" onClick={handleSave} className="flex-1">
+              {transaction ? "Zapisz zmiany" : "Zapisz transakcję"}
+            </Button>
+          </div>
         </div>
       </div>
 

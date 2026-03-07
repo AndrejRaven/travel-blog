@@ -136,10 +136,10 @@ export default function TravelWalletTables({
                           {formatDateRange(country.startDate, country.endDate)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900 dark:text-gray-100 text-right">
-                          {formatCurrency(planned)} zł
+                          {formatCurrency(planned)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900 dark:text-gray-100 text-right">
-                          {formatCurrency(actual)} zł
+                          {formatCurrency(actual)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right">
                           <div
@@ -154,7 +154,7 @@ export default function TravelWalletTables({
                             ) : (
                               <ArrowDown className="w-4 h-4" />
                             )}
-                            {formatCurrency(Math.abs(variance))} zł
+                            {formatCurrency(Math.abs(variance))}
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-center">
@@ -235,10 +235,10 @@ export default function TravelWalletTables({
                           {formatDateRange(country.startDate, country.endDate)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900 dark:text-gray-100 text-right">
-                          {formatCurrency(totalBudget)} zł
+                          {formatCurrency(totalBudget)}
                         </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900 dark:text-gray-100 text-right">
-                        {formatCurrency(avgDailyCost)} zł/dzień
+                        {formatCurrency(avgDailyCost)}/dzień
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center">
                         <CountryActionsMenu

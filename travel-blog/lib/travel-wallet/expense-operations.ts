@@ -5,24 +5,32 @@ import {
   getCurrencyBalance,
 } from "./wallet-operations";
 import { convertToBaseCurrency } from "./reference-rates";
+import { ACCOMMODATION_TYPES_ALLOWING_ZERO } from "./constants";
 
 /**
- * Validates if an expense can be executed
- * @param wallet - wallet state
- * @param currency - currency of the expense
- * @param amount - expense amount
- * @returns validation result
+ * Validates if an expense can be executed.
+ * Allows amount === 0 only for Noclegi with accommodationType in ACCOMMODATION_TYPES_ALLOWING_ZERO (namiot, kemping).
  */
 export function validateExpense(
   wallet: Wallet,
   currency: string,
-  amount: number
+  amount: number,
+  options?: { category?: string; accommodationType?: string }
 ): { valid: boolean; error?: string } {
-  if (amount <= 0) {
+  const allowZero =
+    amount === 0 &&
+    options?.category === "Noclegi" &&
+    options?.accommodationType &&
+    ACCOMMODATION_TYPES_ALLOWING_ZERO.includes(options.accommodationType);
+
+  if (amount < 0) {
+    return { valid: false, error: "Kwota nie może być ujemna" };
+  }
+  if (amount <= 0 && !allowZero) {
     return { valid: false, error: "Expense amount must be greater than 0" };
   }
 
-  if (!hasEnoughBalance(wallet, currency, amount)) {
+  if (amount > 0 && !hasEnoughBalance(wallet, currency, amount)) {
     const balance = getCurrencyBalance(wallet, currency);
     return {
       valid: false,
@@ -44,8 +52,10 @@ export function executeExpense(
   wallet: Wallet,
   expense: Omit<Expense, "id">
 ): { success: boolean; newWallet: Wallet; error?: string } {
-  // Validate expense
-  const validation = validateExpense(wallet, expense.currency, expense.amount);
+  const validation = validateExpense(wallet, expense.currency, expense.amount, {
+    category: expense.category,
+    accommodationType: expense.accommodationType,
+  });
 
   if (!validation.valid) {
     return {
@@ -56,6 +66,10 @@ export function executeExpense(
   }
 
   try {
+    // For 0 PLN accommodation (e.g. namiot, kemping), do not change balance
+    if (expense.amount === 0) {
+      return { success: true, newWallet: wallet };
+    }
     // Decrease currency balance
     const newWallet = adjustCurrencyBalance(
       wallet,
@@ -109,7 +123,8 @@ export function calculateExpenseImpactOnBudget(
 export function validateExpenseData(
   wallet: Wallet,
   currency: string,
-  amount: number
+  amount: number,
+  options?: { category?: string; accommodationType?: string }
 ): { valid: boolean; error?: string } {
-  return validateExpense(wallet, currency, amount);
+  return validateExpense(wallet, currency, amount, options);
 }

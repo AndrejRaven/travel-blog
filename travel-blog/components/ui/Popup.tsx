@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { X } from "lucide-react";
 import Image from "next/image";
 import Button from "./Button";
@@ -19,6 +19,7 @@ export default function Popup({ popupData, onClose }: PopupProps) {
   const [isClosing, setIsClosing] = useState(false);
   const [hasShown, setHasShown] = useState(false);
   const [shouldShow, setShouldShow] = useState(false);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const scrollThreshold = popupData.scrollThreshold ?? 60;
   const cooldownMinutes = popupData.cooldownMinutes ?? 60;
   const hasButton = popupData.button?.label && popupData.button?.href;
@@ -99,11 +100,26 @@ export default function Popup({ popupData, onClose }: PopupProps) {
 
   const handleClose = () => {
     setIsClosing(true);
-    setTimeout(() => {
+    // Clear any existing timeout
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    timeoutRef.current = setTimeout(() => {
       setIsVisible(false);
       onClose?.();
+      timeoutRef.current = null;
     }, 300);
   };
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+    };
+  }, []);
 
   const handleBackdropClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget) {

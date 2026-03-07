@@ -42,7 +42,9 @@ export function migrateExpensesForTrip(tripId: string): number {
   expenses.forEach((expense) => {
     if (!hasPaymentMethod(expense)) {
       const migratedExpense = migrateExpense(expense);
-      saveExpense(migratedExpense, tripId);
+      // Po mergu z Supabase expense.tripId może być zdalne id – ustaw na aktualne tripId
+      const toSave = { ...migratedExpense, tripId };
+      saveExpense(toSave, tripId);
       migratedCount++;
     }
   });

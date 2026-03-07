@@ -152,33 +152,30 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     });
 
     // Dodaj posty (pomijając te z noIndex)
-    let postsAdded = 0;
-    let postsSkipped = 0;
+    let _postsAdded = 0;
+    let _postsSkipped = 0;
     postsWithDates.forEach((post) => {
       // Pomiń posty oznaczone jako noIndex
       if (post.seo?.noIndex) {
-        postsSkipped++;
+        _postsSkipped++;
         return;
       }
 
       const postUrl = getPostUrl(post as Post);
       if (postUrl && postUrl !== "#") {
+        _postsAdded++;
         entries.push({
           url: `${baseUrl}${postUrl}`,
           lastModified: post.publishedAt ? new Date(post.publishedAt) : now,
           changeFrequency: 'monthly',
           priority: 0.9,
         });
-        postsAdded++;
+        _postsAdded++;
       } else {
-        postsSkipped++;
+        _postsSkipped++;
       }
     });
 
-    // Debug logging
-    console.log(`[Sitemap] Total posts fetched: ${postsWithDates.length}`);
-    console.log(`[Sitemap] Posts added to sitemap: ${postsAdded}`);
-    console.log(`[Sitemap] Posts skipped: ${postsSkipped}`);
 
   } catch (error) {
     console.error('Error generating sitemap:', error);

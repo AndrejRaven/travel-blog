@@ -1,10 +1,35 @@
-import type { Expense } from "./types";
-import { convertExpenseToPLN } from "./expenses";
+import type { Expense, ExchangeRate } from "./types";
+import { convertExpenseToPLN, convertExpenseToBase } from "./expenses";
+import { getWallet } from "./wallet-storage";
 
 /**
- * Oblicza całkowity faktyczny koszt na podstawie expenses (w PLN)
+ * Oblicza całkowity faktyczny koszt na podstawie expenses (w walucie bazowej gdy podano baseCurrency i rates)
  */
-export function calculateTotalActualCost(expenses: Expense[]): number {
+export function calculateTotalActualCost(
+  expenses: Expense[],
+  baseCurrency?: string,
+  referenceRates?: ExchangeRate[]
+): number {
+  if (baseCurrency && referenceRates && referenceRates.length > 0) {
+    return expenses.reduce((total, expense) => {
+      return total + convertExpenseToBase(expense, baseCurrency, referenceRates);
+    }, 0);
+  }
+  return expenses.reduce((total, expense) => {
+    return total + convertExpenseToPLN(expense);
+  }, 0);
+}
+
+/**
+ * Oblicza całkowity faktyczny koszt dla podróży (w walucie bazowej) – używa wallet z tripId
+ */
+export function calculateTotalActualCostByTripId(expenses: Expense[], tripId: string): number {
+  const wallet = getWallet(tripId);
+  if (wallet) {
+    return expenses.reduce((total, expense) => {
+      return total + convertExpenseToBase(expense, wallet.baseCurrency, wallet.referenceRates);
+    }, 0);
+  }
   return expenses.reduce((total, expense) => {
     return total + convertExpenseToPLN(expense);
   }, 0);

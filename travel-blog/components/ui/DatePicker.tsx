@@ -15,6 +15,7 @@ interface DatePickerProps {
   required?: boolean;
   error?: string;
   id?: string;
+  relatedDate?: { type: 'start' | 'end'; value: string }; // Powiązana data dla automatycznej walidacji relacji
 }
 
 export default function DatePicker({
@@ -27,6 +28,7 @@ export default function DatePicker({
   required,
   error,
   id,
+  relatedDate,
 }: DatePickerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [position, setPosition] = useState<"bottom" | "top" | "left" | "right">("bottom");
@@ -52,13 +54,30 @@ export default function DatePicker({
     return [...disabledDates].sort().join(",");
   }, [disabledDates]);
 
+  // Oblicz efektywne min/max z uwzględnieniem relatedDate
+  const effectiveMin = useMemo(() => {
+    if (relatedDate?.type === 'end' && relatedDate.value) {
+      // Jeśli to endDate, a relatedDate.value to startDate, ustaw min na startDate
+      return relatedDate.value;
+    }
+    return min;
+  }, [min, relatedDate]);
+
+  const effectiveMax = useMemo(() => {
+    if (relatedDate?.type === 'start' && relatedDate.value) {
+      // Jeśli to startDate, a relatedDate.value to endDate, ustaw max na endDate
+      return relatedDate.value;
+    }
+    return max;
+  }, [max, relatedDate]);
+
   // Sprawdź czy data jest wyłączona (z powodu min/max)
   const isDateOutOfRange = (date: Date): boolean => {
     const dateString = formatDateToYYYYMMDD(date);
     
-    // Sprawdź min/max
-    if (min && dateString < min) return true;
-    if (max && dateString > max) return true;
+    // Sprawdź efektywne min/max
+    if (effectiveMin && dateString < effectiveMin) return true;
+    if (effectiveMax && dateString > effectiveMax) return true;
     
     return false;
   };
@@ -78,7 +97,7 @@ export default function DatePicker({
   const isValidDate = (dateString: string): boolean => {
     if (!dateString) return false;
     const date = new Date(dateString);
-    return !isNaN(date.getTime()) && dateString.match(/^\d{4}-\d{2}-\d{2}$/);
+    return !isNaN(date.getTime()) && dateString.match(/^\d{4}-\d{2}-\d{2}$/) !== null;
   };
 
   // Funkcja sprawdzająca czy w danym miesiącu są dostępne daty
@@ -97,17 +116,17 @@ export default function DatePicker({
 
   // Funkcja znajdująca pierwszy miesiąc z dostępnymi datami
   const findFirstAvailableMonth = (startYear: number, startMonth: number): { year: number; month: number } => {
-    if (!min || !max) {
+    if (!effectiveMin || !effectiveMax) {
       return { year: startYear, month: startMonth };
     }
 
     // Waliduj daty przed użyciem
-    if (!isValidDate(min) || !isValidDate(max)) {
+    if (!isValidDate(effectiveMin) || !isValidDate(effectiveMax)) {
       return { year: startYear, month: startMonth };
     }
 
-    const minDate = new Date(min);
-    const maxDate = new Date(max);
+    const minDate = new Date(effectiveMin);
+    const maxDate = new Date(effectiveMax);
     
     // Sprawdź czy daty są prawidłowe
     if (isNaN(minDate.getTime()) || isNaN(maxDate.getTime())) {
@@ -136,7 +155,7 @@ export default function DatePicker({
         currentYear++;
       }
 
-      // Jeśli przekroczyliśmy max, zatrzymaj
+      // Jeśli przekroczyliśmy effectiveMax, zatrzymaj
       if (monthStart > maxDate) {
         break;
       }
@@ -162,9 +181,22 @@ export default function DatePicker({
         return month;
       }
     }
-    // Jeśli value jest puste, ale min jest ustawione i prawidłowe, użyj miesiąca z min
-    if (min && isValidDate(min)) {
-      const date = new Date(min);
+    // Jeśli value jest puste, ale relatedDate jest ustawione, użyj miesiąca z relatedDate.value
+    // (np. dla endDate użyj miesiąca z startDate)
+    if (relatedDate?.value && isValidDate(relatedDate.value)) {
+      const date = new Date(relatedDate.value);
+      if (!isNaN(date.getTime())) {
+        const month = { year: date.getFullYear(), month: date.getMonth() };
+        // Sprawdź czy w tym miesiącu są dostępne daty, jeśli nie, znajdź pierwszy dostępny
+        if (!hasAvailableDatesInMonth(month.year, month.month)) {
+          return findFirstAvailableMonth(month.year, month.month);
+        }
+        return month;
+      }
+    }
+    // Jeśli value jest puste, ale effectiveMin jest ustawione i prawidłowe, użyj miesiąca z effectiveMin
+    if (effectiveMin && isValidDate(effectiveMin)) {
+      const date = new Date(effectiveMin);
       if (!isNaN(date.getTime())) {
         const month = { year: date.getFullYear(), month: date.getMonth() };
         // Sprawdź czy w tym miesiącu są dostępne daty, jeśli nie, znajdź pierwszy dostępny
@@ -181,7 +213,7 @@ export default function DatePicker({
 
   const [currentMonth, setCurrentMonth] = useState(() => calculateInitialMonth());
 
-  // Aktualizuj miesiąc gdy value, min, max lub disabledDates się zmienia
+  // Aktualizuj miesiąc gdy value, min, max, relatedDate lub disabledDates się zmienia
   useEffect(() => {
     const newMonth = calculateInitialMonth();
     // Aktualizuj tylko jeśli miesiąc faktycznie się zmienił
@@ -191,7 +223,7 @@ export default function DatePicker({
       }
       return prev;
     });
-  }, [value, min, max, disabledDatesKey]);
+  }, [value, min, max, relatedDate?.value, disabledDatesKey]);
 
   // Generuj dni miesiąca
   const monthDays = useMemo(() => {
@@ -252,9 +284,11 @@ export default function DatePicker({
     });
   };
 
-  // Funkcja do obliczania pozycji kalendarza
+  const [calendarPosition, setCalendarPosition] = useState<{ top: number; left: number } | null>(null);
+
+  // Funkcja do obliczania pozycji kalendarza (fixed positioning względem viewportu)
   const calculatePosition = () => {
-    if (!inputRef.current || typeof window === "undefined") return "bottom";
+    if (!inputRef.current || typeof window === "undefined") return null;
     
     const inputRect = inputRef.current.getBoundingClientRect();
     const viewportHeight = window.innerHeight;
@@ -262,31 +296,55 @@ export default function DatePicker({
     const calendarHeight = 280; // Przybliżona wysokość kalendarza
     const calendarWidth = 240; // Szerokość kalendarza
     
+    let top = 0;
+    let left = 0;
+    let position: "bottom" | "top" | "right" | "left" = "bottom";
+    
     // Sprawdź czy jest miejsce na dole
     const spaceBelow = viewportHeight - inputRect.bottom;
     const spaceAbove = inputRect.top;
-    const spaceRight = viewportWidth - inputRect.left;
+    const spaceRight = viewportWidth - inputRect.right;
     const spaceLeft = inputRect.left;
     
     // Priorytet: dół > góra > prawo > lewo
     if (spaceBelow >= calendarHeight) {
-      return "bottom";
+      position = "bottom";
+      top = inputRect.bottom + 4; // 4px margin
+      left = inputRect.left;
     } else if (spaceAbove >= calendarHeight) {
-      return "top";
+      position = "top";
+      top = inputRect.top - calendarHeight - 4; // 4px margin
+      left = inputRect.left;
     } else if (spaceRight >= calendarWidth) {
-      return "right";
+      position = "right";
+      top = inputRect.top;
+      left = inputRect.right + 4; // 4px margin
     } else if (spaceLeft >= calendarWidth) {
-      return "left";
+      position = "left";
+      top = inputRect.top;
+      left = inputRect.left - calendarWidth - 4; // 4px margin
+    } else {
+      // Fallback: wybierz najlepszą dostępną opcję
+      if (spaceAbove > spaceBelow) {
+        position = "top";
+        top = Math.max(8, inputRect.top - calendarHeight - 4);
+        left = inputRect.left;
+      } else if (spaceRight > spaceLeft) {
+        position = "right";
+        top = inputRect.top;
+        left = Math.min(viewportWidth - calendarWidth - 8, inputRect.right + 4);
+      } else {
+        position = "left";
+        top = inputRect.top;
+        left = Math.max(8, inputRect.left - calendarWidth - 4);
+      }
     }
     
-    // Fallback: wybierz najlepszą dostępną opcję
-    if (spaceAbove > spaceBelow) {
-      return "top";
-    } else if (spaceRight > spaceLeft) {
-      return "right";
-    } else {
-      return "left";
-    }
+    // Upewnij się, że kalendarz nie wychodzi poza viewport
+    top = Math.max(8, Math.min(top, viewportHeight - calendarHeight - 8));
+    left = Math.max(8, Math.min(left, viewportWidth - calendarWidth - 8));
+    
+    return { top, left };
   };
 
   // Aktualizuj pozycję gdy kalendarz się otwiera
@@ -294,9 +352,24 @@ export default function DatePicker({
     if (isOpen && inputRef.current) {
       // Użyj setTimeout aby upewnić się, że DOM jest zaktualizowany
       setTimeout(() => {
-        const newPosition = calculatePosition();
-        setPosition(newPosition);
+        const pos = calculatePosition();
+        setCalendarPosition(pos);
+        if (pos) {
+          // Ustaw również position dla klasy CSS (dla kompatybilności)
+          const inputRect = inputRef.current!.getBoundingClientRect();
+          if (pos.top > inputRect.bottom) {
+            setPosition("bottom");
+          } else if (pos.top < inputRect.top) {
+            setPosition("top");
+          } else if (pos.left > inputRect.right) {
+            setPosition("right");
+          } else {
+            setPosition("left");
+          }
+        }
       }, 0);
+    } else {
+      setCalendarPosition(null);
     }
   }, [isOpen]);
 
@@ -312,12 +385,29 @@ export default function DatePicker({
           duration: 3000,
         });
       } else if (isDateOutOfRange(date)) {
-        addToast({
-          type: "error",
-          title: "Data poza zakresem",
-          message: "Ta data jest poza zakresem podróży.",
-          duration: 3000,
-        });
+        // Sprawdź czy to problem z relatedDate
+        if (relatedDate?.type === 'end' && relatedDate.value && dateString < relatedDate.value) {
+          addToast({
+            type: "error",
+            title: "Nieprawidłowa data",
+            message: "Data zakończenia musi być późniejsza niż data rozpoczęcia.",
+            duration: 3000,
+          });
+        } else if (relatedDate?.type === 'start' && relatedDate.value && dateString > relatedDate.value) {
+          addToast({
+            type: "error",
+            title: "Nieprawidłowa data",
+            message: "Data rozpoczęcia musi być wcześniejsza niż data zakończenia.",
+            duration: 3000,
+          });
+        } else {
+          addToast({
+            type: "error",
+            title: "Data poza zakresem",
+            message: "Ta data jest poza zakresem podróży.",
+            duration: 3000,
+          });
+        }
       }
       return;
     }
@@ -354,20 +444,20 @@ export default function DatePicker({
         {isOpen && (
           <>
             <div
-              className="fixed inset-0 z-10"
+              className="fixed inset-0 z-40"
               onClick={() => setIsOpen(false)}
             />
             <div
               ref={calendarRef}
-              className={`absolute z-20 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 p-2 w-[240px] ${
-                position === "top"
-                  ? "bottom-full left-0 mb-1"
-                  : position === "right"
-                  ? "top-0 left-full ml-1"
-                  : position === "left"
-                  ? "top-0 right-full mr-1"
-                  : "top-full left-0 mt-1"
-              }`}
+              className="fixed z-50 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 p-2 w-[240px]"
+              style={
+                calendarPosition
+                  ? {
+                      top: `${calendarPosition.top}px`,
+                      left: `${calendarPosition.left}px`,
+                    }
+                  : undefined
+              }
             >
               {/* Header kalendarza */}
               <div className="flex items-center justify-between mb-2">

@@ -29,7 +29,7 @@ interface TableOfContentsProps {
  *     { id: "wprowadzenie", title: "Wprowadzenie", level: 1 },
  *     { id: "rozdzial-1", title: "Rozdział 1", level: 1 }
  *   ]}
- *   onToggle={(isOpen) => console.log('Spis treści:', isOpen)}
+ *   onToggle={(isOpen) => {}}
  * />
  * ```
  *

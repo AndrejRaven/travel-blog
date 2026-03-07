@@ -24,7 +24,7 @@ export default function PageLayout({
   return (
     <div className="min-h-screen font-sans text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900">
       <div
-        className={`mx-auto ${maxWidthClasses[maxWidth]} px-6 py-12 ${className}`}
+        className={`mx-auto ${maxWidthClasses[maxWidth]} px-6 ${className || "py-12"}`}
       >
         {children}
       </div>

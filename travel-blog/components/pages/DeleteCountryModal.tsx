@@ -67,7 +67,7 @@ export default function DeleteCountryModal({
               Usuń kraj
             </h2>
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              Czy na pewno chcesz usunąć kraj <strong className="text-gray-900 dark:text-gray-100">"{country.name}"</strong>?
+              Czy na pewno chcesz usunąć kraj <strong className="text-gray-900 dark:text-gray-100">&quot;{country.name}&quot;</strong>?
             </p>
           </div>
         </div>

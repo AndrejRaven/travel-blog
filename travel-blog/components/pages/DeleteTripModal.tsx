@@ -67,7 +67,7 @@ export default function DeleteTripModal({
               Usuń podróż
             </h2>
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              Czy na pewno chcesz usunąć podróż <strong className="text-gray-900 dark:text-gray-100">"{trip.name}"</strong>?
+              Czy na pewno chcesz usunąć podróż <strong className="text-gray-900 dark:text-gray-100">&quot;{trip.name}&quot;</strong>?
             </p>
           </div>
         </div>
@@ -101,7 +101,6 @@ export default function DeleteTripModal({
             type="button"
             variant="primary"
             onClick={() => {
-              console.log('[AGENT-LOG] DeleteTripModal button clicked', { tripId: trip?.id, tripName: trip?.name, hypothesisId: 'G' });
               onConfirm();
             }}
             disabled={isDeleting}

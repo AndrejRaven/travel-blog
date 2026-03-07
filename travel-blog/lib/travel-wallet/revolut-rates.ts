@@ -1,14 +1,44 @@
 import type { ExchangeRate } from "./types";
 import { updateReferenceRate } from "./reference-rates";
+import {
+  getCachedExchangeRates,
+  setCachedExchangeRates,
+  hasValidCache,
+} from "./offline/exchange-rates-cache";
 
 /**
  * Pobiera aktualne kursy walut z exchangerate-api.com
+ * Używa cache gdy offline lub gdy API nie jest dostępne
  * @param baseCurrency - waluta bazowa (domyślnie PLN)
+ * @param forceRefresh - wymusza pobranie z API nawet jeśli cache jest ważny
  * @returns array of exchange rates
  */
 export async function fetchRevolutRates(
-  baseCurrency: string = "PLN"
+  baseCurrency: string = "PLN",
+  forceRefresh: boolean = false
 ): Promise<ExchangeRate[]> {
+  // Sprawdź cache przed wywołaniem API (jeśli nie wymuszamy odświeżenia)
+  if (!forceRefresh) {
+    const cachedRates = getCachedExchangeRates(baseCurrency);
+    if (cachedRates) {
+      return cachedRates;
+    }
+  }
+
+  // Sprawdź czy jesteśmy online
+  const isOnline = typeof window !== "undefined" ? navigator.onLine : true;
+
+  // Jeśli offline, użyj cache nawet jeśli nieważny
+  if (!isOnline) {
+    const cachedRates = getCachedExchangeRates(baseCurrency);
+    if (cachedRates) {
+      return cachedRates;
+    }
+    // Jeśli brak cache i offline, użyj domyślnych kursów
+    console.warn("[fetchRevolutRates] Offline and no cache - using default rates");
+    return getDefaultRatesFallback(baseCurrency);
+  }
+
   try {
     // W przeglądarce użyj względnego URL, w server component użyj pełnego URL
     const apiUrl = typeof window !== "undefined" 
@@ -31,8 +61,8 @@ export async function fetchRevolutRates(
       throw new Error("Invalid response from exchange rates API");
     }
 
-    // Konwertuj odpowiedź API na format ExchangeRate[]
-    const rates: ExchangeRate[] = data.rates.map((rate: {
+    // API zwraca kursy wyłącznie do PLN (fromCurrency -> PLN)
+    const ratesToPln: ExchangeRate[] = data.rates.map((rate: {
       fromCurrency: string;
       toCurrency: string;
       rate: number;
@@ -46,24 +76,78 @@ export async function fetchRevolutRates(
       source: rate.source || "exchangerate-api",
     }));
 
+    const effectiveDate = ratesToPln[0]?.effectiveDate ?? new Date().toISOString().split("T")[0];
+    const source = ratesToPln[0]?.source ?? "exchangerate-api";
+
+    // Gdy waluta bazowa to PLN – zwróć kursy bez zmian
+    if (baseCurrency === "PLN") {
+      setCachedExchangeRates(ratesToPln, baseCurrency);
+      return ratesToPln;
+    }
+
+    // Znajdź kurs waluty bazowej do PLN (np. 1 USD = X PLN)
+    const baseToPlnRate = ratesToPln.find(
+      (r) => r.fromCurrency === baseCurrency && r.toCurrency === "PLN"
+    );
+    if (!baseToPlnRate || baseToPlnRate.rate <= 0) {
+      setCachedExchangeRates(ratesToPln, "PLN");
+      return ratesToPln;
+    }
+
+    const baseToPln = baseToPlnRate.rate;
+
+    // Przelicz wszystkie kursy na walutę bazową: fromCurrency -> baseCurrency = (fromCurrency -> PLN) / baseToPln
+    const rates: ExchangeRate[] = [];
+    for (const r of ratesToPln) {
+      if (r.fromCurrency === baseCurrency) continue;
+      rates.push({
+        fromCurrency: r.fromCurrency,
+        toCurrency: baseCurrency,
+        rate: r.rate / baseToPln,
+        effectiveDate: r.effectiveDate,
+        source: r.source,
+      });
+    }
+    // PLN -> baseCurrency
+    rates.push({
+      fromCurrency: "PLN",
+      toCurrency: baseCurrency,
+      rate: 1 / baseToPln,
+      effectiveDate,
+      source,
+    });
+
+    setCachedExchangeRates(rates, baseCurrency);
     return rates;
   } catch (error) {
     console.error("Error fetching Revolut rates:", error);
-    // Fallback do domyślnych kursów
+    
+    // Spróbuj użyć cache nawet jeśli nieważny (lepsze niż domyślne kursy)
+    const cachedRates = getCachedExchangeRates(baseCurrency);
+    if (cachedRates) {
+      return cachedRates;
+    }
+
+    // Fallback do domyślnych kursów tylko jeśli brak cache
+    console.warn("[fetchRevolutRates] API error and no cache - using default rates");
     return getDefaultRatesFallback(baseCurrency);
   }
 }
 
 /**
  * Aktualizuje kursy walut w wallet używając aktualnych kursów z API
+ * Używa cache gdy offline lub gdy API nie jest dostępne
  * @param wallet - aktualny stan wallet
+ * @param forceRefresh - wymusza pobranie z API nawet jeśli cache jest ważny
  * @returns zaktualizowany wallet z nowymi kursami
  */
 export async function updateWalletRatesFromAPI(
-  wallet: { referenceRates: ExchangeRate[] }
+  wallet: { baseCurrency?: string; referenceRates: ExchangeRate[] },
+  forceRefresh: boolean = false
 ): Promise<{ referenceRates: ExchangeRate[] }> {
   try {
-    const newRates = await fetchRevolutRates(wallet.referenceRates[0]?.toCurrency || "PLN");
+    const baseCurrency = wallet.baseCurrency ?? wallet.referenceRates[0]?.toCurrency ?? "PLN";
+    const newRates = await fetchRevolutRates(baseCurrency, forceRefresh);
     
     // Zaktualizuj istniejące kursy, dodając nowe
     let updatedRates = [...wallet.referenceRates];
@@ -86,32 +170,35 @@ export async function updateWalletRatesFromAPI(
  * Fallback do domyślnych kursów w przypadku błędu API
  */
 function getDefaultRatesFallback(baseCurrency: string = "PLN"): ExchangeRate[] {
-  const defaultRates: Record<string, number> = {
+  // Wartości = ile PLN za 1 jednostkę waluty (np. 1 USD ≈ 3.57 PLN)
+  const toPlnRates: Record<string, number> = {
     PLN: 1,
-    USD: 4.0,
-    EUR: 4.3,
-    JPY: 0.027,
-    THB: 0.11,
-    GBP: 5.1,
-    KRW: 0.003,
-    TWD: 0.13,
-    AUD: 2.6,
-    CAD: 2.9,
+    USD: 3.57,
+    EUR: 3.85,
+    JPY: 0.024,
+    THB: 0.098,
+    GBP: 4.52,
+    KRW: 0.0026,
+    TWD: 0.11,
+    AUD: 2.32,
+    CAD: 2.58,
+    NOK: 0.33,
   };
 
   const rates: ExchangeRate[] = [];
   const today = new Date().toISOString().split("T")[0];
+  const baseToPln = toPlnRates[baseCurrency] ?? 1;
 
-  for (const [currency, rate] of Object.entries(defaultRates)) {
-    if (currency !== baseCurrency) {
-      rates.push({
-        fromCurrency: currency,
-        toCurrency: baseCurrency,
-        rate: rate,
-        effectiveDate: today,
-        source: "default",
-      });
-    }
+  for (const [currency, rateToPln] of Object.entries(toPlnRates)) {
+    if (currency === baseCurrency) continue;
+    const rateToBase = baseCurrency === "PLN" ? rateToPln : rateToPln / baseToPln;
+    rates.push({
+      fromCurrency: currency,
+      toCurrency: baseCurrency,
+      rate: rateToBase,
+      effectiveDate: today,
+      source: "default",
+    });
   }
 
   return rates;

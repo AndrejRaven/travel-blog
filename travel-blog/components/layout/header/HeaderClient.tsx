@@ -12,6 +12,7 @@ import {
 import { HeaderData } from "@/lib/sanity";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import Logo from "@/components/ui/Logo";
+import UserProfileMenu from "@/components/auth/UserProfileMenu";
 
 interface HeaderClientProps {
   headerData: HeaderData | null;
@@ -49,18 +50,24 @@ export default function HeaderClient({
   // Użyj danych z Sanity lub placeholder - memoized
   const currentSections = useMemo(
     () => getSectionsFromHeaderData(headerData),
-    [headerData]
+    [headerData],
   );
   const currentMainMenu = useMemo(
     () => getMainMenuFromHeaderData(headerData),
-    [headerData]
+    [headerData],
   );
 
   return (
-    <header className="sticky top-0 z-40 bg-white/80 dark:bg-gray-900/80 backdrop-blur border-b border-gray-100 dark:border-gray-800">
-      <div className="relative mx-auto max-w-7xl px-6 py-4 flex items-center justify-between">
+    <header
+      className="sticky top-0 z-40 bg-white/80 dark:bg-gray-900/80 backdrop-blur border-b border-gray-100 dark:border-gray-800"
+      suppressHydrationWarning
+    >
+      <div
+        className="relative mx-auto max-w-7xl px-6 py-4 flex items-center justify-between"
+        suppressHydrationWarning
+      >
         <Logo headerData={headerData} />
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4" suppressHydrationWarning>
           <DesktopNav
             sections={currentSections}
             mainMenu={currentMainMenu}
@@ -69,6 +76,7 @@ export default function HeaderClient({
             onToggle={(key) => toggleSection(key as keyof typeof openSections)}
           />
           <ThemeToggle />
+          <UserProfileMenu className="ml-4" />
         </div>
         <MobileMenu
           sections={currentSections}

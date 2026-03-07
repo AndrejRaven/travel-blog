@@ -80,11 +80,12 @@ const DesktopNav = memo(function DesktopNav({
                 className={`${hoveredMenu === menuItem.label || (hoveredMenu && hoveredMenu.startsWith(menuItem.label + "-")) ? "visible opacity-100 translate-y-0" : "invisible opacity-0 translate-y-2"} transition-all duration-200 absolute right-0 top-full mt-3 w-64 rounded-lg border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg`}
                 onMouseEnter={() => setHoveredMenu(menuItem.label)}
                 onMouseLeave={() => setHoveredMenu(null)}
+                suppressHydrationWarning
               >
-                <div className="p-2">
+                <div className="p-2" suppressHydrationWarning>
                   {menuItem.dropdownItems.map((item, itemIdx) => (
                     <React.Fragment key={itemIdx}>
-                      <div className="relative group/item">
+                      <div className="relative group/item" suppressHydrationWarning>
                         {item.hasSubmenu && item.submenuItems ? (
                           <div className="relative">
                             <button

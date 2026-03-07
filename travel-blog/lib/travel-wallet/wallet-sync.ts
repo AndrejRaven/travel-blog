@@ -17,12 +17,24 @@ export function syncWalletWithBudgets(tripId: string): boolean {
   if (!trip) return false;
 
   const data = trip.data;
-  const baseCurrency = "PLN"; // Default base currency
+  const baseCurrency = data.wallet?.baseCurrency ?? "PLN";
 
-  // Step 1: Collect initial balances from country budgets
+  // Step 1: Collect initial balances from initialBudgets (trip-level) then country budgets
   const initialBalances: SimpleCurrencyBalance[] = [];
 
-  // From country budgets (add all budgets from all countries)
+  if (data.initialBudgets && data.initialBudgets.length > 0) {
+    data.initialBudgets.forEach((budget) => {
+      if (budget.amount > 0) {
+        const existing = initialBalances.find((b) => b.currency === budget.currency);
+        if (existing) {
+          existing.amount += budget.amount;
+        } else {
+          initialBalances.push({ currency: budget.currency, amount: budget.amount });
+        }
+      }
+    });
+  }
+
   if (data.countries) {
     data.countries.forEach((country) => {
       if (country.budgets) {
@@ -45,14 +57,14 @@ export function syncWalletWithBudgets(tripId: string): boolean {
     });
   }
 
-  // If no budgets, create empty wallet with base currency
   if (initialBalances.length === 0) {
     initialBalances.push({ currency: baseCurrency, amount: 0 });
   }
 
-  // Step 2: Always rebuild wallet from scratch to ensure consistency
-  // Start with budgets, then apply all exchanges and expenses in order
-  const freshWallet = initializeWallet(baseCurrency, initialBalances);
+  // Step 2: Rebuild wallet from initialBalances, then apply exchanges and expenses
+  const freshWallet = data.wallet
+    ? { ...data.wallet, baseCurrency, balances: initialBalances.map((b) => ({ ...b })) }
+    : initializeWallet(baseCurrency, initialBalances);
 
   // Step 3: Apply all exchanges to wallet
   const exchanges = data.exchanges || [];
@@ -60,6 +72,7 @@ export function syncWalletWithBudgets(tripId: string): boolean {
 
   exchanges.forEach((exchange) => {
     const result = executeExchange(currentWallet, {
+      tripId: exchange.tripId,
       fromCurrency: exchange.fromCurrency,
       fromAmount: exchange.fromAmount,
       toCurrency: exchange.toCurrency,

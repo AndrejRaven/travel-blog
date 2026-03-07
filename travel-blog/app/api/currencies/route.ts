@@ -15,6 +15,7 @@ interface CurrencyInfo {
   name?: string;
 }
 
+export const dynamic = "force-dynamic";
 export const revalidate = 86400; // Revalidate co 24h (waluty rzadko się zmieniają)
 
 export async function GET() {

@@ -6,27 +6,12 @@ import type { CurrencyTransaction } from "@/lib/travel-wallet/types";
 import { getTripById } from "@/lib/travel-wallet/trips-storage";
 import { formatCurrency, formatDate } from "@/lib/travel-wallet/formatters";
 import { TRANSACTION_TYPE_LABELS } from "@/lib/travel-wallet/constants";
+import { convertToBaseCurrency } from "@/lib/travel-wallet/reference-rates";
 
 interface TransactionDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
   transaction: CurrencyTransaction | null;
-}
-
-const exchangeRates: Record<string, number> = {
-  PLN: 1,
-  EUR: 4.3,
-  USD: 4.0,
-  GBP: 5.0,
-  THB: 0.12,
-  JPY: 0.027,
-  AUD: 2.6,
-  CAD: 2.9,
-};
-
-function convertToPLN(amount: number, currency: string): number {
-  const rate = exchangeRates[currency.toUpperCase()] || 1;
-  return amount * rate;
 }
 
 export default function TransactionDetailsModal({
@@ -36,20 +21,28 @@ export default function TransactionDetailsModal({
 }: TransactionDetailsModalProps) {
   if (!isOpen || !transaction) return null;
 
+  const trip = getTripById(transaction.tripId);
+  const baseCurrency = trip?.data?.wallet?.baseCurrency ?? "PLN";
+  const rates = trip?.data?.wallet?.referenceRates ?? [];
+  const fromAmountInBase = convertToBaseCurrency(
+    transaction.fromAmount,
+    transaction.fromCurrency,
+    baseCurrency,
+    rates
+  );
+  const toAmountInBase = convertToBaseCurrency(
+    transaction.toAmount,
+    transaction.toCurrency,
+    baseCurrency,
+    rates
+  );
+
   // Pobierz nazwę kraju jeśli countryId jest dostępne
   let countryName: string | null = null;
-  if (transaction.countryId) {
-    const trip = getTripById(transaction.tripId);
-    if (trip) {
-      const country = trip.data.countries.find((c) => c.id === transaction.countryId);
-      if (country) {
-        countryName = country.name;
-      }
-    }
+  if (transaction.countryId && trip) {
+    const country = trip.data.countries.find((c) => c.id === transaction.countryId);
+    if (country) countryName = country.name;
   }
-
-  const fromAmountInPLN = convertToPLN(transaction.fromAmount, transaction.fromCurrency);
-  const toAmountInPLN = convertToPLN(transaction.toAmount, transaction.toCurrency);
 
   return (
     <div
@@ -89,25 +82,25 @@ export default function TransactionDetailsModal({
             <div className="flex items-center justify-center gap-4">
               <div className="text-center">
                 <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                  {formatCurrency(transaction.fromAmount, transaction.fromCurrency)}
+                  {formatCurrency(transaction.fromAmount, transaction.fromCurrency, 2)}
                 </div>
                 <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                   {transaction.fromCurrency}
                 </div>
                 <div className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                  ≈ {formatCurrency(fromAmountInPLN, "PLN")}
+                  ≈ {formatCurrency(fromAmountInBase, baseCurrency)}
                 </div>
               </div>
               <ArrowRight className="w-6 h-6 text-gray-400" />
               <div className="text-center">
                 <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                  {formatCurrency(transaction.toAmount, transaction.toCurrency)}
+                  {formatCurrency(transaction.toAmount, transaction.toCurrency, 2)}
                 </div>
                 <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                   {transaction.toCurrency}
                 </div>
                 <div className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                  ≈ {formatCurrency(toAmountInPLN, "PLN")}
+                  ≈ {formatCurrency(toAmountInBase, baseCurrency)}
                 </div>
               </div>
             </div>
@@ -180,7 +173,7 @@ export default function TransactionDetailsModal({
                   Prowizja
                 </div>
                 <div className="text-base text-red-600 dark:text-red-400 mt-1">
-                  {formatCurrency(transaction.fee, transaction.feeCurrency)}
+                  {formatCurrency(transaction.fee, transaction.feeCurrency, 2)}
                 </div>
               </div>
             </div>

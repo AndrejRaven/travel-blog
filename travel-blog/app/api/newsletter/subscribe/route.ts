@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { checkRateLimit, rateLimitConfigs } from "@/lib/rate-limit";
 import { validateEmail } from "@/lib/validation";
+import { clearSubscriberCache } from "@/lib/mailerlite";
 
 export const dynamic = 'force-dynamic';
 
@@ -60,20 +61,38 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const mlRes = await fetch("https://connect.mailerlite.com/api/subscribers", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      body: JSON.stringify({
-        email,
-        groups: [groupId],
-        // status: "unconfirmed", // DOI sterowane w panelu ML
-        resubscribe: true,
-      }),
-    });
+    // Fetch z timeout (5 sekund)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    
+    let mlRes: Response;
+    try {
+      mlRes = await fetch("https://connect.mailerlite.com/api/subscribers", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({
+          email,
+          groups: [groupId],
+          // status: "unconfirmed", // DOI sterowane w panelu ML
+          resubscribe: true,
+        }),
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+    } catch (error) {
+      clearTimeout(timeoutId);
+      if (error instanceof Error && error.name === 'AbortError') {
+        return NextResponse.json(
+          { success: false, message: "Timeout - MailerLite API nie odpowiada. Spróbuj ponownie później." },
+          { status: 504 }
+        );
+      }
+      throw error;
+    }
 
     if (!mlRes.ok) {
       let message = "Błąd zapisu";
@@ -94,6 +113,9 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
+
+    // Wyczyść cache dla tego emaila (może być już w cache jako null)
+    clearSubscriberCache(email);
 
     return NextResponse.json({
       success: true,

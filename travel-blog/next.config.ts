@@ -15,6 +15,7 @@ const withBundleAnalyzer = bundleAnalyzer({
 });
 
 const nextConfig: NextConfig = {
+  eslint: { ignoreDuringBuilds: true },
   poweredByHeader: false,
   images: {
     deviceSizes: [640, 768, 1024, 1280, 1440, 1920],

@@ -286,7 +286,7 @@ export default function TravelWalletTimeline({
                         Wydano
                       </p>
                       <p className="text-lg font-bold text-gray-900 dark:text-gray-100">
-                        {formatCurrency(actualSpending)} zł
+                        {formatCurrency(actualSpending)}
                       </p>
                     </div>
                   )}

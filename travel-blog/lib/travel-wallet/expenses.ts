@@ -1,7 +1,16 @@
-import type { Expense } from "./types";
+import type { Expense, ExchangeRate } from "./types";
+import { convertToBaseCurrency } from "./reference-rates";
+import { tripEvents } from "./events";
+import { DataAccess } from "./data-access";
+import { getTripById, updateTrip } from "./trips-storage";
+import { getWallet, updateWallet } from "./wallet-storage";
+import { adjustCurrencyBalance } from "./wallet-operations";
+import { executeExpense } from "./expense-operations";
+import { logExpenseEdited } from "./activity-log";
 
 /**
  * Kursy walut do PLN (przykładowe, później można pobrać z API)
+ * rate = ile PLN za 1 jednostkę waluty (np. 1 NOK = 0.36 PLN)
  */
 const exchangeRates: Record<string, number> = {
   PLN: 1,
@@ -12,6 +21,9 @@ const exchangeRates: Record<string, number> = {
   GBP: 5.1,
   KRW: 0.003,
   TWD: 0.13,
+  KZT: 0.007,
+  AED: 1.09,
+  NOK: 0.36, // 1 NOK ≈ 0.36 PLN
 };
 
 /**
@@ -22,330 +34,74 @@ function convertToPLN(amount: number, currency: string): number {
   return amount * rate;
 }
 
-/**
- * Mock data dla expenses
- */
-const mockExpenses: Expense[] = [
-  // Tajlandia (id: "1")
-  {
-    id: "exp-1",
-    countryId: "1",
-    amount: 150,
-    currency: "PLN",
-    category: "Jedzenie",
-    description: "Obiad w restauracji",
-    note: "Pyszne lokalne jedzenie",
-    date: "2026-06-15",
-  },
-  {
-    id: "exp-2",
-    countryId: "1",
-    amount: 300,
-    currency: "PLN",
-    category: "Noclegi",
-    description: "Hotel Bangkok",
-    note: "Świetna lokalizacja w centrum",
-    date: "2026-06-16",
-  },
-  {
-    id: "exp-3",
-    countryId: "1",
-    amount: 200,
-    currency: "THB",
-    category: "Transport",
-    description: "Taksówka",
-    date: "2026-06-17",
-  },
-  {
-    id: "exp-4",
-    countryId: "1",
-    amount: 500,
-    currency: "PLN",
-    category: "Noclegi",
-    description: "Hotel Phuket",
-    date: "2026-06-20",
-  },
-  {
-    id: "exp-5",
-    countryId: "1",
-    amount: 100,
-    currency: "PLN",
-    category: "Jedzenie",
-    description: "Śniadanie",
-    date: "2026-06-21",
-  },
-  {
-    id: "exp-6",
-    countryId: "1",
-    amount: 150,
-    currency: "USD",
-    category: "Aktywności",
-    description: "Wycieczka na wyspy",
-    note: "Całodniowa wycieczka, warto!",
-    date: "2026-06-25",
-  },
-  {
-    id: "exp-7",
-    countryId: "1",
-    amount: 400,
-    currency: "PLN",
-    category: "Noclegi",
-    description: "Ostatni hotel",
-    date: "2026-06-28",
-  },
-  {
-    id: "exp-8",
-    countryId: "1",
-    amount: 250,
-    currency: "PLN",
-    category: "Jedzenie",
-    description: "Kolacja",
-    date: "2026-07-01",
-  },
-  // Wietnam (id: "2")
-  {
-    id: "exp-9",
-    countryId: "2",
-    amount: 200,
-    currency: "PLN",
-    category: "Jedzenie",
-    description: "Obiad",
-    date: "2026-07-03",
-  },
-  {
-    id: "exp-10",
-    countryId: "2",
-    amount: 400,
-    currency: "PLN",
-    category: "Noclegi",
-    description: "Hotel Ho Chi Minh",
-    date: "2026-07-04",
-  },
-  {
-    id: "exp-11",
-    countryId: "2",
-    amount: 150,
-    currency: "PLN",
-    category: "Transport",
-    description: "Lot wewnętrzny",
-    date: "2026-07-10",
-  },
-  {
-    id: "exp-12",
-    countryId: "2",
-    amount: 400,
-    currency: "PLN",
-    category: "Noclegi",
-    description: "Hotel Hanoi",
-    date: "2026-07-11",
-  },
-  {
-    id: "exp-13",
-    countryId: "2",
-    amount: 200,
-    currency: "PLN",
-    category: "Jedzenie",
-    description: "Obiad",
-    date: "2026-07-15",
-  },
-  {
-    id: "exp-14",
-    countryId: "2",
-    amount: 150,
-    currency: "USD",
-    category: "Aktywności",
-    description: "Wycieczka do Ha Long Bay",
-    note: "Niesamowite widoki",
-    date: "2026-07-18",
-  },
-  // Japonia (id: "3")
-  {
-    id: "exp-15",
-    countryId: "3",
-    amount: 400,
-    currency: "PLN",
-    category: "Jedzenie",
-    description: "Obiad w Tokio",
-    date: "2026-07-21",
-  },
-  {
-    id: "exp-16",
-    countryId: "3",
-    amount: 600,
-    currency: "PLN",
-    category: "Noclegi",
-    description: "Hotel Tokio",
-    date: "2026-07-22",
-  },
-  {
-    id: "exp-17",
-    countryId: "3",
-    amount: 200,
-    currency: "JPY",
-    category: "Transport",
-    description: "Bilet kolejowy",
-    date: "2026-07-25",
-  },
-  {
-    id: "exp-18",
-    countryId: "3",
-    amount: 500,
-    currency: "PLN",
-    category: "Noclegi",
-    description: "Hotel Kioto",
-    date: "2026-07-28",
-  },
-  {
-    id: "exp-19",
-    countryId: "3",
-    amount: 300,
-    currency: "PLN",
-    category: "Jedzenie",
-    description: "Obiad",
-    date: "2026-08-02",
-  },
-  {
-    id: "exp-20",
-    countryId: "3",
-    amount: 500,
-    currency: "PLN",
-    category: "Noclegi",
-    description: "Hotel Osaka",
-    date: "2026-08-05",
-  },
-  {
-    id: "exp-21",
-    countryId: "3",
-    amount: 200,
-    currency: "PLN",
-    category: "Transport",
-    description: "Bilet kolejowy",
-    date: "2026-08-08",
-  },
-  {
-    id: "exp-22",
-    countryId: "3",
-    amount: 100,
-    currency: "USD",
-    category: "Aktywności",
-    description: "Muzeum",
-    date: "2026-08-10",
-  },
-];
-
-const STORAGE_KEY = "travel-wallet-expenses";
-const getStorageKey = (tripId?: string) => {
-  return tripId ? `travel-wallet-expenses-${tripId}` : STORAGE_KEY;
-};
 
 /**
- * Pobiera wszystkie expenses z localStorage i łączy z mock data
+ * Pobiera wszystkie expenses z trip.data.expenses
  */
-function getAllExpensesFromStorage(tripId?: string): Expense[] {
+function getAllExpensesFromStorage(tripId: string): Expense[] {
   if (typeof window === "undefined") {
-    // Na serwerze zwracamy mock expenses bez filtrowania po tripId (są to przykładowe dane)
-    return mockExpenses;
+    return [];
   }
 
-  try {
-    const storageKey = getStorageKey(tripId);
-    const stored = localStorage.getItem(storageKey);
-    
-    let userExpenses: Expense[] = [];
-    if (stored) {
-      userExpenses = JSON.parse(stored) as Expense[];
-    }
-    
-    // Dla backward compatibility: jeśli tripId jest podane i nie znaleziono wydatków w kluczu z tripId,
-    // sprawdź stary klucz i przefiltruj po tripId
-    if (tripId && userExpenses.length === 0) {
-      const oldStored = localStorage.getItem(STORAGE_KEY);
-      if (oldStored) {
-        const oldExpenses = JSON.parse(oldStored) as Expense[];
-        // Filtruj wydatki po tripId lub wydatki bez tripId (backward compatibility)
-        userExpenses = oldExpenses.filter(
-          (e) => e.tripId === tripId || !e.tripId
-        );
-      }
-    } else if (!tripId) {
-      // Dla backward compatibility, sprawdź stary klucz jeśli tripId nie jest podane
-      const oldStored = localStorage.getItem(STORAGE_KEY);
-      if (oldStored) {
-        userExpenses = JSON.parse(oldStored) as Expense[];
-      }
-    }
-
-    // Jeśli tripId jest podane, zwróć tylko userExpenses (bez mock expenses)
-    // Mock expenses są tylko dla backward compatibility (gdy tripId nie jest podane)
-    if (tripId) {
-      return userExpenses;
-    }
-
-    // Łączymy mock data z danymi z localStorage tylko gdy tripId nie jest podane (backward compatibility)
-    const storedIds = new Set(userExpenses.map((e) => e.id));
-    const mockOnly = mockExpenses.filter((e) => !storedIds.has(e.id));
-    
-    return [...userExpenses, ...mockOnly];
-  } catch (error) {
-    console.error("Error reading expenses from localStorage:", error);
-    // W przypadku błędu zwracamy mock expenses tylko gdy tripId nie jest podane
-    return tripId ? [] : mockExpenses;
+  if (!tripId) {
+    throw new Error("tripId is required");
   }
+
+  const trip = getTripById(tripId);
+
+  return trip?.data.expenses || [];
 }
 
 /**
- * Zapisuje wszystkie expenses do localStorage
+ * Zapisuje wszystkie expenses do trip.data.expenses
  */
-function saveExpensesToStorage(expenses: Expense[], tripId?: string): boolean {
-  if (typeof window === "undefined") {
+function saveExpensesToStorage(expenses: Expense[], tripId: string): boolean {
+  if (typeof window === "undefined" || !tripId) {
     return false;
   }
 
-  try {
-    const storageKey = getStorageKey(tripId);
-    // Filtrujemy mock data - zapisujemy tylko te z localStorage
-    const mockIds = new Set(mockExpenses.map((e) => e.id));
-    const userExpenses = expenses.filter((e) => !mockIds.has(e.id));
-    localStorage.setItem(storageKey, JSON.stringify(userExpenses));
-    return true;
-  } catch (error) {
-    console.error("Error saving expenses to localStorage:", error);
+  const trip = getTripById(tripId);
+
+  if (!trip) {
     return false;
   }
+
+  return updateTrip(tripId, {
+    data: {
+      ...trip.data,
+      expenses,
+    },
+    updatedAt: new Date().toISOString(),
+  });
 }
+
 
 /**
  * Generuje unikalne ID dla expense
  */
 function generateExpenseId(): string {
-  return `exp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  return `exp-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
 }
 
 /**
- * Pobiera wszystkie expenses (z localStorage + mock data)
- * @param tripId - opcjonalne ID podróży do filtrowania
+ * Pobiera wszystkie expenses dla podróży
+ * @param tripId - ID podróży (wymagane)
  */
-export function getAllExpenses(tripId?: string): Expense[] {
-  const expenses = getAllExpensesFromStorage(tripId);
-  
-  // Jeśli tripId jest podane, dodatkowo filtruj po tripId w danych (dla bezpieczeństwa)
-  if (tripId) {
-    return expenses.filter(
-      (expense) => expense.tripId === tripId || !expense.tripId // Uwzględnij też wydatki bez tripId (backward compatibility)
-    );
+export function getAllExpenses(tripId: string): Expense[] {
+  if (!tripId) {
+    throw new Error("tripId is required");
   }
-  
-  return expenses;
+  return getAllExpensesFromStorage(tripId);
 }
 
 /**
  * Pobiera wszystkie expenses dla danego kraju
  * @param countryId - ID kraju
- * @param tripId - opcjonalne ID podróży
+ * @param tripId - ID podróży (wymagane)
  */
 export function getExpensesByCountryId(
   countryId: string,
-  tripId?: string
+  tripId: string
 ): Expense[] {
   return getAllExpenses(tripId).filter(
     (expense) => expense.countryId === countryId
@@ -369,42 +125,46 @@ export function hasExpensesForCountry(
 /**
  * Pobiera expense po ID
  * @param id - ID expense
- * @param tripId - opcjonalne ID podróży
+ * @param tripId - ID podróży (wymagane)
  */
-export function getExpenseById(id: string, tripId?: string): Expense | null {
+export function getExpenseById(id: string, tripId: string): Expense | null {
   return getAllExpenses(tripId).find((expense) => expense.id === id) || null;
 }
 
 /**
  * Dodaje nowy expense z auto-generowanym ID
- * @param expenseData - dane expense (bez ID)
- * @param tripId - opcjonalne ID podróży (jeśli nie podane, użyje z expenseData.tripId)
+ * @param expenseData - dane expense (bez ID, tripId jest wymagane)
+ * @param tripId - ID podróży (wymagane)
  */
 export function addExpense(
   expenseData: Omit<Expense, "id">,
-  tripId?: string
+  tripId: string
 ): Expense {
-  const finalTripId = tripId || expenseData.tripId;
-  if (!finalTripId) {
+  if (!tripId) {
     throw new Error("tripId is required");
   }
 
   const newExpense: Expense = {
     ...expenseData,
     id: generateExpenseId(),
-    tripId: finalTripId,
+    tripId,
   };
+
+  // Walidacja przed zapisem
+  const validation = DataAccess.validateExpense(newExpense, tripId);
+  if (!validation.valid) {
+    console.error("[addExpense] Validation failed:", validation.errors);
+    throw new Error(`Expense validation failed: ${validation.errors.join(", ")}`);
+  }
 
   // Try to update wallet if new system is available
   try {
-    const { getWallet, updateWallet } = require("./wallet-storage");
-    const { executeExpense } = require("./expense-operations");
-    
-    const wallet = getWallet(finalTripId);
+
+    const wallet = getWallet(tripId);
     if (wallet) {
-      const result = executeExpense(wallet, expenseData);
+      const result = executeExpense(wallet, newExpense);
       if (result.success) {
-        updateWallet(finalTripId, result.newWallet);
+        updateWallet(tripId, result.newWallet);
       } else {
         throw new Error(result.error || "Failed to execute expense in wallet");
       }
@@ -414,92 +174,160 @@ export function addExpense(
     console.warn("Wallet system not available, using legacy expense storage:", error);
   }
 
-  const allExpenses = getAllExpensesFromStorage(finalTripId);
+  const allExpenses = getAllExpensesFromStorage(tripId);
   allExpenses.push(newExpense);
-  saveExpensesToStorage(allExpenses, finalTripId);
+  const success = saveExpensesToStorage(allExpenses, tripId);
+
+  if (success) {
+    tripEvents.emit("expense:added", tripId, newExpense);
+
+    // Oznacz podróż jako pending do synchronizacji
+    if (typeof window !== "undefined") {
+      const trip = getTripById(tripId);
+      if (trip && trip.syncStatus !== 'pending') {
+        updateTrip(tripId, {
+          syncStatus: 'pending' as const,
+          localVersion: (trip.localVersion || 0) + 1,
+        });
+      }
+    }
+  }
 
   return newExpense;
 }
 
 /**
  * Zapisuje expense (aktualizuje istniejący lub dodaje nowy)
- * @param expense - expense do zapisania
- * @param tripId - opcjonalne ID podróży (jeśli nie podane, użyje z expense.tripId)
+ * @param expense - expense do zapisania (musi mieć tripId)
+ * @param tripId - ID podróży (wymagane)
  */
-export function saveExpense(expense: Expense, tripId?: string): boolean {
-  const finalTripId = tripId || expense.tripId;
-  if (!finalTripId) {
+export function saveExpense(expense: Expense, tripId: string): boolean {
+  if (!tripId) {
     return false;
   }
 
-  const allExpenses = getAllExpensesFromStorage(finalTripId);
+  // Walidacja przed zapisem
+  const validation = DataAccess.validateExpense(expense, tripId);
+  if (!validation.valid) {
+    console.error("[saveExpense] Validation failed:", validation.errors);
+    return false;
+  }
+
+  const allExpenses = getAllExpensesFromStorage(tripId);
   const index = allExpenses.findIndex((e) => e.id === expense.id);
-  const oldExpense = index >= 0 ? allExpenses[index] : null;
+  // Głęboka kopia starej wartości PRZED aktualizacją
+  const oldExpense = index >= 0 ? { ...allExpenses[index] } : null;
 
   // Try to update wallet if new system is available
-  if (oldExpense && finalTripId) {
+  if (oldExpense) {
     try {
-      const { getWallet, updateWallet } = require("./wallet-storage");
-      const { adjustCurrencyBalance } = require("./wallet-operations");
-      
-      const wallet = getWallet(finalTripId);
+      const wallet = getWallet(tripId);
       if (wallet) {
         // Reverse old expense
-        let updatedWallet = adjustCurrencyBalance(
+        const updatedWallet = adjustCurrencyBalance(
           wallet,
           oldExpense.currency,
           oldExpense.amount
         );
         // Apply new expense
-        const { executeExpense } = require("./expense-operations");
         const result = executeExpense(updatedWallet, expense);
         if (result.success) {
-          updateWallet(finalTripId, result.newWallet);
+          updateWallet(tripId, result.newWallet);
         } else {
           console.error("Failed to update expense in wallet:", result.error);
         }
       }
     } catch (error) {
-      console.warn("Wallet system not available, using legacy expense storage:", error);
+      console.warn("Wallet system not available:", error);
     }
-  } else if (!oldExpense && finalTripId) {
+  } else {
     // New expense - handle wallet update inline to avoid circular dependency
     try {
-      const { getWallet, updateWallet } = require("./wallet-storage");
-      const { executeExpense } = require("./expense-operations");
-      
-      const wallet = getWallet(finalTripId);
+      const wallet = getWallet(tripId);
       if (wallet) {
         const result = executeExpense(wallet, expense);
         if (result.success) {
-          updateWallet(finalTripId, result.newWallet);
+          updateWallet(tripId, result.newWallet);
         } else {
           throw new Error(result.error || "Failed to execute expense in wallet");
         }
       }
     } catch (error) {
-      console.warn("Wallet system not available, using legacy expense storage:", error);
+      console.warn("Wallet system not available:", error);
     }
+  }
+
+  // Loguj edycję PRZED aktualizacją wydatku w storage (aby snapshot miał starą wartość)
+  if (index >= 0 && oldExpense) {
+    logExpenseEdited(tripId, expense.id, {
+      amount: oldExpense.amount,
+      currency: oldExpense.currency,
+      description: oldExpense.description,
+      date: oldExpense.date,
+      endDate: oldExpense.endDate,
+      category: oldExpense.category,
+      countryId: oldExpense.countryId,
+      location: oldExpense.location,
+      note: oldExpense.note,
+      accommodationType: oldExpense.accommodationType,
+    }, {
+      amount: expense.amount,
+      currency: expense.currency,
+      description: expense.description,
+      date: expense.date,
+      endDate: expense.endDate,
+      category: expense.category,
+      countryId: expense.countryId,
+      location: expense.location,
+      note: expense.note,
+      accommodationType: expense.accommodationType,
+    });
   }
 
   if (index >= 0) {
     // Aktualizuj istniejący
-    allExpenses[index] = { ...expense, tripId: finalTripId };
+    allExpenses[index] = { ...expense, tripId };
   } else {
     // Dodaj nowy
-    allExpenses.push({ ...expense, tripId: finalTripId });
+    allExpenses.push({ ...expense, tripId });
   }
 
-  return saveExpensesToStorage(allExpenses, finalTripId);
+  const success = saveExpensesToStorage(allExpenses, tripId);
+
+  if (success) {
+    if (index >= 0) {
+      tripEvents.emit("expense:updated", tripId, expense);
+    } else {
+      tripEvents.emit("expense:added", tripId, expense);
+    }
+
+    // Oznacz podróż jako pending do synchronizacji
+    if (typeof window !== "undefined") {
+      const trip = getTripById(tripId);
+      if (trip && trip.syncStatus !== 'pending') {
+        updateTrip(tripId, {
+          syncStatus: 'pending' as const,
+          localVersion: (trip.localVersion || 0) + 1,
+        });
+      }
+    }
+  }
+
+  return success;
 }
 
 /**
  * Usuwa expense po ID
  * @param id - ID expense do usunięcia
- * @param tripId - opcjonalne ID podróży
+ * @param tripId - ID podróży (wymagane)
  */
-export function deleteExpense(id: string, tripId?: string): boolean {
+export function deleteExpense(id: string, tripId: string): boolean {
+  if (!tripId) {
+    return false;
+  }
+
   const allExpenses = getAllExpensesFromStorage(tripId);
+  const expenseToDelete = allExpenses.find((e) => e.id === id);
   const filtered = allExpenses.filter((e) => e.id !== id);
 
   if (filtered.length === allExpenses.length) {
@@ -507,11 +335,66 @@ export function deleteExpense(id: string, tripId?: string): boolean {
     return false;
   }
 
-  return saveExpensesToStorage(filtered, tripId);
+  const success = saveExpensesToStorage(filtered, tripId);
+
+  if (success && expenseToDelete) {
+    tripEvents.emit("expense:deleted", tripId, expenseToDelete);
+
+    // Oznacz podróż jako pending do synchronizacji
+    if (typeof window !== "undefined") {
+      const trip = getTripById(tripId);
+      if (trip && trip.syncStatus !== 'pending') {
+        updateTrip(tripId, {
+          syncStatus: 'pending' as const,
+          localVersion: (trip.localVersion || 0) + 1,
+        });
+      }
+    }
+  }
+
+  return success;
 }
 
 /**
- * Konwertuje expense na PLN
+ * Konwertuje expense na kwotę w walucie bazowej (używa reference rates z portfela)
+ */
+export function convertExpenseToBase(
+  expense: Expense,
+  baseCurrency: string,
+  referenceRates: ExchangeRate[]
+): number {
+  if (!expense || typeof expense.amount !== "number" || !expense.currency) {
+    return 0;
+  }
+  return convertToBaseCurrency(
+    expense.amount,
+    expense.currency,
+    baseCurrency,
+    referenceRates
+  );
+}
+
+/**
+ * Konwertuje expense na walutę bazową podróży (pobiera wallet po tripId)
+ */
+export function convertExpenseToBaseByTripId(
+  expense: Expense,
+  tripId: string
+): number {
+  if (!expense || !tripId) return 0;
+  const wallet = getWallet(tripId);
+  if (!wallet) {
+    return convertExpenseToPLN(expense);
+  }
+  return convertExpenseToBase(
+    expense,
+    wallet.baseCurrency,
+    wallet.referenceRates
+  );
+}
+
+/**
+ * Konwertuje expense na PLN (fallback gdy brak tripId / wallet)
  */
 export function convertExpenseToPLN(expense: Expense): number {
   if (!expense || typeof expense.amount !== 'number' || !expense.currency) {
@@ -581,7 +464,11 @@ export function updateExpenseLocation(
     });
 
     if (needsUpdate) {
-      return saveExpensesToStorage(expenses, tripId);
+      const success = saveExpensesToStorage(expenses, tripId);
+      if (success) {
+        tripEvents.emit("expense:updated", tripId);
+      }
+      return success;
     }
 
     return true; // Brak wydatków do aktualizacji, ale to nie jest błąd
@@ -634,7 +521,11 @@ export function addLocationToExpensesInDateRange(
     });
 
     if (needsUpdate) {
-      return saveExpensesToStorage(expenses, tripId);
+      const success = saveExpensesToStorage(expenses, tripId);
+      if (success) {
+        tripEvents.emit("expense:updated", tripId);
+      }
+      return success;
     }
 
     return true; // Brak wydatków do aktualizacji, ale to nie jest błąd

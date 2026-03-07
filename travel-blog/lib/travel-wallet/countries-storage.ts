@@ -2,6 +2,7 @@ import type { Trip, Country, Budget, Expense, Location, TravelWalletData } from 
 import { getTripById, updateTrip, getTripsDataFromStorage } from "./trips-storage";
 import { addLocationToExpensesInDateRange } from "./expenses";
 import { syncWalletWithBudgets } from "./wallet-sync";
+import { tripEvents } from "./events";
 
 /**
  * Migruje slugi dla krajów w podróży (dla krajów bez slug)
@@ -42,7 +43,7 @@ export function migrateCountriesSlugs(tripId: string): void {
           .split(",")
           .map((loc) => loc.trim())
           .filter((loc) => loc.length > 0);
-        country.locations = locationStrings.map((name) => ({ name }));
+        country.locations = locationStrings.map((name) => ({ name, startDate: "", endDate: "" }));
         needsUpdate = true;
       }
     }
@@ -117,7 +118,7 @@ function generateUniqueCountrySlug(
   name: string,
   existingSlugs: Set<string>
 ): string {
-  let baseSlug = generateCountrySlug(name);
+  const baseSlug = generateCountrySlug(name);
   let slug = baseSlug;
   let counter = 1;
 
@@ -127,6 +128,22 @@ function generateUniqueCountrySlug(
   }
 
   return slug;
+}
+
+/**
+ * Tworzy obiekt Country z danymi z formularza (do użycia przy tworzeniu podróży z krajami).
+ */
+export function buildCountryFromData(
+  countryData: Omit<Country, "id" | "slug">,
+  existingSlugs: Set<string> = new Set()
+): Country {
+  const slug = generateUniqueCountrySlug(countryData.name, existingSlugs);
+  return {
+    ...countryData,
+    id: `country-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
+    slug,
+    locations: countryData.locations ? countryData.locations.map((loc) => ({ ...loc })) : [],
+  };
 }
 
 /**
@@ -145,7 +162,7 @@ export function addCountry(tripId: string, countryData: Omit<Country, "id" | "sl
 
   const newCountry: Country = {
     ...countryData,
-    id: `country-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    id: `country-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
     slug,
     // Upewnij się, że locations jest zawsze tablicą (nawet jeśli pusta)
     // Utwórz głęboką kopię lokalizacji aby uniknąć problemów z referencjami
@@ -154,23 +171,27 @@ export function addCountry(tripId: string, countryData: Omit<Country, "id" | "sl
 
   // Stwórz nową kopię countries array z dodanym krajem zamiast mutować
   const updatedCountries = [...trip.data.countries, newCountry];
-  
+
   // Stwórz nową kopię data z zaktualizowanymi krajami
   const updatedData: TravelWalletData = {
     ...trip.data,
     countries: updatedCountries,
   };
-  
+
   const result = updateTrip(tripId, { data: updatedData });
-  
-  // Synchronizuj portfel z budżetami krajów (jeśli portfel istnieje lub dodajemy kraj z budżetem)
-  if (result && updatedData.wallet) {
-    syncWalletWithBudgets(tripId);
-  } else if (result && newCountry.budgets && newCountry.budgets.length > 0) {
-    // Jeśli portfel nie istnieje, ale dodajemy kraj z budżetem, stwórz portfel
-    syncWalletWithBudgets(tripId);
+
+  if (result) {
+    tripEvents.emit("country:added", tripId, newCountry);
+
+    // Synchronizuj portfel z budżetami krajów (jeśli portfel istnieje lub dodajemy kraj z budżetem)
+    if (updatedData.wallet) {
+      syncWalletWithBudgets(tripId);
+    } else if (newCountry.budgets && newCountry.budgets.length > 0) {
+      // Jeśli portfel nie istnieje, ale dodajemy kraj z budżetem, stwórz portfel
+      syncWalletWithBudgets(tripId);
+    }
   }
-  
+
   return result;
 }
 
@@ -206,7 +227,13 @@ export function updateCountry(
   }
 
   trip.data.countries[countryIndex] = updatedCountry;
-  return updateTrip(tripId, { data: trip.data });
+  const success = updateTrip(tripId, { data: trip.data });
+
+  if (success) {
+    tripEvents.emit("country:updated", tripId, updatedCountry);
+  }
+
+  return success;
 }
 
 /**
@@ -216,11 +243,18 @@ export function deleteCountry(tripId: string, countryId: string): boolean {
   const trip = getTripById(tripId);
   if (!trip) return false;
 
+  const countryToDelete = trip.data.countries.find((c) => c.id === countryId);
   const filtered = trip.data.countries.filter((c) => c.id !== countryId);
   if (filtered.length === trip.data.countries.length) return false;
 
   trip.data.countries = filtered;
-  return updateTrip(tripId, { data: trip.data });
+  const success = updateTrip(tripId, { data: trip.data });
+
+  if (success && countryToDelete) {
+    tripEvents.emit("country:deleted", tripId, countryToDelete);
+  }
+
+  return success;
 }
 
 /**
@@ -239,7 +273,7 @@ export function addBudgetToCountry(
 
   country.budgets.push(budget);
   const result = updateTrip(tripId, { data: trip.data });
-  
+
   // Synchronizuj portfel z budżetami krajów
   if (result && trip.data.wallet) {
     syncWalletWithBudgets(tripId);
@@ -247,7 +281,7 @@ export function addBudgetToCountry(
     // Jeśli portfel nie istnieje, ale dodajemy budżet, stwórz portfel
     syncWalletWithBudgets(tripId);
   }
-  
+
   return result;
 }
 
@@ -269,7 +303,7 @@ export function updateBudgetInCountry(
 
   country.budgets[budgetIndex] = budget;
   const result = updateTrip(tripId, { data: trip.data });
-  
+
   // Synchronizuj portfel z budżetami krajów
   if (result && trip.data.wallet) {
     syncWalletWithBudgets(tripId);
@@ -277,7 +311,7 @@ export function updateBudgetInCountry(
     // Jeśli portfel nie istnieje, ale aktualizujemy budżet, stwórz portfel
     syncWalletWithBudgets(tripId);
   }
-  
+
   return result;
 }
 
@@ -298,12 +332,12 @@ export function removeBudgetFromCountry(
 
   country.budgets.splice(budgetIndex, 1);
   const result = updateTrip(tripId, { data: trip.data });
-  
+
   // Synchronizuj portfel z budżetami krajów
   if (result && trip.data.wallet) {
     syncWalletWithBudgets(tripId);
   }
-  
+
   return result;
 }
 
@@ -343,29 +377,31 @@ export function addLocationToCountry(
     startDate,
     endDate,
   };
-  
+
   // Stwórz nową kopię kraju z zaktualizowanymi lokalizacjami
   const updatedCountry: Country = {
     ...country,
     locations: [...existingLocations, newLocation],
   };
-  
+
   // Stwórz nową kopię countries array z zaktualizowanym krajem
   const updatedCountries = trip.data.countries.map((c) =>
     c.id === countryId ? updatedCountry : c
   );
-  
+
   // Stwórz nową kopię data z zaktualizowanymi krajami
   const updatedData: TravelWalletData = {
     ...trip.data,
     countries: updatedCountries,
   };
-  
+
   // Zaktualizuj trip z nową lokalizacją
   const tripUpdated = updateTrip(tripId, { data: updatedData });
-  
-  // Automatycznie dodaj lokalizację do wydatków bez lokalizacji w zakresie dat
+
   if (tripUpdated) {
+    tripEvents.emit("location:added", tripId, { countryId, location: newLocation });
+
+    // Automatycznie dodaj lokalizację do wydatków bez lokalizacji w zakresie dat
     addLocationToExpensesInDateRange(
       tripId,
       countryId,
@@ -374,7 +410,7 @@ export function addLocationToCountry(
       endDate
     );
   }
-  
+
   return tripUpdated;
 }
 
@@ -421,8 +457,15 @@ export function updateLocationInCountry(
     startDate: startDate || (typeof currentLocation === "string" ? "" : currentLocation.startDate),
     endDate: endDate || (typeof currentLocation === "string" ? "" : currentLocation.endDate),
   };
+  if (!country.locations) country.locations = [];
   country.locations[index] = updatedLocation;
-  return updateTrip(tripId, { data: trip.data });
+  const success = updateTrip(tripId, { data: trip.data });
+
+  if (success) {
+    tripEvents.emit("location:updated", tripId, { countryId, location: updatedLocation });
+  }
+
+  return success;
 }
 
 /**
@@ -447,11 +490,18 @@ export function removeLocationFromCountry(
   if (index === -1) return false; // Lokalizacja nie istnieje
 
   // Usuń lokalizację
+  const locationToDelete = existingLocations[index];
   country.locations = existingLocations.filter((loc) => {
     const name = typeof loc === "string" ? loc : loc.name;
     return name !== locationName;
   });
-  return updateTrip(tripId, { data: trip.data });
+  const success = updateTrip(tripId, { data: trip.data });
+
+  if (success && locationToDelete) {
+    tripEvents.emit("location:deleted", tripId, { countryId, location: locationToDelete });
+  }
+
+  return success;
 }
 
 /**

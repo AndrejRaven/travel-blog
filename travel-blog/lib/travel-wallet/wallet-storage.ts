@@ -6,6 +6,8 @@ import type {
 } from "./types";
 import { getTripById, updateTrip } from "./trips-storage";
 import { updateWalletRatesFromAPI } from "./revolut-rates";
+import { tripEvents } from "./events";
+import { DataAccess } from "./data-access";
 
 /**
  * Gets wallet for a trip
@@ -29,12 +31,25 @@ export function updateWallet(tripId: string, wallet: Wallet): boolean {
   const trip = getTripById(tripId);
   if (!trip) return false;
 
-  return updateTrip(tripId, {
+  // Walidacja wallet przed zapisem
+  const validation = DataAccess.validateWallet(wallet);
+  if (!validation.valid) {
+    console.error("[updateWallet] Validation failed:", validation.errors);
+    return false;
+  }
+
+  const success = updateTrip(tripId, {
     data: {
       ...trip.data,
       wallet,
     },
   });
+  
+  if (success) {
+    tripEvents.emit("wallet:updated", tripId);
+  }
+
+  return success;
 }
 
 /**
@@ -93,14 +108,15 @@ export function addExchange(
   const exchanges = trip.data.exchanges || [];
   const updatedExchanges = [...exchanges, newExchange];
 
-  if (
-    updateTrip(tripId, {
-      data: {
-        ...trip.data,
-        exchanges: updatedExchanges,
-      },
-    })
-  ) {
+  const success = updateTrip(tripId, {
+    data: {
+      ...trip.data,
+      exchanges: updatedExchanges,
+    },
+  });
+  
+  if (success) {
+    tripEvents.emit("currency_transaction:added", tripId, newExchange);
     return newExchange;
   }
 
@@ -118,18 +134,25 @@ export function deleteExchange(tripId: string, exchangeId: string): boolean {
   if (!trip) return false;
 
   const exchanges = trip.data.exchanges || [];
+  const exchangeToDelete = exchanges.find((e) => e.id === exchangeId);
   const filtered = exchanges.filter((e) => e.id !== exchangeId);
 
   if (filtered.length === exchanges.length) {
     return false; // Exchange not found
   }
 
-  return updateTrip(tripId, {
+  const success = updateTrip(tripId, {
     data: {
       ...trip.data,
       exchanges: filtered,
     },
   });
+  
+  if (success && exchangeToDelete) {
+    tripEvents.emit("currency_transaction:deleted", tripId, exchangeToDelete);
+  }
+
+  return success;
 }
 
 /**
@@ -212,5 +235,5 @@ export function deleteBudgetAdjustment(
  * Generates a unique ID
  */
 function generateId(): string {
-  return `wallet-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  return `wallet-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
 }

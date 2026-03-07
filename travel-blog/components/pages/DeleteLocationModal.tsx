@@ -68,7 +68,7 @@ export default function DeleteLocationModal({
                     Nie można usunąć miejsca
                   </p>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Miejsce <strong>"{location}"</strong> jest używane w wydatkach.
+                    Miejsce <strong>&quot;{location}&quot;</strong> jest używane w wydatkach.
                     Aby je usunąć, najpierw usuń lub zmień miejsce we wszystkich
                     powiązanych wydatkach.
                   </p>
@@ -78,7 +78,7 @@ export default function DeleteLocationModal({
           ) : (
             <>
               <p className="text-gray-900 dark:text-gray-100">
-                Czy na pewno chcesz usunąć miejsce <strong>"{location}"</strong>?
+                Czy na pewno chcesz usunąć miejsce <strong>&quot;{location}&quot;</strong>?
               </p>
               <p className="text-sm text-gray-600 dark:text-gray-400">
                 Ta operacja nie może być cofnięta.

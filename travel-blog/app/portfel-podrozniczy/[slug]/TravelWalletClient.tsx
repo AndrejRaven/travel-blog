@@ -1,13 +1,15 @@
 "use client";
 
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import PageLayout from "@/components/shared/PageLayout";
+import Breadcrumbs from "@/components/shared/Breadcrumbs";
 import TravelWalletDashboard from "@/components/pages/TravelWalletDashboard";
 import AddCountryModal from "@/components/pages/AddCountryModal";
 import EditCountryModal from "@/components/pages/EditCountryModal";
 import DeleteCountryModal from "@/components/pages/DeleteCountryModal";
 import AddExpenseFromDashboardModal from "@/components/pages/AddExpenseFromDashboardModal";
+import DeleteExpenseModal from "@/components/pages/DeleteExpenseModal";
 import EditTripModal from "@/components/pages/EditTripModal";
 import AddLocationModal from "@/components/pages/AddLocationModal";
 import EditLocationModal from "@/components/pages/EditLocationModal";
@@ -16,6 +18,7 @@ import AddCurrencyTransactionModal from "@/components/pages/AddCurrencyTransacti
 import ExchangeRateVerificationModal from "@/components/pages/ExchangeRateVerificationModal";
 import { useToast } from "@/components/ui/Toast";
 import { setCurrentTrip, updateTrip } from "@/lib/travel-wallet/trips-storage";
+import { syncWalletWithBudgets } from "@/lib/travel-wallet/wallet-sync";
 import {
   addCountry,
   updateCountry,
@@ -29,7 +32,6 @@ import {
 } from "@/lib/travel-wallet/expenses";
 import {
   logExpenseAdded,
-  logExpenseEdited,
   logExpenseDeleted,
   logCountryAdded,
   logCountryEdited,
@@ -48,17 +50,22 @@ import {
   hasExpensesWithLocation,
 } from "@/lib/travel-wallet/countries-storage";
 import { updateExpenseLocation } from "@/lib/travel-wallet/expenses";
-import { addCurrencyTransaction, deleteCurrencyTransaction, updateCurrencyTransaction } from "@/lib/travel-wallet/currency-transactions";
+import { addCurrencyTransaction, deleteCurrencyTransaction, updateCurrencyTransaction, getCurrencyTransactions, getCurrencyTransactionById } from "@/lib/travel-wallet/currency-transactions";
 import { autoMigrateExpenses } from "@/lib/travel-wallet/migrate-expenses";
 import { autoMigrateToV2 } from "@/lib/travel-wallet/migrations/v2-wallet-migration";
-import { getBalancesWithBaseCurrency } from "@/lib/travel-wallet/wallet-operations";
-import { getTripBySlug } from "@/lib/travel-wallet/trips-storage";
+import { migrateToV3 } from "@/lib/travel-wallet/migrations/v3-data-consolidation";
 import { getEffectiveDashboardMode } from "@/lib/travel-wallet/dashboard-mode";
 import { getWalletCurrencies } from "@/lib/travel-wallet/wallet-helpers";
 import type { TravelWalletData, Country, CurrencyTransaction, Expense } from "@/lib/travel-wallet/types";
+import type { RateVerificationResult } from "@/lib/travel-wallet/rate-verification";
 import { useTripData } from "@/lib/travel-wallet/hooks/useTripData";
 import { useModalState } from "@/lib/travel-wallet/hooks/useModalState";
 import { useSessionNotification } from "@/lib/travel-wallet/hooks/useSessionNotification";
+import { useAuth } from "@/lib/auth/AuthContext";
+import { useOnlineStatus } from "@/lib/travel-wallet/hooks/useOnlineStatus";
+import WalletStatusBanner from "@/components/ui/WalletStatusBanner";
+import TripOnboardingModal from "@/components/ui/TripOnboardingModal";
+import { getTripOnboardingSeen } from "@/lib/onboarding-storage";
 
 interface TravelWalletClientProps {
   slug: string;
@@ -68,11 +75,28 @@ export default function TravelWalletClient({
   slug,
 }: TravelWalletClientProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { addToast } = useToast();
-  
+  const { user, profile } = useAuth();
+  const { isOnline } = useOnlineStatus();
+  const [showTripOnboarding, setShowTripOnboarding] = useState(false);
+
   // Use custom hooks
-  const { trip, isLoading, refreshTrip } = useTripData(slug);
+  const { trip, isLoading, status, refreshTrip } = useTripData(slug);
   useSessionNotification("newTripAdded", slug);
+
+  // Onboarding po utworzeniu podróży: pokaż modal gdy ?onboarding=1 i flaga nie ustawiona
+  useEffect(() => {
+    if (!trip || isLoading) return;
+    if (searchParams.get("onboarding") === "1" && !getTripOnboardingSeen(trip.id)) {
+      setShowTripOnboarding(true);
+    }
+  }, [trip, isLoading, searchParams]);
+
+  const handleTripOnboardingClose = useCallback(() => {
+    setShowTripOnboarding(false);
+    router.replace(`/portfel-podrozniczy/${slug}`, { scroll: false });
+  }, [router, slug]);
   
   const countryModal = useModalState<{
     type: "add" | "delete";
@@ -87,7 +111,8 @@ export default function TravelWalletClient({
     countryId?: string;
     date?: string;
   }>();
-  const expenseModal = useModalState<{ date?: string; expense?: Expense }>();
+  const expenseModal = useModalState<{ date?: string; expense?: Expense; initialCategory?: string }>();
+  const deleteExpenseModal = useModalState<Expense>();
   const editTripModal = useModalState<void>();
   const currencyTransactionModal = useModalState<CurrencyTransaction | void>();
   const rateVerificationModal = useModalState<{
@@ -130,35 +155,34 @@ export default function TravelWalletClient({
     
     const currencies = getWalletCurrencies(data, trip, countryIdForFilter);
     
-    console.log('[TravelWalletClient] walletCurrencies calculated:', {
-      effectiveMode,
-      isMultiMode,
-      countryIdForFilter,
-      currencies,
-      hasWallet: !!data.wallet,
-      modalIsOpen: currencyTransactionModal.isOpen,
-      modalData: currencyTransactionModal.data,
-    });
-    
     return currencies;
-  }, [data, trip, currencyTransactionModal.data?.countryId, currencyTransactionModal.isOpen]);
+  }, [data, trip, currencyTransactionModal.data?.countryId]);
 
-  // Set current trip when trip changes and run migration
+  // Set current/active trip when trip changes and run migration
   useEffect(() => {
     if (isLoading) return; // Wait for loading to complete
+
+    // Gdy mamy wpis tylko w indeksie i jesteśmy offline – pokaż dedykowany komunikat zamiast przekierowania.
+    if (!trip && status === "offlineIndexOnly") {
+      return;
+    }
+
     if (!trip) {
       router.push("/portfel-podrozniczy");
       return;
     }
+
+    // Zachowaj legacy currentTrip dla kompatybilności.
     setCurrentTrip(trip.id);
     
     // Run auto-migrations on first load
     if (typeof window !== "undefined") {
       autoMigrateExpenses();
       autoMigrateToV2(); // Migrate to new wallet system
+      // V3 migration: consolidate data to trip.data
+      migrateToV3();
     }
-  }, [trip, isLoading, router]);
-
+  }, [trip, isLoading, status, router]);
 
   const handleAddCountry = useCallback((countryData: {
     name: string;
@@ -187,22 +211,24 @@ export default function TravelWalletClient({
         : null;
       const newCountry = updatedTrip || { id: "", name: countryData.name };
       
-      logCountryAdded(
-        trip.id,
-        newCountry.id || "unknown",
-        countryData.name,
-        countryData.startDate,
-        countryData.endDate
-      );
+      logCountryAdded(trip.id, newCountry.id || "unknown");
       addToast({
         type: "success",
         title: "Dodano kraj",
         message: `${countryData.name} został dodany do podróży`,
       });
+      if (!user) {
+        addToast({
+          type: "info",
+          title: "Zapisz w chmurze",
+          message: "Zaloguj się, aby zapisać podróże w chmurze i mieć do nich dostęp z każdego urządzenia.",
+          duration: 5000,
+        });
+      }
       refreshTrip();
       countryModal.close();
     }
-  }, [trip, refreshTrip, countryModal, addToast]);
+  }, [trip, user, refreshTrip, countryModal, addToast]);
 
   const handleEditCountry = useCallback((country: Country) => {
     editCountryModal.open(country);
@@ -225,7 +251,7 @@ export default function TravelWalletClient({
 
     if (updateCountry(trip.id, countryId, updates)) {
       if (Object.keys(changes).length > 0) {
-        logCountryEdited(trip.id, countryId, updates.name || country.name, changes);
+        logCountryEdited(trip.id, countryId);
       }
       addToast({
         type: "success",
@@ -246,13 +272,12 @@ export default function TravelWalletClient({
 
     setIsDeleting(true);
     try {
-      const countryName = countryModal.data.country.name;
       if (deleteCountry(trip.id, countryModal.data.country.id)) {
-        logCountryDeleted(trip.id, countryModal.data.country.id, countryName);
+        logCountryDeleted(trip.id, countryModal.data.country.id);
         addToast({
           type: "success",
           title: "Usunięto kraj",
-          message: `${countryName} został usunięty z podróży`,
+          message: `${countryModal.data.country.name} został usunięty z podróży`,
         });
         refreshTrip();
         countryModal.close();
@@ -262,16 +287,16 @@ export default function TravelWalletClient({
     }
   }, [countryModal, trip, refreshTrip, addToast]);
 
-  const handleAddBudget = useCallback((country: Country) => {
+  const handleAddBudget = useCallback((_country: Country) => {
     // TODO: Implement AddBudgetModal
   }, []);
 
-  const handleReduceBudget = useCallback((country: Country) => {
+  const handleReduceBudget = useCallback((_country: Country) => {
     // TODO: Implement EditBudgetModal
   }, []);
 
-  const handleAddExpense = useCallback((date?: string) => {
-    expenseModal.open({ date });
+  const handleAddExpense = useCallback((date?: string, initialCategory?: string) => {
+    expenseModal.open({ date, initialCategory });
   }, [expenseModal]);
 
   const handleSaveExpense = useCallback((expenseData: {
@@ -282,9 +307,11 @@ export default function TravelWalletClient({
     amount: number;
     currency: string;
     date: string;
+    endDate?: string;
     note?: string;
     location?: string;
     tripId?: string;
+    accommodationType?: string;
   }) => {
     if (!trip) return;
 
@@ -295,16 +322,8 @@ export default function TravelWalletClient({
       // Edycja wydatku
       const existingExpense = getExpenseById(expenseData.id, trip.id);
       if (existingExpense) {
-        const changes: Record<string, unknown> = {};
-        if (existingExpense.amount !== expenseData.amount) changes.amount = expenseData.amount;
-        if (existingExpense.currency !== expenseData.currency) changes.currency = expenseData.currency;
-        if (existingExpense.category !== expenseData.category) changes.category = expenseData.category;
-        if (existingExpense.description !== expenseData.description) changes.description = expenseData.description;
-        if (existingExpense.date !== expenseData.date) changes.date = expenseData.date;
-        if (existingExpense.location !== expenseData.location) changes.location = expenseData.location;
-
-        saveExpense({ ...expenseData, id: expenseData.id } as any, trip.id);
-        logExpenseEdited(trip.id, expenseData.id, countryName, changes);
+        // saveExpense automatycznie loguje edycję z snapshot starej wartości
+        saveExpense({ ...expenseData, id: expenseData.id } as Expense, trip.id);
         addToast({
           type: "success",
           title: "Zaktualizowano",
@@ -313,25 +332,39 @@ export default function TravelWalletClient({
       }
     } else {
       // Dodanie wydatku
-      const newExpense = addExpense(expenseData, trip.id);
-      logExpenseAdded(
-        trip.id,
-        newExpense.id,
-        countryName,
-        expenseData.amount,
-        expenseData.currency,
-        expenseData.description
+      const newExpense = addExpense(
+        { ...expenseData, tripId: trip.id } as Omit<Expense, "id">,
+        trip.id
       );
+      logExpenseAdded(trip.id, newExpense.id, {
+        amount: newExpense.amount,
+        currency: newExpense.currency,
+        description: newExpense.description,
+        date: newExpense.date,
+        category: newExpense.category,
+        countryId: newExpense.countryId,
+        location: newExpense.location,
+        note: newExpense.note,
+        accommodationType: newExpense.accommodationType,
+      });
       addToast({
         type: "success",
         title: "Dodano wydatek",
         message: `${expenseData.amount} ${expenseData.currency} - ${expenseData.description || expenseData.category}`,
       });
+      if (!user) {
+        addToast({
+          type: "info",
+          title: "Zapisz w chmurze",
+          message: "Zaloguj się, aby zapisać podróże w chmurze i mieć do nich dostęp z każdego urządzenia.",
+          duration: 5000,
+        });
+      }
     }
 
     refreshTrip();
     expenseModal.close();
-  }, [trip, data, refreshTrip, expenseModal, addToast]);
+  }, [trip, data, user, refreshTrip, expenseModal, addToast]);
 
   const handleEditTrip = useCallback(() => {
     editTripModal.open();
@@ -367,17 +400,25 @@ export default function TravelWalletClient({
     const success = addCurrencyTransaction(trip.id, transactionData);
     if (success) {
       // Pobierz dodaną transakcję (najnowsza)
-      const transactions = require("@/lib/travel-wallet/currency-transactions").getCurrencyTransactions(trip.id);
+      const transactions = getCurrencyTransactions(trip.id);
       const newTransaction = transactions[transactions.length - 1];
       
       if (newTransaction) {
         logCurrencyTransactionAdded(
           trip.id,
           newTransaction.id,
-          transactionData.fromCurrency,
-          transactionData.fromAmount,
-          transactionData.toCurrency,
-          transactionData.toAmount
+          {
+            fromCurrency: transactionData.fromCurrency,
+            fromAmount: transactionData.fromAmount,
+            toCurrency: transactionData.toCurrency,
+            toAmount: transactionData.toAmount,
+            date: transactionData.date,
+            countryId: transactionData.countryId,
+            location: transactionData.location,
+            fee: transactionData.fee,
+            feeCurrency: transactionData.feeCurrency,
+            type: transactionData.type,
+          }
         );
       }
       
@@ -404,17 +445,25 @@ export default function TravelWalletClient({
     const success = addCurrencyTransaction(trip.id, transactionData);
     
     if (success) {
-      const transactions = require("@/lib/travel-wallet/currency-transactions").getCurrencyTransactions(trip.id);
+      const transactions = getCurrencyTransactions(trip.id);
       const newTransaction = transactions[transactions.length - 1];
       
       if (newTransaction) {
         logCurrencyTransactionAdded(
           trip.id,
           newTransaction.id,
-          transactionData.fromCurrency,
-          transactionData.fromAmount,
-          transactionData.toCurrency,
-          transactionData.toAmount
+          {
+            fromCurrency: transactionData.fromCurrency,
+            fromAmount: transactionData.fromAmount,
+            toCurrency: transactionData.toCurrency,
+            toAmount: transactionData.toAmount,
+            date: transactionData.date,
+            countryId: transactionData.countryId,
+            location: transactionData.location,
+            fee: transactionData.fee,
+            feeCurrency: transactionData.feeCurrency,
+            type: transactionData.type,
+          }
         );
       }
       
@@ -433,20 +482,12 @@ export default function TravelWalletClient({
     if (!trip) return;
 
     // Pobierz transakcję przed usunięciem
-    const { getCurrencyTransactionById } = require("@/lib/travel-wallet/currency-transactions");
     const transaction = getCurrencyTransactionById(trip.id, transactionId);
     
     const success = deleteCurrencyTransaction(trip.id, transactionId);
     if (success) {
       if (transaction) {
-        logCurrencyTransactionDeleted(
-          trip.id,
-          transactionId,
-          transaction.fromCurrency,
-          transaction.fromAmount,
-          transaction.toCurrency,
-          transaction.toAmount
-        );
+        logCurrencyTransactionDeleted(trip.id, transactionId);
       }
       
       refreshTrip();
@@ -459,52 +500,59 @@ export default function TravelWalletClient({
   }, [trip, refreshTrip, addToast]);
 
   const handleEditExpense = useCallback((expense: Expense) => {
-    expenseModal.open({ date: expense.date });
-    // TODO: Przekaż expense do modala (wymaga modyfikacji AddExpenseFromDashboardModal)
+    expenseModal.open({ expense, date: expense.date });
   }, [expenseModal]);
 
   const handleDeleteExpense = useCallback((expense: Expense) => {
-    if (!trip) return;
+    deleteExpenseModal.open(expense);
+  }, [deleteExpenseModal]);
 
+  const handleDeleteExpenseConfirm = useCallback(() => {
+    if (!deleteExpenseModal.data || !trip) return;
+
+    const expense = deleteExpenseModal.data;
     const country = data?.countries.find((c) => c.id === expense.countryId);
-    const countryName = country?.name || "Nieznany kraj";
+    const _countryName = country?.name || "Nieznany kraj";
 
     if (deleteExpense(expense.id, trip.id)) {
-      logExpenseDeleted(trip.id, expense.id, countryName, expense.amount, expense.currency);
+      logExpenseDeleted(trip.id, expense.id);
       addToast({
         type: "success",
         title: "Usunięto wydatek",
         message: `Wydatek ${expense.amount} ${expense.currency} został usunięty`,
       });
       refreshTrip();
+      deleteExpenseModal.close();
     }
-  }, [trip, data, refreshTrip, addToast]);
+  }, [deleteExpenseModal, trip, data, refreshTrip, addToast]);
 
   const handleSaveTrip = useCallback((tripData: {
     name: string;
     startDate?: string;
     endDate?: string;
-    totalBudget?: number;
+    baseCurrency: string;
+    initialBudgets: Array<{ currency: string; amount: number }>;
     userName?: string;
     dashboardMode?: "multi-country" | "single-country" | "single-location" | "auto";
   }) => {
     if (!trip) return;
 
-    // Aktualizuj dane podróży
     const updatedData: TravelWalletData = {
       ...trip.data,
-      totalBudget: tripData.totalBudget,
       userName: tripData.userName,
       dashboardMode: tripData.dashboardMode,
+      initialBudgets: tripData.initialBudgets,
+      wallet: {
+        ...trip.data.wallet,
+        baseCurrency: tripData.baseCurrency,
+      },
     };
 
-    // Przygotuj aktualizacje
     const updates: Partial<typeof trip> = {
       name: tripData.name,
       data: updatedData,
     };
-    
-    // Zawsze przekazuj daty (nawet jeśli undefined, aby je wyczyścić)
+
     if (tripData.startDate !== undefined) {
       updates.startDate = tripData.startDate || undefined;
     }
@@ -512,31 +560,31 @@ export default function TravelWalletClient({
       updates.endDate = tripData.endDate || undefined;
     }
 
-    // Sprawdź zmiany
     const changes: Record<string, unknown> = {};
     if (trip.name !== tripData.name) changes.name = tripData.name;
     if (trip.startDate !== tripData.startDate) changes.startDate = tripData.startDate;
     if (trip.endDate !== tripData.endDate) changes.endDate = tripData.endDate;
-    if (trip.data.totalBudget !== tripData.totalBudget) changes.totalBudget = tripData.totalBudget;
+    if (trip.data.wallet?.baseCurrency !== tripData.baseCurrency) changes.baseCurrency = tripData.baseCurrency;
+    if (JSON.stringify(trip.data.initialBudgets ?? []) !== JSON.stringify(tripData.initialBudgets)) changes.initialBudgets = tripData.initialBudgets;
     if (trip.data.userName !== tripData.userName) changes.userName = tripData.userName;
 
     if (updateTrip(trip.id, updates)) {
+      syncWalletWithBudgets(trip.id);
       if (Object.keys(changes).length > 0) {
-        logTripEdited(trip.id, tripData.name, changes);
+        logTripEdited(trip.id);
       }
-      
-      // Sprawdź czy daty zostały rozszerzone i czy są niewybrane daty
+
       const hasDateExtension = (tripData.startDate && trip.startDate && new Date(tripData.startDate) < new Date(trip.startDate)) ||
         (tripData.endDate && trip.endDate && new Date(tripData.endDate) > new Date(trip.endDate));
-      
+
       addToast({
         type: "success",
         title: "Zapisano zmiany",
-        message: hasDateExtension 
+        message: hasDateExtension
           ? "Podróż została zaktualizowana. Możesz teraz dodać kraj w nowe dni."
           : "Zmiany w podróży zostały zapisane",
       });
-      
+
       refreshTrip();
       editTripModal.close();
     }
@@ -569,7 +617,7 @@ export default function TravelWalletClient({
     const countryName = country?.name || "Nieznany kraj";
 
     if (addLocationToCountry(trip.id, locationModal.data.countryId, location, startDate, endDate)) {
-      logLocationAdded(trip.id, locationModal.data.countryId, countryName, location, startDate, endDate);
+      logLocationAdded(trip.id, locationModal.data.countryId, location);
       addToast({
         type: "success",
         title: "Dodano miejsce",
@@ -597,7 +645,7 @@ export default function TravelWalletClient({
     if (!trip || !locationModal.data?.countryId || !locationModal.data?.location) return;
     
     const country = data?.countries.find((c) => c.id === locationModal.data?.countryId);
-    const countryName = country?.name || "Nieznany kraj";
+    const _countryName = country?.name || "Nieznany kraj";
     const oldLocationName = locationModal.data.location;
     
     if (updateLocationInCountry(trip.id, locationModal.data.countryId, locationModal.data.location, newLocation, startDate, endDate)) {
@@ -611,7 +659,7 @@ export default function TravelWalletClient({
       if (startDate) changes.startDate = startDate;
       if (endDate) changes.endDate = endDate;
       
-      logLocationEdited(trip.id, locationModal.data.countryId, countryName, oldLocationName, newLocation, changes);
+      logLocationEdited(trip.id, locationModal.data.countryId, newLocation);
       addToast({
         type: "success",
         title: "Zaktualizowano miejsce",
@@ -639,7 +687,7 @@ export default function TravelWalletClient({
     setIsDeletingLocation(true);
     try {
       if (removeLocationFromCountry(trip.id, locationModal.data.countryId, locationModal.data.location)) {
-        logLocationDeleted(trip.id, locationModal.data.countryId, countryName, locationName);
+        logLocationDeleted(trip.id, locationModal.data.countryId, locationName);
         addToast({
           type: "success",
           title: "Usunięto miejsce",
@@ -664,7 +712,7 @@ export default function TravelWalletClient({
     if (!locationModal.data?.location || !pendingCountry) return null;
     const loc = pendingCountry.locations?.find((loc) => {
       const name = typeof loc === "string" ? loc : loc.name;
-      return name === locationModal.data.location;
+      return name === locationModal.data?.location;
     });
     return loc && typeof loc !== "string" ? loc : null;
   }, [locationModal.data?.location, pendingCountry]);
@@ -680,6 +728,39 @@ export default function TravelWalletClient({
   }
 
   if (!data) {
+    // Specjalny przypadek: podróż jest widoczna tylko w indeksie, ale nie jest dostępna offline.
+    if (status === "offlineIndexOnly") {
+      return (
+        <PageLayout maxWidth="6xl">
+          <Breadcrumbs
+            items={[
+              { label: "Portfel podróżniczy", href: "/portfel-podrozniczy" },
+              { label: "Dashboard" },
+            ]}
+            className="mb-6"
+          />
+          <div className="mb-6">
+            <WalletStatusBanner variant="offline" />
+          </div>
+          <div className="text-center py-12">
+            <p className="text-gray-700 dark:text-gray-300 mb-3">
+              Ta podróż nie jest w pełni dostępna offline.
+            </p>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">
+              Połącz się z internetem, aby załadować szczegóły podróży i kontynuować pracę.
+            </p>
+            <Link
+              href="/portfel-podrozniczy"
+              variant="primary"
+              className="inline-flex items-center gap-2"
+            >
+              Wróć do listy podróży
+            </Link>
+          </div>
+        </PageLayout>
+      );
+    }
+
     return (
       <PageLayout maxWidth="6xl">
         <div className="text-center py-12">
@@ -694,6 +775,18 @@ export default function TravelWalletClient({
   return (
     <>
       <PageLayout maxWidth="6xl">
+        <Breadcrumbs
+          items={[
+            { label: "Portfel podróżniczy", href: "/portfel-podrozniczy" },
+            { label: "Dashboard" },
+          ]}
+          className="mb-6"
+        />
+        {!isOnline && (
+          <div className="mb-6">
+            <WalletStatusBanner variant="offline" />
+          </div>
+        )}
         <TravelWalletDashboard
           data={data}
           slug={slug}
@@ -701,6 +794,8 @@ export default function TravelWalletClient({
           tripName={trip?.name}
           tripStartDate={trip?.startDate}
           tripEndDate={trip?.endDate}
+          isOffline={!isOnline}
+          displayUserName={user ? (profile?.full_name?.trim() || profile?.email?.split("@")[0]) : undefined}
           onAddCountry={(startDate, endDate) => {
             countryModal.open({ type: "add", startDate, endDate });
           }}
@@ -721,6 +816,16 @@ export default function TravelWalletClient({
         />
       </PageLayout>
 
+      {trip && (
+        <TripOnboardingModal
+          isOpen={showTripOnboarding}
+          onClose={handleTripOnboardingClose}
+          tripId={trip.id}
+          tripName={trip.name}
+          tripSlug={slug}
+        />
+      )}
+
       <AddCountryModal
         isOpen={countryModal.isOpen && countryModal.data?.type === "add"}
         onClose={() => countryModal.close()}
@@ -732,6 +837,7 @@ export default function TravelWalletClient({
         existingCountries={data?.countries || []}
         tripData={data || undefined}
         totalBudget={trip?.data.totalBudget}
+        baseCurrency={data?.wallet?.baseCurrency ?? "PLN"}
       />
 
       <DeleteCountryModal
@@ -766,6 +872,8 @@ export default function TravelWalletClient({
             data={data}
             tripId={trip?.id || ""}
             initialDate={expenseModal.data?.date}
+            initialCategory={expenseModal.data?.initialCategory}
+            expense={expenseModal.data?.expense}
             tripStartDate={trip?.startDate}
             tripEndDate={trip?.endDate}
             onAddLocation={handleAddLocationFromExpense}
@@ -773,6 +881,14 @@ export default function TravelWalletClient({
               expenseModal.close();
               countryModal.open({ type: "add" });
             }}
+          />
+
+          <DeleteExpenseModal
+            isOpen={deleteExpenseModal.isOpen}
+            onClose={() => deleteExpenseModal.close()}
+            onConfirm={handleDeleteExpenseConfirm}
+            expense={deleteExpenseModal.data || undefined}
+            tripId={trip?.id}
           />
 
           <EditTripModal
@@ -833,7 +949,7 @@ export default function TravelWalletClient({
             onClose={() => currencyTransactionModal.close()}
             onSave={handleSaveCurrencyTransaction}
             slug={slug}
-            transaction={currencyTransactionModal.data}
+            transaction={currencyTransactionModal.data ?? undefined}
             walletCurrencies={walletCurrencies}
             tripId={trip?.id}
             countryId={(() => {

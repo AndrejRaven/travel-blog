@@ -255,6 +255,7 @@ export default function EditLocationModal({
                   }}
                   min={countryStartDate}
                   max={countryEndDate}
+                  relatedDate={startDate ? { type: 'end', value: startDate } : undefined}
                   disabledDates={occupiedDates}
                   required
                   error={errors.endDate}

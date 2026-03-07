@@ -6,6 +6,12 @@ import Button from "@/components/ui/Button";
 import DatePicker from "@/components/ui/DatePicker";
 import Select from "@/components/ui/Select";
 import type { Country, Expense, TravelWalletData } from "@/lib/travel-wallet/types";
+import { getCurrencyBalance, getBalancesWithBaseCurrency, getBalancesForCountry } from "@/lib/travel-wallet/wallet-operations";
+import { getWallet } from "@/lib/travel-wallet/wallet-storage";
+import { formatCurrency } from "@/lib/travel-wallet/formatters";
+import { getEffectiveDashboardMode } from "@/lib/travel-wallet/dashboard-mode";
+import { useToast } from "@/components/ui/Toast";
+import { ACCOMMODATION_TYPES, ACCOMMODATION_TYPES_ALLOWING_ZERO } from "@/lib/travel-wallet/constants";
 
 interface AddExpenseFromDashboardModalProps {
   isOpen: boolean;
@@ -18,13 +24,16 @@ interface AddExpenseFromDashboardModalProps {
     amount: number;
     currency: string;
     date: string;
+    endDate?: string;
     note?: string;
     location?: string;
     tripId?: string;
+    accommodationType?: string;
   }) => void;
   data: TravelWalletData;
   tripId: string;
   initialDate?: string;
+  initialCategory?: string;
   expense?: Expense;
   tripStartDate?: string;
   tripEndDate?: string;
@@ -32,7 +41,19 @@ interface AddExpenseFromDashboardModalProps {
   onAddCountry?: () => void;
 }
 
-const EXPENSE_CATEGORIES = ["Jedzenie", "Noclegi", "Transport", "Aktywności"];
+const EXPENSE_CATEGORIES = [
+  "Jedzenie",
+  "Noclegi",
+  "Transport",
+  "Aktywności",
+  "Alkohol i imprezy",
+  "Kosmetyki i chemia",
+  "Ubrania i obuwie",
+  "Zdrowie i leki",
+  "Pamiątki i prezenty",
+  "Komunikacja (SIM, internet)",
+  "Inne",
+];
 
 export default function AddExpenseFromDashboardModal({
   isOpen,
@@ -41,12 +62,14 @@ export default function AddExpenseFromDashboardModal({
   data,
   tripId,
   initialDate,
+  initialCategory,
   expense,
   tripStartDate,
   tripEndDate,
   onAddLocation,
   onAddCountry,
 }: AddExpenseFromDashboardModalProps) {
+  const { addToast } = useToast();
   const [selectedCountryId, setSelectedCountryId] = useState<string>("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("Jedzenie");
@@ -55,6 +78,8 @@ export default function AddExpenseFromDashboardModal({
   const [date, setDate] = useState("");
   const [note, setNote] = useState("");
   const [location, setLocation] = useState("");
+  const [accommodationType, setAccommodationType] = useState("");
+  const [spreadEndDate, setSpreadEndDate] = useState<string>("");
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Znajdź kraj dla danej daty
@@ -108,11 +133,67 @@ export default function AddExpenseFromDashboardModal({
     return countryForDate !== null;
   }, [initialDate, findCountryForDate]);
 
-  // Reset formularza gdy modal się otwiera/zamyka
+  // Pobierz dostępne waluty z portfela
+  const availableWalletCurrencies = useMemo(() => {
+    if (!tripId) {
+      return [];
+    }
+    
+    try {
+      const wallet = getWallet(tripId);
+      
+      if (!wallet) {
+        return [];
+      }
+      
+      // Użyj getBalancesWithBaseCurrency, aby uzyskać wszystkie salda (podobnie jak w innych komponentach)
+      const balances = getBalancesWithBaseCurrency(wallet, tripId);
+      
+      // Pobierz wszystkie waluty z portfela (nawet z zerowym saldem, aby pokazać wszystkie dostępne opcje)
+      const currencies = balances.map((balance) => balance.currency);
+      
+      return currencies;
+    } catch (error) {
+      console.error("[AddExpenseFromDashboardModal] availableWalletCurrencies: Error getting wallet currencies:", error);
+      return [];
+    }
+  }, [tripId]);
+
+  // Pobierz dostępne waluty (z portfela + z budżetu kraju)
+  const availableCurrencies = useMemo(() => {
+    const currenciesSet = new Set<string>();
+    
+    // Zawsze dodaj waluty z portfela (nawet jeśli kraj nie jest wybrany)
+    availableWalletCurrencies.forEach((curr) => currenciesSet.add(curr));
+    
+    // Dodaj waluty z budżetu wybranego kraju (jeśli jest wybrany)
+    if (selectedCountry && selectedCountry.budgets) {
+      selectedCountry.budgets.forEach((budget) => {
+        currenciesSet.add(budget.currency);
+      });
+    }
+    
+    // Jeśli brak walut, dodaj PLN jako domyślną
+    if (currenciesSet.size === 0) {
+      currenciesSet.add("PLN");
+    }
+    
+    const result = Array.from(currenciesSet).sort((a, b) => {
+      // PLN zawsze pierwsza
+      if (a === "PLN") return -1;
+      if (b === "PLN") return 1;
+      return a.localeCompare(b);
+    });
+    
+    return result;
+  }, [availableWalletCurrencies, selectedCountry]);
+
+  // Reset formularza tylko gdy modal się otwiera lub zmienia się kontekst (initialDate, expense, lista krajów).
+  // NIE dodawać availableCurrencies – zależy od selectedCountryId, więc po wyborze kraju efekt by się
+  // odpalał ponownie i resetował wybór do „Wybierz kraj”.
   useEffect(() => {
     if (isOpen) {
       if (expense) {
-        // Edycja wydatku - wypełnij formularz danymi wydatku
         setSelectedCountryId(expense.countryId);
         setDescription(expense.description || "");
         setCategory(expense.category || "Jedzenie");
@@ -121,29 +202,35 @@ export default function AddExpenseFromDashboardModal({
         setDate(expense.date);
         setNote(expense.note || "");
         setLocation(expense.location || "");
+        setAccommodationType(expense.category === "Noclegi" ? (expense.accommodationType || "") : "");
+        if (expense.endDate && expense.endDate !== expense.date) {
+          setSpreadEndDate(expense.endDate);
+        } else {
+          setSpreadEndDate("");
+        }
       } else {
         // Dodawanie nowego wydatku
-        // Jeśli initialDate jest podane, automatycznie wybierz kraj
         if (initialDate) {
           const countryForDate = findCountryForDate(initialDate);
           setSelectedCountryId(countryForDate?.id || "");
         } else if (data.countries.length === 1) {
-          // Jeśli jest tylko jeden kraj, automatycznie go wybierz
           setSelectedCountryId(data.countries[0].id);
         } else {
           setSelectedCountryId("");
         }
         setDescription("");
-        setCategory("Jedzenie");
+        setCategory(initialCategory || "Jedzenie");
         setAmount("");
         setCurrency("PLN");
         setDate(initialDate || "");
         setNote("");
         setLocation("");
+        setAccommodationType("");
+        setSpreadEndDate("");
       }
       setErrors({});
     }
-  }, [isOpen, initialDate, expense, findCountryForDate, data.countries]);
+  }, [isOpen, initialDate, initialCategory, expense, findCountryForDate, data.countries]);
 
   // Ustaw datę z initialDate gdy się zmienia
   useEffect(() => {
@@ -152,12 +239,17 @@ export default function AddExpenseFromDashboardModal({
     }
   }, [initialDate]);
 
-  // Resetuj walutę gdy zmienia się wybrany kraj
+  // Resetuj walutę gdy zmienia się wybrany kraj - użyj pierwszej dostępnej waluty
+  // Nie resetuj podczas edycji wydatku
   useEffect(() => {
-    if (selectedCountry && selectedCountry.budgets.length > 0) {
-      setCurrency(selectedCountry.budgets[0].currency);
+    if (!expense && selectedCountry && availableCurrencies.length > 0) {
+      // Użyj pierwszej dostępnej waluty (PLN ma priorytet)
+      const firstAvailable = availableCurrencies[0];
+      if (firstAvailable && firstAvailable !== currency) {
+        setCurrency(firstAvailable);
+      }
     }
-  }, [selectedCountry]);
+  }, [selectedCountry, availableCurrencies, expense]);
 
   // Znajdź lokalizację dla wybranej daty
   const findLocationForDate = useMemo(() => {
@@ -227,6 +319,83 @@ export default function AddExpenseFromDashboardModal({
     return !locationForDate;
   }, [date, selectedCountry, findLocationForDate]);
 
+  // Funkcja pomocnicza do obliczania salda dla waluty (używana w availableBalance i walidacji)
+  const getBalanceForCurrency = useMemo(() => {
+    return (wallet: ReturnType<typeof getWallet>, currencyCode: string, countryId?: string): number => {
+      if (!wallet || !currencyCode) return 0;
+      
+      try {
+        // Sprawdź tryb dashboardu
+        const effectiveMode = getEffectiveDashboardMode(data);
+        const isSingleMode = effectiveMode === "single-country" || effectiveMode === "single-location";
+        
+        // W trybie single-country, użyj sald dla wybranego kraju
+        if (isSingleMode && (countryId || selectedCountryId)) {
+          const targetCountryId = countryId || selectedCountryId;
+          const countryBalances = getBalancesForCountry(wallet, tripId, targetCountryId);
+          const balance = countryBalances.find(b => b.currency === currencyCode);
+          return balance ? balance.amount : 0;
+        }
+        
+        // W trybie multi-country, użyj globalnych sald
+        return getCurrencyBalance(wallet, currencyCode);
+      } catch (error) {
+        console.warn("[AddExpenseFromDashboardModal] Error getting balance:", error);
+        return 0;
+      }
+    };
+  }, [tripId, data, selectedCountryId]);
+
+  // Pobierz dostępne saldo dla wybranej waluty
+  const availableBalance = useMemo(() => {
+    if (!currency || !tripId) return null;
+    
+    try {
+      const wallet = getWallet(tripId);
+      if (!wallet) return null;
+      
+      return getBalanceForCurrency(wallet, currency);
+    } catch (error) {
+      console.warn("[AddExpenseFromDashboardModal] Error getting balance:", error);
+      return null;
+    }
+  }, [currency, tripId, getBalanceForCurrency]);
+
+  // Pobierz wszystkie dostępne salda (wszystkie waluty z portfela)
+  const allAvailableBalances = useMemo(() => {
+    if (!tripId) {
+      return [];
+    }
+    
+    try {
+      const wallet = getWallet(tripId);
+      
+      if (!wallet) {
+        return [];
+      }
+      
+      const balances = getBalancesWithBaseCurrency(wallet, tripId);
+      
+      const result = balances
+        .filter((balance) => balance.amount >= 0) // Zmieniono: pokazuj wszystkie salda >= 0
+        .map((balance) => ({
+          currency: balance.currency,
+          amount: balance.amount,
+        }))
+        .sort((a, b) => {
+          // PLN zawsze pierwsza
+          if (a.currency === "PLN") return -1;
+          if (b.currency === "PLN") return 1;
+          return a.currency.localeCompare(b.currency);
+        });
+      
+      return result;
+    } catch (error) {
+      console.error("[AddExpenseFromDashboardModal] allAvailableBalances: Error getting all balances:", error);
+      return [];
+    }
+  }, [tripId, isOpen]);
+
   const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget) {
       onClose();
@@ -255,8 +424,56 @@ export default function AddExpenseFromDashboardModal({
       newErrors.description = "Tytuł jest wymagany";
     }
 
-    if (!amount || parseFloat(amount) <= 0) {
-      newErrors.amount = "Kwota musi być większa od 0";
+    if (category === "Noclegi" && !accommodationType) {
+      newErrors.accommodationType = "Wybierz typ noclegu";
+    }
+
+    const amountValue = parseFloat(amount);
+    const allowZeroAmount =
+      category === "Noclegi" &&
+      ACCOMMODATION_TYPES_ALLOWING_ZERO.includes(accommodationType);
+    if (!amount && amount !== "0") {
+      newErrors.amount = "Kwota jest wymagana";
+    } else if (isNaN(amountValue)) {
+      newErrors.amount = "Podaj prawidłową kwotę";
+    } else if (amountValue < 0) {
+      newErrors.amount = "Kwota nie może być ujemna";
+    } else if (amountValue === 0 && !allowZeroAmount) {
+      newErrors.amount = "Kwota musi być większa od 0 (0 zł tylko dla Namiot/Kemping)";
+    } else if (amountValue > 0 && amountValue < 0.01) {
+      newErrors.amount = "Kwota musi być co najmniej 0.01";
+    } else if (amountValue > 0) {
+      // Sprawdź dostępne saldo
+      if (tripId) {
+        try {
+          const wallet = getWallet(tripId);
+          if (wallet) {
+            const currentBalance = getBalanceForCurrency(wallet, currency, selectedCountryId);
+            if (amountValue > currentBalance) {
+              const errorMessage = `Niewystarczające środki. Dostępne: ${formatCurrency(currentBalance, currency)}`;
+              newErrors.amount = errorMessage;
+              // Pokaż toast z informacją o błędzie
+              addToast({
+                type: "error",
+                title: "Niewystarczające środki",
+                message: errorMessage,
+              });
+            }
+          }
+        } catch (error) {
+          console.warn("[AddExpenseFromDashboardModal] Error checking balance in validate:", error);
+        }
+      } else if (availableBalance !== null && amountValue > availableBalance) {
+        // Fallback do cached balance jeśli nie ma tripId
+        const errorMessage = `Niewystarczające środki. Dostępne: ${formatCurrency(availableBalance, currency)}`;
+        newErrors.amount = errorMessage;
+        // Pokaż toast z informacją o błędzie
+        addToast({
+          type: "error",
+          title: "Niewystarczające środki",
+          message: errorMessage,
+        });
+      }
     }
 
     if (!date) {
@@ -279,17 +496,60 @@ export default function AddExpenseFromDashboardModal({
       return;
     }
 
+    const amountValue = parseFloat(amount);
+    const allowZeroAmount =
+      category === "Noclegi" &&
+      ACCOMMODATION_TYPES_ALLOWING_ZERO.includes(accommodationType);
+    if (isNaN(amountValue) || amountValue < 0 || (amountValue === 0 && !allowZeroAmount)) {
+      return;
+    }
+    const roundedTo2Decimals = Math.round(amountValue * 100) / 100;
+    const normalizedAmount =
+      amountValue === 0
+        ? 0
+        : Math.abs(roundedTo2Decimals - Math.round(roundedTo2Decimals)) < 0.001
+          ? Math.round(roundedTo2Decimals)
+          : roundedTo2Decimals;
+
+    if (tripId && normalizedAmount > 0) {
+      try {
+        const wallet = getWallet(tripId);
+        if (wallet) {
+          const finalCountryId = finalCountry?.id || selectedCountryId;
+          const currentBalance = getBalanceForCurrency(wallet, currency, finalCountryId);
+          if (normalizedAmount > currentBalance) {
+            setErrors({
+              ...errors,
+              amount: `Niewystarczające środki. Dostępne: ${formatCurrency(currentBalance, currency)}`,
+            });
+            return; // Blokuj zapisanie
+          }
+        }
+      } catch (error) {
+        console.warn("[AddExpenseFromDashboardModal] Error checking balance before save:", error);
+      }
+    }
+
+    if (spreadEndDate && spreadEndDate < date) {
+      setErrors((e) => ({ ...e, spreadEndDate: "Data do nie może być wcześniejsza niż data od" }));
+      return;
+    }
+    const endDate =
+      spreadEndDate && spreadEndDate > date ? spreadEndDate : undefined;
+
     onSave({
       id: expense?.id,
       countryId: finalCountry.id,
       description: description.trim(),
       category,
-      amount: parseFloat(amount),
+      amount: normalizedAmount,
       currency,
       date,
+      endDate,
       note: note.trim() || undefined,
       location: location.trim() || undefined,
       tripId: tripId,
+      accommodationType: category === "Noclegi" ? accommodationType || undefined : undefined,
     });
 
     onClose();
@@ -415,13 +675,45 @@ export default function AddExpenseFromDashboardModal({
             </label>
             <Select
               value={category}
-              onChange={setCategory}
+              onChange={(v) => {
+                setCategory(v);
+                if (v !== "Noclegi") setAccommodationType("");
+              }}
               options={EXPENSE_CATEGORIES.map((cat) => ({
                 value: cat,
                 label: cat,
               }))}
             />
           </div>
+
+          {category === "Noclegi" && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Typ noclegu *
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {Object.entries(ACCOMMODATION_TYPES).map(([code, label]) => (
+                  <button
+                    key={code}
+                    type="button"
+                    onClick={() => setAccommodationType(code)}
+                    className={`px-3 py-2 rounded-md border text-sm transition-colors ${
+                      accommodationType === code
+                        ? "bg-blue-50 dark:bg-blue-900/20 border-blue-500 text-blue-700 dark:text-blue-300"
+                        : "border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-900 dark:text-gray-100"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+              {errors.accommodationType && (
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                  {errors.accommodationType}
+                </p>
+              )}
+            </div>
+          )}
 
           {/* Kwota i Waluta */}
           <div className="grid grid-cols-2 gap-4">
@@ -435,11 +727,26 @@ export default function AddExpenseFromDashboardModal({
               <input
                 id="amount"
                 type="number"
-                step="0.01"
-                min="0.01"
                 value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                className={`w-full px-3 py-2 border rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 ${
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setAmount(value);
+                  // Resetuj błąd kwoty gdy użytkownik zaczyna wpisywać
+                  if (errors.amount) {
+                    setErrors({ ...errors, amount: "" });
+                  }
+                }}
+                onKeyDown={(e) => {
+                  // Blokuj strzałki góra/dół i PageUp/PageDown
+                  if (e.key === "ArrowUp" || e.key === "ArrowDown" || e.key === "PageUp" || e.key === "PageDown") {
+                    e.preventDefault();
+                  }
+                }}
+                onWheel={(e) => {
+                  // Blokuj scroll na polu number
+                  e.currentTarget.blur();
+                }}
+                className={`w-full px-3 py-2 border rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${
                   errors.amount ? "border-red-500 dark:border-red-400" : ""
                 }`}
                 placeholder="0.00"
@@ -459,17 +766,28 @@ export default function AddExpenseFromDashboardModal({
               </label>
               <Select
                 value={currency}
-                onChange={setCurrency}
-                disabled={!selectedCountry || selectedCountry.budgets.length === 0}
-                options={
-                  selectedCountry && selectedCountry.budgets.length > 0
-                    ? selectedCountry.budgets.map((budget) => ({
-                        value: budget.currency,
-                        label: budget.currency.toUpperCase(),
-                      }))
-                    : [{ value: "PLN", label: "PLN" }]
-                }
+                onChange={(newCurrency) => {
+                  setCurrency(newCurrency);
+                  // Resetuj błąd kwoty gdy zmienia się waluta
+                  if (errors.amount) {
+                    setErrors({ ...errors, amount: "" });
+                  }
+                }}
+                disabled={availableCurrencies.length === 0}
+                options={availableCurrencies.map((curr) => ({
+                  value: curr,
+                  label: curr.toUpperCase(),
+                }))}
               />
+              {availableBalance !== null ? (
+                <p className="mt-1 text-xs text-gray-700 dark:text-gray-300 font-medium">
+                  Dostępne: {formatCurrency(availableBalance, currency)}
+                </p>
+              ) : tripId ? (
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  Brak dostępnych środków
+                </p>
+              ) : null}
             </div>
           </div>
 
@@ -507,19 +825,57 @@ export default function AddExpenseFromDashboardModal({
             </div>
           )}
 
-          {/* Data */}
+          {/* Data od */}
           <div>
             <DatePicker
               id="date"
-              label="Data"
+              label="Data od"
               value={date}
-              onChange={(newDate) => setDate(newDate)}
+              onChange={(newDate) => {
+                setDate(newDate);
+                if (spreadEndDate && newDate && spreadEndDate < newDate) setSpreadEndDate("");
+              }}
               min={selectedLocationDateRange?.min || selectedCountry?.startDate || tripStartDate || undefined}
               max={selectedLocationDateRange?.max || selectedCountry?.endDate || tripEndDate || undefined}
               required
               error={errors.date}
-              disabled={!selectedCountry}
             />
+          </div>
+
+          {/* Data do (rozłożenie wydatku na dni) */}
+          <div>
+            <DatePicker
+              id="spreadEndDate"
+              label="Data do (opcjonalnie)"
+              value={spreadEndDate}
+              onChange={(newEndDate) => {
+                setSpreadEndDate(newEndDate || "");
+                if (errors.spreadEndDate) setErrors((e) => ({ ...e, spreadEndDate: "" }));
+              }}
+              min={date || undefined}
+              max={selectedCountry?.endDate || tripEndDate || undefined}
+              error={errors.spreadEndDate}
+            />
+            {date && spreadEndDate && spreadEndDate > date && (
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                {(() => {
+                  const start = new Date(date);
+                  const end = new Date(spreadEndDate);
+                  const days = Math.round((end.getTime() - start.getTime()) / (24 * 60 * 60 * 1000)) + 1;
+                  const fmt = (d: Date) => d.toLocaleDateString("pl-PL", { day: "2-digit", month: "2-digit" });
+                  return (
+                    <>
+                      <strong>{days}</strong> {days === 1 ? "dzień" : "dni"} ({fmt(start)} – {fmt(end)}). Kwota rozłoży się równo na każdy dzień.
+                    </>
+                  );
+                })()}
+              </p>
+            )}
+            {(!date || !spreadEndDate || spreadEndDate === date) && (
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                Np. hotel na 3 noce lub wynajem auta na tydzień – podaj datę od i do, kwota rozłoży się równo na każdy dzień.
+              </p>
+            )}
           </div>
 
           {/* Notatka */}

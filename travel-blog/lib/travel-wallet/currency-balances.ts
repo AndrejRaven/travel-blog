@@ -1,8 +1,9 @@
 import type { CurrencyBalance, Trip, Expense } from "./types";
+import { convertToBaseCurrency } from "./reference-rates";
 import { getCurrencyTransactions, getInitialBalances } from "./currency-transactions";
 import { getAllExpenses } from "./expenses";
 
-// Exchange rates (same as in calculations.ts and expenses.ts)
+// Fallback when no trip/wallet (PLN)
 const exchangeRates: Record<string, number> = {
   PLN: 1,
   EUR: 4.3,
@@ -12,11 +13,9 @@ const exchangeRates: Record<string, number> = {
   JPY: 0.027,
   AUD: 2.6,
   CAD: 2.9,
+  NOK: 0.36,
 };
 
-/**
- * Konwertuje kwotę w danej walucie na PLN
- */
 function convertToPLN(amount: number, currency: string): number {
   const rate = exchangeRates[currency.toUpperCase()] || 1;
   return amount * rate;
@@ -177,11 +176,22 @@ export function calculateCurrencyBalances(
 }
 
 /**
- * Oblicza całkowite saldo we wszystkich walutach przeliczone na PLN
- * @param balances - lista sald walutowych
- * @returns suma w PLN
+ * Oblicza całkowite saldo we wszystkich walutach przeliczone na walutę bazową (lub PLN gdy brak trip)
  */
-export function calculateTotalBalanceInPLN(balances: CurrencyBalance[]): number {
+export function calculateTotalBalanceInPLN(
+  balances: CurrencyBalance[],
+  trip?: Trip | null
+): number {
+  if (trip?.data?.wallet) {
+    return balances.reduce((total, balance) => {
+      return total + convertToBaseCurrency(
+        balance.amount,
+        balance.currency,
+        trip.data.wallet.baseCurrency,
+        trip.data.wallet.referenceRates
+      );
+    }, 0);
+  }
   return balances.reduce((total, balance) => {
     return total + convertToPLN(balance.amount, balance.currency);
   }, 0);

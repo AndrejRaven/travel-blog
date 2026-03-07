@@ -62,6 +62,7 @@ async function fetchAllRatesFromPLN(): Promise<ExchangeRateResponse[]> {
   return rates;
 }
 
+export const dynamic = "force-dynamic";
 export const revalidate = 3600; // Revalidate co godzinę
 
 export async function GET() {

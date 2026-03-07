@@ -1,9 +1,11 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
-import { X, Plus, Trash2, ArrowLeft } from "lucide-react";
+import { useState, useEffect, useMemo, useRef } from "react";
+import { createPortal } from "react-dom";
+import { X, Plus, Trash2, ArrowLeft, Search } from "lucide-react";
 import Button from "@/components/ui/Button";
 import DatePicker from "@/components/ui/DatePicker";
+import { getCurrencyName } from "@/lib/travel-wallet/currency-names";
 import type { Budget, TravelWalletData } from "@/lib/travel-wallet/types";
 
 interface CountryFormData {
@@ -40,12 +42,14 @@ interface AddMultipleCountriesModalProps {
   tripStartDate?: string;
   tripEndDate?: string;
   tripData?: TravelWalletData;
+  /** Całkowity budżet podróży w walucie bazowej (do walidacji sumy krajów) */
   totalBudget?: number;
+  /** Waluta główna budżetu (np. PLN, USD). Używana do przeliczania i komunikatów. */
+  baseCurrency?: string;
   onBack?: () => void;
 }
 
-const AVAILABLE_CURRENCIES = ["PLN", "USD", "EUR", "GBP", "THB", "JPY", "KRW", "TWD"];
-
+/** W step 2 do wyboru są wyłącznie waluty z podróży (initialBudgets). */
 /**
  * Kursy walut do PLN (muszą być takie same jak w calculations.ts)
  */
@@ -58,23 +62,28 @@ const exchangeRates: Record<string, number> = {
   GBP: 5.1,
   KRW: 0.003,
   TWD: 0.13,
+  NOK: 0.36,
 };
 
 /**
- * Konwertuje kwotę w danej walucie na PLN
+ * Konwertuje kwotę do waluty bazowej (domyślnie PLN)
  */
-function convertToPLN(amount: number, currency: string): number {
-  const rate = exchangeRates[currency.toUpperCase()] || 1;
-  return amount * rate;
+function convertToBase(amount: number, currency: string, baseCurrency: string = "PLN"): number {
+  const fromRate = exchangeRates[currency.toUpperCase()] || 1;
+  const toRate = exchangeRates[baseCurrency] ?? 1;
+  return (amount * fromRate) / toRate;
 }
 
 /**
- * Oblicza budżet kraju w PLN (suma wszystkich budżetów przeliczona na PLN)
+ * Oblicza budżet kraju w walucie bazowej (suma budżetów przeliczona)
  */
+function calculateCountryBudgetInBase(budgets: Budget[], baseCurrency: string = "PLN"): number {
+  return budgets.reduce((sum, budget) => sum + convertToBase(budget.amount, budget.currency, baseCurrency), 0);
+}
+
+/** Legacy: w PLN */
 function calculateCountryBudgetInPLN(budgets: Budget[]): number {
-  return budgets.reduce((sum, budget) => {
-    return sum + convertToPLN(budget.amount, budget.currency);
-  }, 0);
+  return calculateCountryBudgetInBase(budgets, "PLN");
 }
 
 export default function AddMultipleCountriesModal({
@@ -86,33 +95,90 @@ export default function AddMultipleCountriesModal({
   tripEndDate,
   tripData,
   totalBudget,
+  baseCurrency = "PLN",
   onBack,
 }: AddMultipleCountriesModalProps) {
+  /** Tylko waluty z budżetu podróży (krok 1). */
+  const tripCurrencies = useMemo(() => {
+    const list = tripData?.initialBudgets?.map((b) => b.currency) ?? [];
+    return list.length > 0 ? list : [baseCurrency];
+  }, [tripData?.initialBudgets, baseCurrency]);
+
   const [countries, setCountries] = useState<CountryFormData[]>([
     {
       name: "",
       startDate: "",
       endDate: "",
-      budgets: [{ currency: "PLN", amount: 0 }],
+      budgets: [{ currency: tripCurrencies[0] ?? baseCurrency, amount: 0 }],
       locations: [],
     },
   ]);
   const [errors, setErrors] = useState<Record<number, Record<string, string>>>({});
 
+  /** Wyszukiwarka walut: który dropdown jest otwarty i filtr. */
+  const [openCurrencyDropdown, setOpenCurrencyDropdown] = useState<{ countryIndex: number; budgetIndex: number } | null>(null);
+  const [currencyFilterText, setCurrencyFilterText] = useState("");
+  const [dropdownPosition, setDropdownPosition] = useState<{ top: number; left: number; width: number } | null>(null);
+  const currencyTriggerRef = useRef<HTMLInputElement | null>(null);
+
+  const filteredCurrencies = useMemo(() => {
+    const q = currencyFilterText.trim().toLowerCase();
+    if (!q) return tripCurrencies;
+    return tripCurrencies.filter(
+      (code) => `${code} ${getCurrencyName(code)}`.toLowerCase().includes(q)
+    );
+  }, [tripCurrencies, currencyFilterText]);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as Node;
+      if (currencyTriggerRef.current === target) return;
+      if (target && (target as Element).nodeType === 1 && (target as Element).closest?.("[data-currency-dropdown]")) return;
+      setOpenCurrencyDropdown(null);
+    };
+    if (openCurrencyDropdown !== null) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => document.removeEventListener("mousedown", handleClickOutside);
+    }
+  }, [openCurrencyDropdown]);
+
+  useEffect(() => {
+    if (openCurrencyDropdown === null) {
+      setDropdownPosition(null);
+      return;
+    }
+    const measure = () => {
+      const el = currencyTriggerRef.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      setDropdownPosition({
+        top: rect.bottom + 4,
+        left: rect.left,
+        width: rect.width,
+      });
+    };
+    measure();
+    const raf = requestAnimationFrame(measure);
+    return () => cancelAnimationFrame(raf);
+  }, [openCurrencyDropdown]);
+
   useEffect(() => {
     if (isOpen) {
+      const initialBudgets: Budget[] = tripCurrencies.map((c) => ({ currency: c, amount: 0 }));
       setCountries([
         {
           name: "",
           startDate: "",
           endDate: "",
-          budgets: [{ currency: "PLN", amount: 0 }],
+          budgets: initialBudgets,
           locations: [],
         },
       ]);
       setErrors({});
+      setOpenCurrencyDropdown(null);
+      setCurrencyFilterText("");
     }
-  }, [isOpen]);
+  }, [isOpen, tripCurrencies]);
 
   const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget) {
@@ -136,13 +202,14 @@ export default function AddMultipleCountriesModal({
   };
 
   const addCountry = () => {
+    const initialBudgets: Budget[] = tripCurrencies.map((c) => ({ currency: c, amount: 0 }));
     setCountries([
       ...countries,
       {
         name: "",
         startDate: "",
         endDate: "",
-        budgets: [{ currency: "PLN", amount: 0 }],
+        budgets: initialBudgets,
         locations: [],
       },
     ]);
@@ -168,7 +235,7 @@ export default function AddMultipleCountriesModal({
     }
   };
 
-  const updateCountry = (index: number, field: keyof CountryFormData, value: any) => {
+  const updateCountry = (index: number, field: keyof CountryFormData, value: CountryFormData[keyof CountryFormData]) => {
     const newCountries = [...countries];
     newCountries[index] = { ...newCountries[index], [field]: value };
     setCountries(newCountries);
@@ -221,7 +288,8 @@ export default function AddMultipleCountriesModal({
 
   const addBudget = (countryIndex: number) => {
     const newCountries = [...countries];
-    newCountries[countryIndex].budgets.push({ currency: "PLN", amount: 0 });
+    const firstCurrency = tripCurrencies[0] ?? baseCurrency;
+    newCountries[countryIndex].budgets.push({ currency: firstCurrency, amount: 0 });
     setCountries(newCountries);
   };
 
@@ -258,13 +326,13 @@ export default function AddMultipleCountriesModal({
 
       // Walidacja budżetu: sprawdź czy suma budżetów wszystkich krajów nie przekracza całkowitego budżetu
       if (totalBudget !== undefined && validBudgets.length > 0) {
-        const currentCountryBudget = calculateCountryBudgetInPLN(validBudgets);
+        const currentCountryBudget = calculateCountryBudgetInBase(validBudgets, baseCurrency);
         
         // Oblicz sumę budżetów wszystkich innych krajów
         const otherCountriesBudget = countries.reduce((sum, c, idx) => {
           if (idx !== index) {
             const otherValidBudgets = c.budgets.filter((b) => b.amount > 0);
-            return sum + calculateCountryBudgetInPLN(otherValidBudgets);
+            return sum + calculateCountryBudgetInBase(otherValidBudgets, baseCurrency);
           }
           return sum;
         }, 0);
@@ -273,7 +341,7 @@ export default function AddMultipleCountriesModal({
         
         if (totalPlannedBudget > totalBudget) {
           const availableBudget = Math.max(0, totalBudget - otherCountriesBudget);
-          countryErrors.budgets = `Suma budżetów wszystkich krajów (${Math.round(totalPlannedBudget).toLocaleString("pl-PL")} zł) przekracza budżet całkowity (${Math.round(totalBudget).toLocaleString("pl-PL")} zł). Dla tego kraju możesz zaplanować maksymalnie ${Math.round(availableBudget).toLocaleString("pl-PL")} zł.`;
+          countryErrors.budgets = `Suma budżetów wszystkich krajów (${Math.round(totalPlannedBudget).toLocaleString("pl-PL")} ${baseCurrency}) przekracza budżet całkowity (${Math.round(totalBudget ?? 0).toLocaleString("pl-PL")} ${baseCurrency}). Dla tego kraju możesz zaplanować maksymalnie ${Math.round(availableBudget).toLocaleString("pl-PL")} ${baseCurrency}.`;
         }
       }
 
@@ -285,7 +353,6 @@ export default function AddMultipleCountriesModal({
     setErrors(newErrors);
 
     const isValid = Object.keys(newErrors).length === 0;
-    console.log('[AddMultipleCountriesModal] validate - isValid:', isValid, 'errors:', newErrors);
     return isValid;
   };
 
@@ -293,7 +360,6 @@ export default function AddMultipleCountriesModal({
     e.preventDefault();
     const isValid = validate();
     if (!isValid) {
-      console.log('[AddMultipleCountriesModal] handleSubmit - walidacja nie przeszła, errors:', errors);
       return;
     }
 
@@ -311,7 +377,7 @@ export default function AddMultipleCountriesModal({
           : 0;
 
         // Automatycznie dodaj lokalizację jeśli są wypełnione dane
-        let finalLocations = [...(country.locations || [])];
+        const finalLocations = [...(country.locations || [])];
         // Tutaj można dodać logikę automatycznego dodawania lokalizacji jeśli są wypełnione dane
 
         return {
@@ -326,7 +392,6 @@ export default function AddMultipleCountriesModal({
         };
       });
 
-    console.log('[AddMultipleCountriesModal] handleSubmit - zapisuję kraje:', countriesToSave);
     onSave(countriesToSave);
   };
 
@@ -499,27 +564,52 @@ export default function AddMultipleCountriesModal({
                     + Dodaj budżet
                   </Button>
                 </div>
-                {totalBudget !== undefined && (() => {
-                  // Oblicz sumę budżetów wszystkich innych krajów
-                  const otherCountriesBudget = countries.reduce((sum, c, idx) => {
-                    if (idx !== countryIndex) {
-                      const validBudgets = c.budgets.filter((b) => b.amount > 0);
-                      return sum + calculateCountryBudgetInPLN(validBudgets);
-                    }
-                    return sum;
-                  }, 0);
-                  
-                  const availableBudget = Math.max(0, totalBudget - otherCountriesBudget);
-                  
+                {(totalBudget !== undefined || (tripData?.initialBudgets?.length ?? 0) > 0) && (() => {
+                  const initialBudgets = tripData?.initialBudgets?.filter((b) => b.amount > 0) ?? [];
+                  // Zaplanowane w innych krajach per waluta (suma budżetów w danej walucie)
+                  const plannedByCurrency = tripCurrencies.reduce<Record<string, number>>((acc, curr) => {
+                    acc[curr] = countries.reduce((sum, c, idx) => {
+                      if (idx === countryIndex) return sum;
+                      return sum + (c.budgets.filter((b) => b.currency === curr && b.amount > 0).reduce((s, b) => s + b.amount, 0) ?? 0);
+                    }, 0);
+                    return acc;
+                  }, {});
+                  // Dostępne per waluta: budżet podróży w walucie minus zaplanowane w innych
+                  const availableByCurrency = initialBudgets.map((ib) => ({
+                    currency: ib.currency,
+                    amount: Math.max(0, ib.amount - (plannedByCurrency[ib.currency] ?? 0)),
+                  })).filter((a) => a.amount > 0);
+                  const totalBudgetLabel =
+                    initialBudgets.length > 0
+                      ? initialBudgets
+                          .map((b) => `${b.amount.toLocaleString("pl-PL")} ${b.currency}`)
+                          .join(" + ")
+                      : `${Math.round(totalBudget ?? 0).toLocaleString("pl-PL")} ${baseCurrency}`;
+                  const plannedLabel = Object.entries(plannedByCurrency)
+                    .filter(([, v]) => v > 0)
+                    .map(([c, v]) => `${Math.round(v).toLocaleString("pl-PL")} ${c}`)
+                    .join(" + ");
+                  const availableLabel = availableByCurrency
+                    .map((a) => `${Math.round(a.amount).toLocaleString("pl-PL")} ${a.currency}`)
+                    .join(" + ");
+                  const showExtra = plannedLabel || availableLabel;
                   return (
                     <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">
-                      Budżet całkowity: <span className="font-semibold">{Math.round(totalBudget).toLocaleString("pl-PL")} zł</span>
-                      {otherCountriesBudget > 0 && (
+                      Budżet całkowity: <span className="font-semibold">{totalBudgetLabel}</span>
+                      {totalBudget !== undefined && showExtra && (
                         <>
-                          {" • "}
-                          Zaplanowane w innych krajach: <span className="font-semibold">{Math.round(otherCountriesBudget).toLocaleString("pl-PL")} zł</span>
-                          {" • "}
-                          Dostępne: <span className="font-semibold text-green-600 dark:text-green-400">{Math.round(availableBudget).toLocaleString("pl-PL")} zł</span>
+                          {plannedLabel && (
+                            <>
+                              {" • "}
+                              Zaplanowane w innych krajach: <span className="font-semibold">{plannedLabel}</span>
+                            </>
+                          )}
+                          {availableLabel && (
+                            <>
+                              {" • "}
+                              Dostępne: <span className="font-semibold text-green-600 dark:text-green-400">{availableLabel}</span>
+                            </>
+                          )}
                         </>
                       )}
                     </p>
@@ -527,22 +617,35 @@ export default function AddMultipleCountriesModal({
                 })()}
                 {country.budgets.map((budget, budgetIndex) => (
                   <div key={budgetIndex} className="flex gap-2 mb-2">
-                    <select
-                      value={budget.currency}
-                      onChange={(e) => updateBudget(countryIndex, budgetIndex, "currency", e.target.value)}
-                      className="flex-1 p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-blue-500 focus:border-blue-500"
-                    >
-                      {AVAILABLE_CURRENCIES.map((curr) => (
-                        <option key={curr} value={curr}>
-                          {curr}
-                        </option>
-                      ))}
-                    </select>
+                    <div className="flex-1 relative">
+                      <input
+                        ref={openCurrencyDropdown?.countryIndex === countryIndex && openCurrencyDropdown?.budgetIndex === budgetIndex ? currencyTriggerRef : undefined}
+                        type="text"
+                        readOnly={!(openCurrencyDropdown?.countryIndex === countryIndex && openCurrencyDropdown?.budgetIndex === budgetIndex)}
+                        value={openCurrencyDropdown?.countryIndex === countryIndex && openCurrencyDropdown?.budgetIndex === budgetIndex ? currencyFilterText : `${budget.currency} - ${getCurrencyName(budget.currency)}`}
+                        onChange={(e) => setCurrencyFilterText(e.target.value)}
+                        onFocus={() => {
+                          setOpenCurrencyDropdown({ countryIndex, budgetIndex });
+                          setCurrencyFilterText("");
+                        }}
+                        className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="Wybierz walutę"
+                      />
+                      <Search className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                    </div>
                     <input
                       type="number"
                       value={budget.amount || ""}
                       onChange={(e) => updateBudget(countryIndex, budgetIndex, "amount", parseFloat(e.target.value) || 0)}
-                      className="flex-1 p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-blue-500 focus:border-blue-500"
+                      onKeyDown={(e) => {
+                        if (e.key === "ArrowUp" || e.key === "ArrowDown" || e.key === "PageUp" || e.key === "PageDown") {
+                          e.preventDefault();
+                        }
+                      }}
+                      onWheel={(e) => {
+                        e.currentTarget.blur();
+                      }}
+                      className="flex-1 p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-blue-500 focus:border-blue-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                       step="0.01"
                       min="0"
                       placeholder="Kwota"
@@ -589,6 +692,40 @@ export default function AddMultipleCountriesModal({
         </form>
       </div>
     </div>
+    {openCurrencyDropdown !== null &&
+      dropdownPosition &&
+      typeof document !== "undefined" &&
+      createPortal(
+        <div
+          data-currency-dropdown
+          className="fixed z-[60] py-1 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 max-h-48 overflow-y-auto"
+          style={{
+            top: dropdownPosition.top,
+            left: dropdownPosition.left,
+            width: dropdownPosition.width,
+          }}
+        >
+          {filteredCurrencies.length === 0 ? (
+            <div className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">Brak walut</div>
+          ) : (
+            filteredCurrencies.map((code) => (
+              <button
+                key={code}
+                type="button"
+                className="w-full text-left px-3 py-2 text-sm text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                onClick={() => {
+                  updateBudget(openCurrencyDropdown.countryIndex, openCurrencyDropdown.budgetIndex, "currency", code);
+                  setOpenCurrencyDropdown(null);
+                }}
+              >
+                <span className="font-medium">{code}</span>
+                <span className="text-gray-500 dark:text-gray-400">{getCurrencyName(code)}</span>
+              </button>
+            ))
+          )}
+        </div>,
+        document.body
+      )}
     </>
   );
 }

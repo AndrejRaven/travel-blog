@@ -48,7 +48,7 @@ export function canChangeMode(
   if (targetMode === "single-location") {
     if (data.countries.length !== 1) return false;
     const country = data.countries[0];
-    return country.locations && country.locations.length === 1;
+    return !!(country.locations && country.locations.length === 1);
   }
 
   return false;

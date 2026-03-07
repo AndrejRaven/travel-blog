@@ -99,7 +99,6 @@ export async function submitToIndexNow(urls: string[]): Promise<{
 
     // IndexNow zwraca 200 dla sukcesu, 400/403/422/429 dla błędów
     if (response.ok) {
-      console.log(`✅ IndexNow: Wysłano ${urls.length} URL-i pomyślnie`);
       return {
         success: true,
         message: `Wysłano ${urls.length} URL-i pomyślnie`,

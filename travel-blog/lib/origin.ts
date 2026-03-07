@@ -9,8 +9,17 @@ const PRIMARY_ORIGIN =
   normalizeOriginValue(FALLBACK_ORIGIN)!;
 const SANITY_PREVIEW_ORIGINS = getSanityPreviewOrigins();
 
+// W development dodaj localhost:3000 do dozwolonych originów
+const DEVELOPMENT_ORIGINS = process.env.NODE_ENV === 'development' 
+  ? ['http://localhost:3000', 'http://127.0.0.1:3000']
+  : [];
+
 export const ALLOWED_ORIGINS = Array.from(
-  new Set([PRIMARY_ORIGIN, ...SANITY_PREVIEW_ORIGINS])
+  new Set([
+    PRIMARY_ORIGIN, 
+    ...SANITY_PREVIEW_ORIGINS,
+    ...DEVELOPMENT_ORIGINS.map(normalizeOriginValue).filter((o): o is string => Boolean(o))
+  ])
 );
 
 export const getAllowedOrigin = (origin?: string | null) => {

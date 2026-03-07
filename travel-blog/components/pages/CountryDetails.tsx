@@ -1,14 +1,21 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import Link from "@/components/ui/Link";
-import { MoreVertical, Plus, Edit, Trash2 } from "lucide-react";
-import type { Country, Expense } from "@/lib/travel-wallet/types";
+import { MoreVertical, Plus, Edit, Trash2, Search } from "lucide-react";
+import TravelWalletHeader from "./TravelWalletHeader";
+import TravelWalletStats from "./TravelWalletStats";
+import CountryStats from "./CountryStats";
+import CurrencyBalancesCard from "./CurrencyBalancesCard";
+import TravelWalletProgress from "./TravelWalletProgress";
+import type { Country, Expense, TravelWalletData, CurrencyTransaction } from "@/lib/travel-wallet/types";
 import {
   formatDateRange,
   calculatePlannedTotal,
+  getCountryStatusLabel,
 } from "@/lib/travel-wallet/countries";
 import { formatCurrency } from "@/lib/travel-wallet/formatters";
+import { convertAmount } from "@/lib/travel-wallet/reference-rates";
 
 // Funkcja do formatowania zakresu dat w formacie "21.02 - 25.02"
 const formatLocationDateRange = (startDate: string, endDate: string): string => {
@@ -29,14 +36,22 @@ const formatLocationDateRange = (startDate: string, endDate: string): string => 
 };
 import {
   calculateTotalActualCost,
+  calculateTotalActualCostByTripId,
   calculateTravelDays,
   calculateAverageDailyCost,
   calculateBudgetDifference,
   isOverBudget,
 } from "@/lib/travel-wallet/country-calculations";
+import {
+  calculateRemainingBudget,
+  calculateTotalBudget,
+} from "@/lib/travel-wallet/calculations";
 import { getUniqueLocationsFromExpenses, calculateExpenseCategories } from "@/lib/travel-wallet/expenses";
 import CountryExpensesSection from "./CountryExpensesSection";
 import type { ExpenseCategory } from "@/lib/travel-wallet/types";
+import { getBalancesForCountry } from "@/lib/travel-wallet/wallet-operations";
+import { getTripBySlug } from "@/lib/travel-wallet/trips-storage";
+import { getCurrencyName } from "@/lib/travel-wallet/currency-names";
 
 interface CountryDetailsProps {
   country: Country;
@@ -49,6 +64,19 @@ interface CountryDetailsProps {
   onDeleteLocation?: (location: string) => void;
   slug?: string;
   tripId?: string;
+  data?: TravelWalletData; // Pełne dane podróży
+  tripName?: string;
+  tripStartDate?: string;
+  tripEndDate?: string;
+  transactions?: CurrencyTransaction[]; // Transakcje walutowe dla kraju
+  onAddCurrencyTransaction?: () => void;
+  onDeleteCurrencyTransaction?: (transactionId: string) => void;
+  onEditCurrencyTransaction?: (transaction: CurrencyTransaction) => void;
+  onTransactionClick?: (transaction: CurrencyTransaction) => void;
+  onEditTrip?: () => void;
+  onEditCountry?: () => void;
+  /** Callback przy zmianie waluty wyświetlania (tylko podróże wielokrajowe). */
+  onDisplayCurrencyChange?: (displayCurrency: string) => void;
 }
 
 export default function CountryDetails({
@@ -62,14 +90,97 @@ export default function CountryDetails({
   onDeleteLocation,
   slug,
   tripId,
+  data,
+  tripName,
+  tripStartDate,
+  tripEndDate,
+  transactions = [],
+  onAddCurrencyTransaction,
+  onDeleteCurrencyTransaction,
+  onEditCurrencyTransaction,
+  onTransactionClick,
+  onEditTrip,
+  onEditCountry,
+  onDisplayCurrencyChange,
 }: CountryDetailsProps) {
   const [locationMenuOpen, setLocationMenuOpen] = useState<string | null>(null);
-  const planned = calculatePlannedTotal(country);
-  const actual = calculateTotalActualCost(expenses);
+  const [displayCurrencyDropdownOpen, setDisplayCurrencyDropdownOpen] = useState(false);
+  const [displayCurrencyFilterText, setDisplayCurrencyFilterText] = useState("");
+  const displayCurrencyDropdownRef = useRef<HTMLDivElement>(null);
+  const baseCurrency = data?.wallet?.baseCurrency ?? "PLN";
+  const displayCurrency = country.displayCurrency ?? baseCurrency;
+  const referenceRates = data?.wallet?.referenceRates ?? [];
+  const toDisplay = (amount: number) =>
+    displayCurrency === baseCurrency
+      ? amount
+      : convertAmount(amount, baseCurrency, displayCurrency, referenceRates);
+
+  const planned = calculatePlannedTotal(country, data);
+  const actual =
+    tripId
+      ? calculateTotalActualCostByTripId(expenses, tripId)
+      : calculateTotalActualCost(expenses, data?.wallet?.baseCurrency, data?.wallet?.referenceRates);
   const travelDays = calculateTravelDays(country.startDate, country.endDate);
   const averageDailyCost = calculateAverageDailyCost(actual, travelDays);
   const budgetDifference = calculateBudgetDifference(planned, actual);
   const overBudget = isOverBudget(planned, actual);
+  const remainingCountry = Math.max(0, planned - actual);
+
+  // Salda walutowe dla kraju (do bloku Dostępne środki)
+  const countryBalanceCurrencies = useMemo(() => {
+    if (!data?.wallet || !tripId || !slug) return [];
+    const trip = getTripBySlug(slug);
+    if (!trip) return [];
+    const balances = getBalancesForCountry(data.wallet, tripId, country.id);
+    return balances
+      .filter((b) => b.amount > 0.01)
+      .map((b) => ({
+        currency: b.currency,
+        amount: b.amount,
+        isBase: b.currency === baseCurrency,
+      }))
+      .sort((a, b) => {
+        if (a.isBase) return -1;
+        if (b.isBase) return 1;
+        return a.currency.localeCompare(b.currency);
+      });
+  }, [data?.wallet, tripId, slug, country.id, baseCurrency]);
+
+  // Waluty dostępne w portfelu (salda + z transakcji wymiany) – do selecta waluty wyświetlania
+  const walletCurrencyCodes = useMemo(() => {
+    if (!data?.wallet) return [];
+    const fromBalances = data.wallet.balances.map((b) => b.currency);
+    const fromTransactions = transactions.flatMap((t) => [t.fromCurrency, t.toCurrency]);
+    const set = new Set<string>([baseCurrency, ...fromBalances, ...fromTransactions]);
+    return Array.from(set).sort((a, b) => {
+      if (a === baseCurrency) return -1;
+      if (b === baseCurrency) return 1;
+      return a.localeCompare(b);
+    });
+  }, [data?.wallet, baseCurrency, transactions]);
+
+  const getDisplayCurrencySearchText = (code: string) =>
+    `${code} ${getCurrencyName(code)}`.toLowerCase();
+  const filteredDisplayCurrencies = useMemo(() => {
+    const q = displayCurrencyFilterText.trim().toLowerCase();
+    if (!q) return walletCurrencyCodes;
+    return walletCurrencyCodes.filter((code) => getDisplayCurrencySearchText(code).includes(q));
+  }, [walletCurrencyCodes, displayCurrencyFilterText]);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (displayCurrencyDropdownRef.current?.contains(e.target as Node)) return;
+      setDisplayCurrencyDropdownOpen(false);
+    };
+    if (displayCurrencyDropdownOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => document.removeEventListener("mousedown", handleClickOutside);
+    }
+  }, [displayCurrencyDropdownOpen]);
+
+  // Oblicz availableBalance i totalBudget dla TravelWalletHeader
+  const availableBalance = data && tripId ? calculateRemainingBudget(data, tripId) : 0;
+  const totalBudget = data && tripId ? (data.totalBudget ?? calculateTotalBudget(data, tripId)) : 0;
 
   // Oblicz kategorie wydatków na podstawie aktualnych wydatków
   const calculatedCategories = useMemo(() => {
@@ -192,51 +303,151 @@ export default function CountryDetails({
           return unassignedRanges;
         }, [country.startDate, country.endDate, country.locations]);
 
-  const getStatusLabel = (status: Country["status"]) => {
-    switch (status) {
-      case "visited":
-        return "Odwiedzony";
-      case "current":
-        return "Obecny";
-      case "upcoming":
-        return "Nadchodzący";
-      default:
-        return status;
-    }
-  };
 
   return (
     <div className="space-y-8">
-      {/* Link powrotu */}
-      <div>
-        <Link
-          href={`/portfel-podrozniczy/${slug}/kraje`}
-          variant="arrow"
-          className="text-gray-600 dark:text-gray-400"
-        >
-          Powrót do listy krajów
-        </Link>
-      </div>
+      {/* Karta: nazwa kraju + daty/status oraz Dostępne środki + Budżet kraju w jednym bloku */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm">
+        {/* Waluta wyświetlania – wyżej i bardziej widoczna, select z wyszukiwaniem (tylko waluty z portfela) */}
+        {data?.countries && data.countries.length > 1 && onDisplayCurrencyChange && walletCurrencyCodes.length > 0 && (
+          <div className="mb-6 pb-6 border-b border-gray-200 dark:border-gray-700">
+            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+              Waluta wyświetlania w tym kraju
+            </label>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+              Kwoty na stronie tego kraju będą pokazywane w wybranej walucie (przeliczenie z waluty głównej podróży).
+            </p>
+            <div className="relative max-w-md" ref={displayCurrencyDropdownRef}>
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none z-[1]" />
+              <input
+                type="text"
+                readOnly={!displayCurrencyDropdownOpen}
+                value={displayCurrencyDropdownOpen ? displayCurrencyFilterText : `${displayCurrency} – ${getCurrencyName(displayCurrency)}`}
+                onChange={(e) => {
+                  setDisplayCurrencyFilterText(e.target.value);
+                  setDisplayCurrencyDropdownOpen(true);
+                }}
+                onFocus={() => {
+                  setDisplayCurrencyDropdownOpen(true);
+                  setDisplayCurrencyFilterText("");
+                }}
+                placeholder="Wpisz kod lub nazwę (np. USD, dolar)..."
+                className="w-full pl-10 pr-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent"
+              />
+              {displayCurrencyDropdownOpen && (
+                <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-60 overflow-auto z-10">
+                  {filteredDisplayCurrencies.length === 0 ? (
+                    <div className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
+                      Brak pasujących walut
+                    </div>
+                  ) : (
+                    filteredDisplayCurrencies.map((code) => (
+                      <button
+                        key={code}
+                        type="button"
+                        onClick={() => {
+                          onDisplayCurrencyChange(code);
+                          setDisplayCurrencyDropdownOpen(false);
+                          setDisplayCurrencyFilterText("");
+                        }}
+                        className="w-full px-4 py-2.5 text-left text-sm text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-between gap-2"
+                      >
+                        <span>{code} – {getCurrencyName(code)}</span>
+                        {code === displayCurrency && (
+                          <span className="text-blue-600 dark:text-blue-400 font-medium">✓</span>
+                        )}
+                      </button>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
-      {/* Podstawowe informacje */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-          {country.name}
-        </h1>
-        <div className="space-y-2 text-gray-600 dark:text-gray-400">
-          <p>
-            <span className="font-semibold">Daty:</span>{" "}
-            {formatDateRange(country.startDate, country.endDate)}
-          </p>
-          <p>
-            <span className="font-semibold">Liczba dni:</span> {travelDays > 0 ? travelDays : country.days}
-          </p>
-          <p>
-            <span className="font-semibold">Status:</span>{" "}
-            {getStatusLabel(country.status)}
-          </p>
+        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
+          {/* Lewa strona – informacje o kraju */}
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+              {country.name}
+            </h1>
+            <div className="space-y-2 text-gray-600 dark:text-gray-400">
+              <p>
+                <span className="font-semibold">Daty:</span>{" "}
+                {formatDateRange(country.startDate, country.endDate)}
+              </p>
+              <p>
+                <span className="font-semibold">Liczba dni:</span> {travelDays > 0 ? travelDays : country.days}
+              </p>
+              <p>
+                <span className="font-semibold">Status:</span>{" "}
+                {getCountryStatusLabel(country.status)}
+              </p>
+            </div>
+          </div>
+          {/* Prawa strona – Dostępne środki + Budżet kraju */}
+          {tripId && data?.wallet && (
+            <div className="text-right w-full md:w-auto md:min-w-[240px] shrink-0">
+              <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-2">
+                Dostępne środki
+              </p>
+              <div className="text-xs text-gray-500 dark:text-gray-400 space-y-1 mb-3">
+                <div className="flex justify-between gap-4 items-center">
+                  <span>Całkowity:</span>
+                  <span className="font-medium text-gray-700 dark:text-gray-300">
+                    {formatCurrency(toDisplay(remainingCountry), displayCurrency, 2)}
+                  </span>
+                </div>
+                {countryBalanceCurrencies.map((balance) => (
+                  <div key={balance.currency} className="flex justify-between gap-4 items-center">
+                    <span>{balance.currency === baseCurrency ? balance.currency : getCurrencyName(balance.currency)}:</span>
+                    <span className="font-medium text-gray-700 dark:text-gray-300">
+                      {formatCurrency(balance.amount, balance.currency, 2)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              <div className="border-t border-gray-200 dark:border-gray-700 pt-3 mt-3">
+                <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-2">
+                  Budżet kraju
+                </p>
+                <div className="text-xs text-gray-500 dark:text-gray-400 space-y-1">
+                  <div className="flex justify-between gap-4">
+                    <span>Całkowity (zaplanowany):</span>
+                    <span className="font-medium text-gray-700 dark:text-gray-300">
+                      {formatCurrency(toDisplay(planned), displayCurrency, 2)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between gap-4">
+                    <span>Wydane:</span>
+                    <span className="font-medium text-gray-700 dark:text-gray-300">
+                      {formatCurrency(toDisplay(actual), displayCurrency, 2)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between gap-4 pt-1 border-t border-gray-200 dark:border-gray-700">
+                    <span className="font-semibold">Pozostały:</span>
+                    <span className={`font-semibold ${remainingCountry >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}>
+                      ≈ {formatCurrency(toDisplay(remainingCountry), displayCurrency, 2)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
+
+      {/* CountryStats */}
+      {tripId && (
+        <CountryStats
+          country={country}
+          expenses={expenses}
+          tripId={tripId}
+          slug={slug}
+          data={data}
+          displayCurrency={displayCurrency}
+        />
+      )}
 
       {/* Miejsca */}
       <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
@@ -376,6 +587,15 @@ export default function CountryDetails({
         )}
       </div>
 
+      {/* CurrencyBalancesCard */}
+      {tripId && onAddCurrencyTransaction && onTransactionClick && (
+        <CurrencyBalancesCard
+          transactions={transactions}
+          onAddTransaction={onAddCurrencyTransaction}
+          onTransactionClick={onTransactionClick}
+        />
+      )}
+
       {/* Podsumowanie numeryczne */}
       <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
         <div className="flex items-center justify-between mb-4">
@@ -394,7 +614,7 @@ export default function CountryDetails({
               Planowany budżet:
             </span>
             <span className="text-lg font-bold text-gray-900 dark:text-gray-100">
-              {formatCurrency(planned)} zł
+              {formatCurrency(toDisplay(planned), displayCurrency)}
             </span>
           </div>
           <div className="flex justify-between items-center">
@@ -402,7 +622,7 @@ export default function CountryDetails({
               Faktyczne wydatki:
             </span>
             <span className="text-lg font-bold text-gray-900 dark:text-gray-100">
-              {formatCurrency(actual)} zł
+              {formatCurrency(toDisplay(actual), displayCurrency)}
             </span>
           </div>
           <div className="flex justify-between items-center">
@@ -417,7 +637,7 @@ export default function CountryDetails({
               }`}
             >
               {budgetDifference >= 0 ? "+" : ""}
-              {formatCurrency(budgetDifference)} zł
+              {formatCurrency(toDisplay(budgetDifference), displayCurrency)}
             </span>
           </div>
           {travelDays > 0 && (
@@ -426,12 +646,22 @@ export default function CountryDetails({
                 Średni dzienny koszt:
               </span>
               <span className="text-lg font-bold text-gray-900 dark:text-gray-100">
-                {formatCurrency(averageDailyCost)} zł/dzień
+                {formatCurrency(toDisplay(averageDailyCost), displayCurrency)}/dzień
               </span>
             </div>
           )}
         </div>
       </div>
+
+      {/* TravelWalletProgress dla kraju */}
+      {data && tripId && (
+        <TravelWalletProgress
+          data={data}
+          tripId={tripId}
+          country={country}
+          expenses={expenses}
+        />
+      )}
 
       {/* Zintegrowana sekcja wydatków i kalendarza */}
       <CountryExpensesSection
@@ -458,19 +688,11 @@ export default function CountryDetails({
                   <p className="font-semibold text-gray-900 dark:text-gray-100">
                     {category.name}
                   </p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Planowane: {formatCurrency(category.plannedAmount)} zł
-                  </p>
                 </div>
                 <div className="text-right">
                   <p className="font-bold text-gray-900 dark:text-gray-100">
-                    {formatCurrency(category.amount)} zł
+                    {formatCurrency(toDisplay(category.amount), displayCurrency)}
                   </p>
-                  {category.plannedAmount > 0 && (
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      {((category.amount / category.plannedAmount) * 100).toFixed(1)}%
-                    </p>
-                  )}
                 </div>
               </div>
             ))}

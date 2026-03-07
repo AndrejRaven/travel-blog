@@ -152,7 +152,6 @@ export async function POST(request: NextRequest) {
     if (payload._deleted) {
       // Dla usuniętych postów możemy też powiadomić IndexNow, ale to wymaga
       // zapisania URL przed usunięciem. Na razie ignorujemy usunięcia.
-      console.log('ℹ️ IndexNow Webhook: Post usunięty, pomijam:', payload._id);
       return NextResponse.json(
         { message: 'Post deleted - skipping IndexNow submission' },
         { status: 200 }
@@ -192,7 +191,6 @@ export async function POST(request: NextRequest) {
 
     // Sprawdź czy post ma noIndex (nie indeksuj jeśli jest ustawione)
     if (post.seo?.noIndex) {
-      console.log('ℹ️ IndexNow Webhook: Post ma noIndex, pomijam:', postUrl);
       return NextResponse.json(
         { message: 'Post has noIndex - skipping IndexNow submission' },
         { status: 200 }
@@ -203,7 +201,6 @@ export async function POST(request: NextRequest) {
     const result = await submitToIndexNow([postUrl]);
 
     if (result.success) {
-      console.log(`✅ IndexNow Webhook: Wysłano URL do IndexNow: ${postUrl}`);
       return NextResponse.json({
         success: true,
         message: 'URL submitted to IndexNow',

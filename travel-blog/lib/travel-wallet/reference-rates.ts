@@ -14,16 +14,8 @@ export function getReferenceRate(
   toCurrency: string,
   date?: string
 ): number | null {
-  console.log("[getReferenceRate] Looking for rate:", {
-    fromCurrency,
-    toCurrency,
-    date,
-    availableRates: rates.map(r => `${r.fromCurrency}/${r.toCurrency}: ${r.rate}`),
-  });
-
   // Same currency - rate is 1
   if (fromCurrency === toCurrency) {
-    console.log("[getReferenceRate] Same currency, returning 1");
     return 1;
   }
 
@@ -38,14 +30,6 @@ export function getReferenceRate(
   );
 
   if (directRate) {
-    console.log("[getReferenceRate] Found direct rate:", {
-      rate: directRate.rate,
-      fromCurrency: directRate.fromCurrency,
-      toCurrency: directRate.toCurrency,
-      effectiveDate: directRate.effectiveDate,
-      requestedDate: date,
-      useDateFilter,
-    });
     return directRate.rate;
   }
 
@@ -59,10 +43,6 @@ export function getReferenceRate(
 
   if (reverseRate) {
     const calculatedRate = 1 / reverseRate.rate;
-    console.log("[getReferenceRate] Found reverse rate:", {
-      reverseRate: reverseRate.rate,
-      calculatedRate,
-    });
     return calculatedRate;
   }
 
@@ -70,21 +50,14 @@ export function getReferenceRate(
   // This is a simplified approach - in production you might want a more sophisticated path finding
   const baseCurrency = findCommonBaseCurrency(rates, fromCurrency, toCurrency);
   if (baseCurrency) {
-    console.log("[getReferenceRate] Trying through base currency:", baseCurrency);
     const fromToBase = getReferenceRate(rates, fromCurrency, baseCurrency, date);
     const baseToTo = getReferenceRate(rates, baseCurrency, toCurrency, date);
     if (fromToBase !== null && baseToTo !== null) {
       const calculatedRate = fromToBase * baseToTo;
-      console.log("[getReferenceRate] Found rate through base:", {
-        fromToBase,
-        baseToTo,
-        calculatedRate,
-      });
       return calculatedRate;
     }
   }
 
-  console.log("[getReferenceRate] No rate found, returning null");
   return null;
 }
 
@@ -221,34 +194,42 @@ export function getLatestReferenceRate(
 
 /**
  * Initializes default reference rates (from hardcoded rates in calculations.ts)
+ * defaultRates = ile PLN za 1 jednostkę waluty (1 USD = 4 PLN, 1 THB = 0.11 PLN).
+ * Dla baseCurrency !== PLN przeliczamy: kurs X→base = (X→PLN) / (base→PLN).
+ *
  * @param baseCurrency - base currency code (default: "PLN")
  * @returns array of default exchange rates
  */
 export function getDefaultReferenceRates(
   baseCurrency: string = "PLN"
 ): ExchangeRate[] {
+  // Ile PLN za 1 jednostkę waluty (np. 1 USD ≈ 3.57 PLN); przy braku API używane jako fallback
   const defaultRates: Record<string, number> = {
     PLN: 1,
-    USD: 4.0,
-    EUR: 4.3,
-    JPY: 0.027,
-    THB: 0.11,
-    GBP: 5.1,
-    KRW: 0.003,
-    TWD: 0.13,
-    AUD: 2.6,
-    CAD: 2.9,
+    USD: 3.57,
+    EUR: 3.85,
+    JPY: 0.024,
+    THB: 0.098,
+    GBP: 4.52,
+    KRW: 0.0026,
+    TWD: 0.11,
+    AUD: 2.32,
+    CAD: 2.58,
+    NOK: 0.33,
   };
 
   const rates: ExchangeRate[] = [];
   const today = new Date().toISOString().split("T")[0];
+  const baseToPln = defaultRates[baseCurrency] ?? 1;
 
   for (const [currency, rate] of Object.entries(defaultRates)) {
     if (currency !== baseCurrency) {
+      // rate = ile PLN za 1 jednostkę waluty. Dla base !== PLN: 1 X = (rate/baseToPln) base
+      const rateToBase = baseCurrency === "PLN" ? rate : rate / baseToPln;
       rates.push({
         fromCurrency: currency,
         toCurrency: baseCurrency,
-        rate: rate,
+        rate: rateToBase,
         effectiveDate: today,
         source: "default",
       });

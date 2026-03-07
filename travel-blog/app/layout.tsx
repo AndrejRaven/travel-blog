@@ -6,7 +6,11 @@ import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
 import ClientShell from "@/components/layout/ClientShell";
 import { SITE_CONFIG } from "@/lib/config";
-import { buildAlternates, buildOpenGraph, buildAbsoluteUrl } from "@/lib/metadata";
+import {
+  buildAlternates,
+  buildOpenGraph,
+  buildAbsoluteUrl,
+} from "@/lib/metadata";
 import "./globals.css";
 
 // Font główny - Inter - doskonały do czytania
@@ -76,11 +80,12 @@ export default async function RootLayout({
   const draft = await draftMode();
   const isDraftMode = draft.isEnabled;
   return (
-    <html lang="pl">
+    <html lang="pl" suppressHydrationWarning>
       <head>
         {/* Critical CSS inline - eliminuje render-blocking dla najważniejszych stylów */}
-        <style dangerouslySetInnerHTML={{
-          __html: `
+        <style
+          dangerouslySetInnerHTML={{
+            __html: `
             :root {
               --radius: 0.625rem;
               --content-font-size: 1rem;
@@ -108,17 +113,16 @@ export default async function RootLayout({
             * {
               box-sizing: border-box;
             }
-          `
-        }} />
+          `,
+          }}
+        />
         {/* DNS prefetch dla Sanity CDN */}
         <link rel="dns-prefetch" href="https://cdn.sanity.io" />
-        <Script
-          src="/scripts/theme-init.js"
-          strategy="beforeInteractive"
-        />
+        <Script src="/scripts/theme-init.js" strategy="beforeInteractive" />
       </head>
       <body
         className={`${inter.variable} ${playfairDisplay.variable} ${sourceCodePro.variable} antialiased bg-white dark:bg-gray-900`}
+        suppressHydrationWarning
       >
         <ClientShell isDraftMode={isDraftMode}>
           <>

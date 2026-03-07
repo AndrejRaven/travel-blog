@@ -9,10 +9,14 @@ import {
   getFirstDayOfMonth,
   hasExpensesOnDate,
   getExpensesForDate,
+  getDailyTotalInPLNForDate,
+  getExpenseDays,
+  getExpenseDayCount,
   formatDateToYYYYMMDD,
 } from "@/lib/travel-wallet/calendar";
 import { convertExpenseToPLN } from "@/lib/travel-wallet/expenses";
-import { formatCurrency } from "@/lib/travel-wallet/formatters";
+import { formatCurrency, formatExpenseDateRange } from "@/lib/travel-wallet/formatters";
+import { getExpenseCategoryDisplay } from "@/lib/travel-wallet/constants";
 
 interface CountryExpenseCalendarProps {
   country: Country;
@@ -72,11 +76,6 @@ export default function CountryExpenseCalendar({
     return getExpensesForDate(selectedDate, expenses);
   }, [selectedDate, expenses]);
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("pl-PL", {
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -106,13 +105,9 @@ export default function CountryExpenseCalendar({
     return date >= start && date <= end;
   };
 
-  // Funkcja obliczająca sumę wydatków dla dnia
-  const getDailyTotal = (dateString: string): number => {
-    const dayExpenses = getExpensesForDate(dateString, expenses);
-    return dayExpenses.reduce((total, expense) => {
-      return total + convertExpenseToPLN(expense);
-    }, 0);
-  };
+  // Suma dzienna w PLN (wielodniowe wydatki liczone jako portion)
+  const getDailyTotal = (dateString: string): number =>
+    getDailyTotalInPLNForDate(dateString, expenses);
 
   return (
     <div className="space-y-2">
@@ -213,7 +208,7 @@ export default function CountryExpenseCalendar({
                         }
                       `}
                     >
-                      {formatCurrency(dailyTotal)} zł
+                      {formatCurrency(dailyTotal)}
                     </span>
                   ) : (
                     <span className="text-[8px] leading-none opacity-0">0</span>
@@ -234,7 +229,15 @@ export default function CountryExpenseCalendar({
           {displayedExpenses.length > 0 ? (
             <div className="space-y-3">
               {displayedExpenses.map((expense) => {
-                const amountInPLN = convertExpenseToPLN(expense);
+                const dayPortion = selectedDate
+                  ? getExpenseDays(expense).find((d) => d.date === selectedDate)
+                  : null;
+                const amountInPLN =
+                  dayPortion && expense.amount > 0
+                    ? (dayPortion.amountPortion / expense.amount) * convertExpenseToPLN(expense)
+                    : convertExpenseToPLN(expense);
+                const amountToShow =
+                  dayPortion && expense.amount > 0 ? dayPortion.amountPortion : expense.amount;
                 return (
                   <div
                     key={expense.id}
@@ -243,14 +246,15 @@ export default function CountryExpenseCalendar({
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
                         <span className="font-semibold text-gray-900 dark:text-gray-100">
-                          {expense.category}
+                          {getExpenseCategoryDisplay(expense.category, expense.accommodationType)}
                         </span>
                         <span className="text-sm font-bold text-gray-700 dark:text-gray-300">
-                          {formatCurrency(amountInPLN)} zł
+                          {formatCurrency(amountInPLN)}
                         </span>
                         {expense.currency !== "PLN" && (
                           <span className="text-xs text-gray-500 dark:text-gray-500">
-                            ({formatCurrency(expense.amount)} {expense.currency})
+                            ({formatCurrency(amountToShow, expense.currency)}
+                            {dayPortion && expense.amount > 0 && expense.endDate && " / dzień"})
                           </span>
                         )}
                       </div>
@@ -262,6 +266,11 @@ export default function CountryExpenseCalendar({
                       {expense.note && (
                         <p className="text-xs text-gray-500 dark:text-gray-500 mt-1 italic">
                           {expense.note}
+                        </p>
+                      )}
+                      {expense.endDate && expense.endDate !== expense.date && (
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          Rozłożony na {getExpenseDayCount(expense)} {getExpenseDayCount(expense) === 1 ? "dzień" : "dni"}: {formatExpenseDateRange(expense)}
                         </p>
                       )}
                     </div>
@@ -318,14 +327,7 @@ export default function CountryExpenseCalendar({
                 )
                 .map((expense) => {
                   const amountInPLN = convertExpenseToPLN(expense);
-                  const formattedDate = new Date(expense.date).toLocaleDateString(
-                    "pl-PL",
-                    {
-                      day: "numeric",
-                      month: "short",
-                      year: "numeric",
-                    }
-                  );
+                  const formattedDate = formatExpenseDateRange(expense);
                   return (
                     <div
                       key={expense.id}
@@ -334,14 +336,14 @@ export default function CountryExpenseCalendar({
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
                           <span className="font-semibold text-gray-900 dark:text-gray-100">
-                            {expense.category}
+                            {getExpenseCategoryDisplay(expense.category, expense.accommodationType)}
                           </span>
                           <span className="text-sm font-bold text-gray-700 dark:text-gray-300">
-                            {formatCurrency(amountInPLN)} zł
+                            {formatCurrency(amountInPLN)}
                           </span>
                           {expense.currency !== "PLN" && (
                             <span className="text-xs text-gray-500 dark:text-gray-500">
-                              ({formatCurrency(expense.amount)} {expense.currency})
+                              ({formatCurrency(expense.amount, expense.currency)})
                             </span>
                           )}
                         </div>
@@ -355,9 +357,15 @@ export default function CountryExpenseCalendar({
                             {expense.note}
                           </p>
                         )}
-                        <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
-                          {formattedDate}
-                        </p>
+                        {expense.endDate && expense.endDate !== expense.date ? (
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                            Rozłożony na {getExpenseDayCount(expense)} {getExpenseDayCount(expense) === 1 ? "dzień" : "dni"}: {formattedDate}
+                          </p>
+                        ) : (
+                          <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                            {formattedDate}
+                          </p>
+                        )}
                       </div>
                     </div>
                   );

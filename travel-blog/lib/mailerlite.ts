@@ -16,6 +16,48 @@ export interface MailerLiteConfig {
   groupId: string;
 }
 
+// Cache dla wyników findSubscriberByEmail (TTL: 1 minuta)
+const SUBSCRIBER_CACHE = new Map<string, { subscriber: MailerLiteSubscriber | null; timestamp: number }>();
+const CACHE_TTL = 60 * 1000; // 1 minuta
+
+// Timeout dla fetch requests (5 sekund)
+const FETCH_TIMEOUT = 5000;
+
+/**
+ * Czyści cache dla danego emaila (używane po zapisie/wypisaniu)
+ */
+export function clearSubscriberCache(email: string): void {
+  const emailKey = email.toLowerCase();
+  SUBSCRIBER_CACHE.delete(emailKey);
+}
+
+/**
+ * Fetch z timeout i lepszą obsługą błędów
+ */
+async function fetchWithTimeout(url: string, options: RequestInit, timeout: number = FETCH_TIMEOUT): Promise<Response> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
+  
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    return response;
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error(`Request timeout after ${timeout}ms`);
+    }
+    // Obsługa błędów DNS/połączenia
+    if (error instanceof Error && (error.message.includes('ENOTFOUND') || error.message.includes('getaddrinfo'))) {
+      throw new Error(`Nie można połączyć się z MailerLite. Sprawdź połączenie z internetem.`);
+    }
+    throw error;
+  }
+}
+
 /**
  * Gets MailerLite configuration from environment variables
  */
@@ -33,6 +75,7 @@ export function getMailerLiteConfig(): MailerLiteConfig | null {
 /**
  * Finds a subscriber by email using MailerLite API
  * Tries multiple approaches for maximum compatibility
+ * Uses cache to avoid repeated API calls
  */
 export async function findSubscriberByEmail(
   email: string,
@@ -43,11 +86,19 @@ export async function findSubscriberByEmail(
     throw new Error('MailerLite configuration not found');
   }
 
+  const emailKey = email.toLowerCase();
+  
+  // Sprawdź cache
+  const cached = SUBSCRIBER_CACHE.get(emailKey);
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+    return cached.subscriber;
+  }
+
   try {
     // Try filter[email] approach first
     const url = `https://connect.mailerlite.com/api/subscribers?filter[email]=${encodeURIComponent(email)}`;
     
-    const response = await fetch(url, {
+    const response = await fetchWithTimeout(url, {
       headers: {
         Authorization: `Bearer ${mlConfig.token}`,
         Accept: 'application/json',
@@ -80,15 +131,23 @@ export async function findSubscriberByEmail(
     );
 
     if (subscriber) {
+      // Cache wynik
+      SUBSCRIBER_CACHE.set(emailKey, { subscriber, timestamp: Date.now() });
       return subscriber;
     }
 
     // If not found with filter, try group search as fallback
-    return await findSubscriberInGroupByEmail(email, mlConfig);
+    const groupSubscriber = await findSubscriberInGroupByEmail(email, mlConfig);
+    // Cache wynik (nawet jeśli null)
+    SUBSCRIBER_CACHE.set(emailKey, { subscriber: groupSubscriber, timestamp: Date.now() });
+    return groupSubscriber;
   } catch (error) {
     // If direct search fails, try group search as fallback
     try {
-      return await findSubscriberInGroupByEmail(email, mlConfig || getMailerLiteConfig()!);
+      const groupSubscriber = await findSubscriberInGroupByEmail(email, mlConfig || getMailerLiteConfig()!);
+      // Cache wynik
+      SUBSCRIBER_CACHE.set(emailKey, { subscriber: groupSubscriber, timestamp: Date.now() });
+      return groupSubscriber;
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (_fallbackError) {
       throw error; // Throw original error
@@ -106,9 +165,12 @@ async function findSubscriberInGroupByEmail(
 ): Promise<MailerLiteSubscriber | null> {
   let nextUrl: string | null = `https://connect.mailerlite.com/api/groups/${encodeURIComponent(config.groupId)}/subscribers?limit=100`;
   const emailLower = email.toLowerCase();
+  let pageCount = 0;
+  const MAX_PAGES = 10; // Limit paginacji - maksymalnie 10 stron (1000 subskrybentów)
 
-  while (nextUrl) {
-    const response: Response = await fetch(nextUrl, {
+  while (nextUrl && pageCount < MAX_PAGES) {
+    pageCount++;
+    const response: Response = await fetchWithTimeout(nextUrl, {
       headers: {
         Authorization: `Bearer ${config.token}`,
         Accept: 'application/json',

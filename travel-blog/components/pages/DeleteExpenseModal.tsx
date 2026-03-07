@@ -3,14 +3,19 @@
 import { X, AlertTriangle } from "lucide-react";
 import Button from "@/components/ui/Button";
 import type { Expense } from "@/lib/travel-wallet/types";
+import { formatCurrency, formatExpenseDateRange } from "@/lib/travel-wallet/formatters";
+import { getExpenseCategoryDisplay } from "@/lib/travel-wallet/constants";
+import { getTripById } from "@/lib/travel-wallet/trips-storage";
+import { calculateTotalActualCostByTripId } from "@/lib/travel-wallet/country-calculations";
 import { convertExpenseToPLN } from "@/lib/travel-wallet/expenses";
-import { formatCurrency } from "@/lib/travel-wallet/formatters";
 
 interface DeleteExpenseModalProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: () => void;
   expense?: Expense;
+  /** Id podróży – używane do waluty bazowej i przeliczenia kwoty */
+  tripId?: string;
 }
 
 export default function DeleteExpenseModal({
@@ -18,6 +23,7 @@ export default function DeleteExpenseModal({
   onClose,
   onConfirm,
   expense,
+  tripId,
 }: DeleteExpenseModalProps) {
 
   const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -34,12 +40,9 @@ export default function DeleteExpenseModal({
 
   if (!isOpen || !expense) return null;
 
-  const amountInPLN = convertExpenseToPLN(expense);
-  const formattedDate = new Date(expense.date).toLocaleDateString("pl-PL", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
+  const baseCurrency = tripId ? (getTripById(tripId)?.data?.wallet?.baseCurrency ?? "PLN") : "PLN";
+  const amountInBase = tripId ? calculateTotalActualCostByTripId([expense], tripId) : convertExpenseToPLN(expense);
+  const formattedDate = formatExpenseDateRange(expense);
 
   return (
     <div
@@ -81,7 +84,7 @@ export default function DeleteExpenseModal({
                 Kategoria:
               </span>
               <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                {expense.category}
+                {getExpenseCategoryDisplay(expense.category, expense.accommodationType)}
               </span>
             </div>
             {expense.description && (
@@ -107,10 +110,10 @@ export default function DeleteExpenseModal({
                 Kwota:
               </span>
               <span className="text-sm font-bold text-gray-900 dark:text-gray-100">
-                {formatCurrency(amountInPLN)} zł
-                {expense.currency !== "PLN" && (
+                {formatCurrency(amountInBase, baseCurrency)}
+                {expense.currency !== baseCurrency && (
                   <span className="text-xs text-gray-500 dark:text-gray-500 ml-1">
-                    ({formatCurrency(expense.amount)} {expense.currency})
+                    ({formatCurrency(expense.amount, expense.currency)})
                   </span>
                 )}
               </span>

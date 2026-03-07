@@ -11,18 +11,14 @@ export default function PageHeader({
 }: PageHeaderProps) {
   return (
     <div
-      className={`bg-gray-50 mb-8 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 ${className}`}
+      className={`mb-6 border-b border-gray-200 dark:border-gray-700 pb-4 ${className}`}
     >
-      <div className="mx-auto max-w-4xl px-6 py-12">
-        <div className="text-center">
-          <h1 className="text-3xl md:text-4xl font-serif font-bold text-gray-900 dark:text-gray-100 mb-4">
-            {title}
-          </h1>
-          {subtitle && (
-            <p className="text-lg text-gray-600 dark:text-gray-300">{subtitle}</p>
-          )}
-        </div>
-      </div>
+      <h1 className="text-2xl font-medium text-gray-900 dark:text-gray-100 mb-1">
+        {title}
+      </h1>
+      {subtitle && (
+        <p className="text-sm text-gray-600 dark:text-gray-400">{subtitle}</p>
+      )}
     </div>
   );
 }

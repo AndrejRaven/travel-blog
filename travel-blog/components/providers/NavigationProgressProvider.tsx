@@ -30,6 +30,11 @@ export function useNavigationProgress() {
   return context;
 }
 
+/** Wersja bez rzucania – gdy provider niedostępny (np. przy unmount podczas redirect), zwraca undefined. */
+export function useOptionalNavigationProgress() {
+  return useContext(NavigationProgressContext);
+}
+
 interface NavigationProgressProviderProps {
   children: React.ReactNode;
 }

@@ -2,14 +2,20 @@
  * Formatuje kwotę walutową
  * @param amount - kwota do sformatowania
  * @param currency - kod waluty (opcjonalny, domyślnie PLN)
+ * @param fractionDigits - liczba miejsc po przecinku (domyślnie 2 dla wszystkich walut)
  * @returns sformatowana kwota jako string
  */
 export function formatCurrency(
   amount: number,
-  currency: string = "PLN"
+  currency: string = "PLN",
+  fractionDigits?: number
 ): string {
+  // Domyślnie zawsze używaj 2 miejsc po przecinku dla wszystkich walut
+  const defaultFractionDigits = fractionDigits !== undefined ? fractionDigits : 2;
+  
   const formatted = new Intl.NumberFormat("pl-PL", {
-    maximumFractionDigits: 0,
+    minimumFractionDigits: defaultFractionDigits,
+    maximumFractionDigits: defaultFractionDigits,
   }).format(Math.abs(amount));
 
   // Dla niektórych walut symbol jest po liczbie
@@ -17,7 +23,7 @@ export function formatCurrency(
     return `${formatted} ${currency === "PLN" ? "zł" : currency === "THB" ? "฿" : "¥"}`;
   }
 
-  // Dla innych walut symbol jest przed liczbą
+  // Dla innych walut symbol jest przed liczbą; kod waluty (np. NOK) ze spacją przed kwotą
   const symbols: Record<string, string> = {
     EUR: "€",
     USD: "$",
@@ -26,7 +32,8 @@ export function formatCurrency(
     CAD: "C$",
   };
   const symbol = symbols[currency] || currency;
-  return `${symbol}${formatted}`;
+  const space = symbol.length <= 3 && symbol === symbol.toUpperCase() ? " " : "";
+  return `${symbol}${space}${formatted}`;
 }
 
 /**
@@ -38,6 +45,19 @@ export function formatCurrencyAmount(amount: number): string {
   return new Intl.NumberFormat("pl-PL", {
     maximumFractionDigits: 0,
   }).format(amount);
+}
+
+/**
+ * Formatuje kwotę liczbową bez spacji (dla kompaktowych wyświetleń)
+ * @param amount - kwota do sformatowania
+ * @returns sformatowana kwota jako string bez spacji
+ */
+export function formatCurrencyCompact(amount: number): string {
+  return Math.abs(amount).toLocaleString("pl-PL", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+    useGrouping: false, // Bez separatorów tysięcy
+  });
 }
 
 /**
@@ -103,4 +123,27 @@ export function formatDateShort(dateString?: string): string {
     day: "numeric",
     month: "short",
   });
+}
+
+/**
+ * Formatuje zakres dat wydatku (jedna data lub zakres gdy endDate).
+ * @param expense - wydatek z date i opcjonalnie endDate
+ * @returns np. "1 maja 2025" lub "1–3 maja 2025"
+ */
+export function formatExpenseDateRange(expense: {
+  date: string;
+  endDate?: string;
+}): string {
+  if (!expense.date) return "—";
+  if (!expense.endDate || expense.endDate === expense.date) {
+    return formatDate(expense.date);
+  }
+  const start = new Date(expense.date);
+  const end = new Date(expense.endDate);
+  if (isNaN(start.getTime()) || isNaN(end.getTime())) return formatDate(expense.date);
+  const sameMonth = start.getMonth() === end.getMonth() && start.getFullYear() === end.getFullYear();
+  if (sameMonth) {
+    return `${start.getDate()}–${end.getDate()} ${end.toLocaleDateString("pl-PL", { month: "long", year: "numeric" })}`;
+  }
+  return `${formatDate(expense.date)} – ${formatDate(expense.endDate)}`;
 }

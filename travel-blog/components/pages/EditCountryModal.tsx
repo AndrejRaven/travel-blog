@@ -9,6 +9,7 @@ import {
   calculateTotalSpent,
   calculateTotalPlannedSpending,
 } from "@/lib/travel-wallet/calculations";
+import { getCurrencyName } from "@/lib/travel-wallet/currency-names";
 
 interface EditCountryModalProps {
   isOpen: boolean;
@@ -21,7 +22,7 @@ interface EditCountryModalProps {
   totalBudget?: number;
 }
 
-const AVAILABLE_CURRENCIES = ["PLN", "USD", "EUR", "GBP", "THB", "JPY", "KRW", "TWD"];
+const AVAILABLE_CURRENCIES = ["PLN", "USD", "EUR", "GBP", "NOK", "THB", "JPY", "KRW", "TWD"];
 
 /**
  * Kursy walut do PLN (muszą być takie same jak w calculations.ts)
@@ -69,6 +70,7 @@ export default function EditCountryModal({
   const [endDate, setEndDate] = useState("");
   const [budgets, setBudgets] = useState<Budget[]>([{ currency: "PLN", amount: 0 }]);
   const [budgetInputValues, setBudgetInputValues] = useState<string[]>([""]);
+  const [displayCurrency, setDisplayCurrency] = useState<string>(""); // "" = użyj waluty podróży
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Wypełnij formularz danymi z kraju
@@ -83,6 +85,7 @@ export default function EditCountryModal({
           ? country.budgets.map((b) => (b.amount === 0 ? "" : b.amount.toString()))
           : [""]
       );
+      setDisplayCurrency(country.displayCurrency ?? "");
       setErrors({});
     }
   }, [isOpen, country]);
@@ -184,7 +187,11 @@ export default function EditCountryModal({
         endDate: endDate || undefined,
         budgets: validBudgets,
       };
-      
+      if (tripData?.countries && tripData.countries.length > 1) {
+        updates.displayCurrency = displayCurrency || undefined;
+      } else {
+        updates.displayCurrency = undefined;
+      }
       onSave(country.id, updates);
     }
   };
@@ -326,7 +333,15 @@ export default function EditCountryModal({
                     placeholder="0"
                     min="0"
                     step="0.01"
-                    className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    onKeyDown={(e) => {
+                      if (e.key === "ArrowUp" || e.key === "ArrowDown" || e.key === "PageUp" || e.key === "PageDown") {
+                        e.preventDefault();
+                      }
+                    }}
+                    onWheel={(e) => {
+                      e.currentTarget.blur();
+                    }}
+                    className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   />
                   {budgets.length > 1 && (
                     <button
@@ -349,6 +364,32 @@ export default function EditCountryModal({
               </p>
             )}
           </div>
+
+          {/* Waluta wyświetlania – tylko przy podróży wielokrajowej */}
+          {tripData?.countries && tripData.countries.length > 1 && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Waluta wyświetlania w tym kraju
+              </label>
+              <select
+                value={displayCurrency}
+                onChange={(e) => setDisplayCurrency(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="">
+                  Tak jak podróż ({tripData?.wallet?.baseCurrency ?? "PLN"} – {getCurrencyName(tripData?.wallet?.baseCurrency ?? "PLN")})
+                </option>
+                {AVAILABLE_CURRENCIES.map((code) => (
+                  <option key={code} value={code}>
+                    {code} – {getCurrencyName(code)}
+                  </option>
+                ))}
+              </select>
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                Kwoty na stronie tego kraju będą pokazywane w wybranej walucie (przeliczenie z waluty głównej podróży).
+              </p>
+            </div>
+          )}
 
           {/* Przyciski */}
           <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">

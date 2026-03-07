@@ -68,18 +68,15 @@ export function migrateTripToV2(trip: Trip): Trip | null {
   // From currencyTransactions with type "initial"
   if (data.currencyTransactions) {
     data.currencyTransactions
-      .filter((tx) => tx.type === "initial")
+      .filter((tx) => tx.type === "initial" && tx.toCurrency != null && tx.toAmount != null)
       .forEach((tx) => {
-        const existing = initialBalances.find(
-          (b) => b.currency === tx.toCurrency
-        );
+        const toCurrency = tx.toCurrency!;
+        const toAmount = tx.toAmount!;
+        const existing = initialBalances.find((b) => b.currency === toCurrency);
         if (existing) {
-          existing.amount += tx.toAmount;
+          existing.amount += toAmount;
         } else {
-          initialBalances.push({
-            currency: tx.toCurrency,
-            amount: tx.toAmount,
-          });
+          initialBalances.push({ currency: toCurrency, amount: toAmount });
         }
       });
   }
@@ -117,23 +114,29 @@ export function migrateTripToV2(trip: Trip): Trip | null {
 
   // Step 3: Process currency transactions (exchanges)
   const exchanges: CurrencyExchange[] = [];
-  let currentWallet = wallet;
+  const currentWallet = wallet;
 
   if (data.currencyTransactions) {
     data.currencyTransactions
-      .filter((tx) => tx.type === "exchange")
-      .forEach((tx) => {
-        // Convert old CurrencyTransaction to new CurrencyExchange
+      .filter(
+        (tx) =>
+          tx.type === "exchange" &&
+          tx.toCurrency != null &&
+          tx.toAmount != null
+      )
+      .forEach((tx, idx) => {
+        const toCurrency = tx.toCurrency!;
+        const toAmount = tx.toAmount!;
         const exchange: CurrencyExchange = {
-          id: tx.id,
+          id: tx.id ?? `exchange-${idx}-${Date.now()}`,
           tripId: trip.id,
           type: "exchange",
-          timestamp: new Date(tx.date).toISOString(),
+          timestamp: (tx.date ? new Date(tx.date) : new Date()).toISOString(),
           fromCurrency: tx.fromCurrency,
           fromAmount: tx.fromAmount,
-          toCurrency: tx.toCurrency,
-          toAmount: tx.toAmount,
-          transactionRate: tx.rate,
+          toCurrency,
+          toAmount,
+          transactionRate: tx.rate ?? toAmount / tx.fromAmount,
           fee: tx.fee,
           feeCurrency: tx.feeCurrency,
           note: tx.note,
@@ -143,7 +146,6 @@ export function migrateTripToV2(trip: Trip): Trip | null {
         exchanges.push(exchange);
 
         // Apply exchange to wallet (simulate)
-        // Subtract fromCurrency
         const fromBalance = currentWallet.balances.find(
           (b) => b.currency === tx.fromCurrency
         );
@@ -151,20 +153,15 @@ export function migrateTripToV2(trip: Trip): Trip | null {
           fromBalance.amount -= tx.fromAmount;
         }
 
-        // Add toCurrency
         const toBalance = currentWallet.balances.find(
-          (b) => b.currency === tx.toCurrency
+          (b) => b.currency === toCurrency
         );
         if (toBalance) {
-          toBalance.amount += tx.toAmount;
+          toBalance.amount += toAmount;
         } else {
-          currentWallet.balances.push({
-            currency: tx.toCurrency,
-            amount: tx.toAmount,
-          });
+          currentWallet.balances.push({ currency: toCurrency, amount: toAmount });
         }
 
-        // Handle fee
         if (tx.fee && tx.feeCurrency) {
           const feeBalance = currentWallet.balances.find(
             (b) => b.currency === tx.feeCurrency
@@ -235,6 +232,10 @@ export function migrateTripToV2(trip: Trip): Trip | null {
     exchanges: exchanges.length > 0 ? exchanges : undefined,
     budgetAdjustments:
       budgetAdjustments.length > 0 ? budgetAdjustments : undefined,
+    // Zachowaj stary totalBudget jako initialBudgets (dla waluty bazowej i nowego UI)
+    ...(data.totalBudget !== undefined && data.totalBudget > 0
+      ? { initialBudgets: [{ currency: baseCurrency, amount: data.totalBudget }] }
+      : {}),
   };
 
   const migratedTrip = {

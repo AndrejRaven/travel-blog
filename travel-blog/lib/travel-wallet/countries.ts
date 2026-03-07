@@ -18,6 +18,8 @@ export function getCountryById(id: string, tripId?: string): Country | null {
     if (!trip) return null;
     data = trip.data;
   } else {
+    // DEPRECATED: tripId powinno być zawsze podane. Używamy starego systemu tylko dla kompatybilności.
+    console.warn("[getCountryById] tripId should always be provided. Using deprecated getTravelWalletData().");
     data = getTravelWalletData();
   }
   const country = data.countries.find((c) => c.id === id);
@@ -35,6 +37,22 @@ export function getCountryBySlug(slug: string, tripId: string): Country | null {
   
   const country = trip.data.countries.find((c) => c.slug === slug);
   return country || null;
+}
+
+/**
+ * Zwraca etykietę statusu kraju w języku polskim
+ */
+export function getCountryStatusLabel(status: "visited" | "current" | "upcoming"): string {
+  switch (status) {
+    case "visited":
+      return "Odwiedzony";
+    case "current":
+      return "Obecny";
+    case "upcoming":
+      return "Nadchodzący";
+    default:
+      return status;
+  }
 }
 
 /**
@@ -64,10 +82,10 @@ export function formatDateRange(
 }
 
 /**
- * Oblicza planowany budżet dla kraju (używa istniejącej funkcji)
+ * Oblicza planowany budżet dla kraju (w walucie bazowej gdy podano data)
  */
-export function calculatePlannedTotal(country: Country): number {
-  return calculatePlannedSpending(country);
+export function calculatePlannedTotal(country: Country, data?: TravelWalletData): number {
+  return calculatePlannedSpending(country, data);
 }
 
 /**
@@ -88,6 +106,8 @@ export function getAllCountries(tripId?: string): Country[] {
     if (!trip) return [];
     data = trip.data;
   } else {
+    // DEPRECATED: tripId powinno być zawsze podane. Używamy starego systemu tylko dla kompatybilności.
+    console.warn("[getAllCountries] tripId should always be provided. Using deprecated getTravelWalletData().");
     data = getTravelWalletData();
   }
   return data.countries;

@@ -1,4 +1,6 @@
 import type { TravelWalletData, Country, Location } from "./types";
+import { createWallet } from "./wallet-operations";
+import { safeSetLocalStorageItem } from "./utils/safe-local-storage";
 
 const STORAGE_KEY = "travel-wallet-data";
 
@@ -155,6 +157,9 @@ const defaultData: TravelWalletData = {
       ],
     },
   ],
+  wallet: createWallet("PLN"),
+  expenses: [],
+  activityLogs: [],
 };
 
 /**
@@ -217,6 +222,9 @@ function validateData(data: unknown): data is TravelWalletData {
 
 /**
  * Pobiera dane z localStorage lub zwraca dane domyślne
+ * 
+ * @deprecated Use trips-storage.ts instead. This file is only used for migration purposes.
+ * This file will be removed in v5. Use getAllTrips() and getTripById() from trips-storage.ts.
  */
 export function getTravelWalletData(): TravelWalletData {
   if (typeof window === "undefined") {
@@ -246,6 +254,9 @@ export function getTravelWalletData(): TravelWalletData {
 
 /**
  * Zapisuje dane do localStorage
+ * 
+ * @deprecated Use trips-storage.ts instead. This file is only used for migration purposes.
+ * This file will be removed in v5. Use createTrip() and updateTrip() from trips-storage.ts.
  */
 export function saveTravelWalletData(data: TravelWalletData): boolean {
   if (typeof window === "undefined") {
@@ -258,8 +269,8 @@ export function saveTravelWalletData(data: TravelWalletData): boolean {
       return false;
     }
 
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-    return true;
+    const ok = safeSetLocalStorageItem(STORAGE_KEY, JSON.stringify(data));
+    return !!ok;
   } catch (error) {
     console.error("Error saving travel wallet data to localStorage:", error);
     return false;
@@ -268,6 +279,9 @@ export function saveTravelWalletData(data: TravelWalletData): boolean {
 
 /**
  * Resetuje dane do domyślnych wartości
+ * 
+ * @deprecated Use trips-storage.ts instead. This file is only used for migration purposes.
+ * This file will be removed in v5.
  */
 export function resetTravelWalletData(): boolean {
   return saveTravelWalletData(defaultData);

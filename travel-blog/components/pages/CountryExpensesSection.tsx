@@ -9,6 +9,7 @@ import {
   getFirstDayOfMonth,
   hasExpensesOnDate,
   getExpensesForDate,
+  getDailyTotalInPLNForDate,
   formatDateToYYYYMMDD,
 } from "@/lib/travel-wallet/calendar";
 import {
@@ -16,7 +17,9 @@ import {
   filterExpensesByLocation,
   getUniqueLocationsFromExpenses,
 } from "@/lib/travel-wallet/expenses";
-import { formatCurrency, formatDate } from "@/lib/travel-wallet/formatters";
+import { formatCurrency, formatDate, formatExpenseDateRange } from "@/lib/travel-wallet/formatters";
+import { getExpenseCategoryDisplay } from "@/lib/travel-wallet/constants";
+import { getExpenseDayCount } from "@/lib/travel-wallet/calendar";
 
 interface CountryExpensesSectionProps {
   country: Country;
@@ -551,16 +554,12 @@ export default function CountryExpensesSection({
             // Sprawdź czy data jest zablokowana przez wybraną lokalizację
             const isDisabledByLocation = disabledDates.includes(dateString);
 
-            // Sprawdź czy są wydatki w tym dniu (z uwzględnieniem filtru lokalizacji)
-            let dayExpenses = expenses.filter((e) => e.date === dateString);
-            if (selectedLocation) {
-              dayExpenses = filterExpensesByLocation(dayExpenses, selectedLocation);
-            }
-            const hasFilteredExpenses = dayExpenses.length > 0;
-            const dayTotal = dayExpenses.reduce(
-              (sum, e) => sum + convertExpenseToPLN(e),
-              0
-            );
+            // Wydatki do sumy dziennej: z filtrem lokalizacji; wielodniowe = porcja na dzień (kwota/dni)
+            const calendarExpenses = selectedLocation
+              ? filterExpensesByLocation(expenses, selectedLocation)
+              : expenses;
+            const dayTotal = getDailyTotalInPLNForDate(dateString, calendarExpenses);
+            const hasFilteredExpenses = hasExpensesOnDate(dateString, calendarExpenses);
 
             // Sprawdź czy dzień jest dostępny (w zakresie kraju i nie zablokowany przez lokalizację)
             const isAvailable = isInRange && !isDisabledByLocation;
@@ -632,14 +631,7 @@ export default function CountryExpensesSection({
             <div className="space-y-3">
               {displayedExpenses.map((expense) => {
                 const amountInPLN = convertExpenseToPLN(expense);
-                const formattedDate = new Date(expense.date).toLocaleDateString(
-                  "pl-PL",
-                  {
-                    day: "numeric",
-                    month: "short",
-                    year: "numeric",
-                  }
-                );
+                const formattedDate = formatExpenseDateRange(expense);
 
                 return (
                   <div
@@ -649,7 +641,7 @@ export default function CountryExpensesSection({
                     <div className="flex-1">
                       <div className="flex items-center gap-2 flex-wrap mb-1">
                         <span className="font-semibold text-gray-900 dark:text-gray-100">
-                          {expense.category}
+                          {getExpenseCategoryDisplay(expense.category, expense.accommodationType)}
                         </span>
                         <span className="text-sm font-bold text-gray-700 dark:text-gray-300">
                           {formatCurrency(amountInPLN, "PLN")}
@@ -676,11 +668,15 @@ export default function CountryExpensesSection({
                           {expense.note}
                         </p>
                       )}
-                      {!selectedDate && (
+                      {expense.endDate && expense.endDate !== expense.date ? (
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          Rozłożony na {getExpenseDayCount(expense)} {getExpenseDayCount(expense) === 1 ? "dzień" : "dni"}: {formattedDate}
+                        </p>
+                      ) : !selectedDate ? (
                         <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
                           {formattedDate}
                         </p>
-                      )}
+                      ) : null}
                     </div>
                     <div className="flex gap-2 ml-4">
                       {onEditExpense && (

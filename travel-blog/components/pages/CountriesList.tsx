@@ -1,12 +1,14 @@
 "use client";
 
 import Link from "@/components/ui/Link";
-import type { Country } from "@/lib/travel-wallet/types";
+import { Edit } from "lucide-react";
+import type { Country, TravelWalletData } from "@/lib/travel-wallet/types";
 import {
   formatDateRange,
   calculatePlannedTotal,
   calculateActualTotal,
   groupCountriesByStatus,
+  getCountryStatusLabel,
 } from "@/lib/travel-wallet/countries";
 import { formatCurrency } from "@/lib/travel-wallet/formatters";
 
@@ -14,28 +16,21 @@ interface CountriesListProps {
   countries: Country[];
   slug: string;
   tripId?: string;
+  data?: TravelWalletData;
+  baseCurrency?: string;
+  onEditCountry?: (country: Country) => void;
 }
 
 export default function CountriesList({
   countries,
   slug,
   tripId,
+  data,
+  baseCurrency = "PLN",
+  onEditCountry,
 }: CountriesListProps) {
+  // Grupowanie krajów według statusu
   const grouped = groupCountriesByStatus(countries);
-
-
-  const getStatusLabel = (status: Country["status"]) => {
-    switch (status) {
-      case "visited":
-        return "Odwiedzony";
-      case "current":
-        return "Obecny";
-      case "upcoming":
-        return "Nadchodzący";
-      default:
-        return status;
-    }
-  };
 
   const renderTable = (countryList: Country[], title: string) => {
     if (countryList.length === 0) return null;
@@ -64,11 +59,16 @@ export default function CountriesList({
                 <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
                   Faktyczne wydatki
                 </th>
+                {onEditCountry && (
+                  <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider w-24">
+                    Akcje
+                  </th>
+                )}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
               {countryList.map((country) => {
-                const planned = calculatePlannedTotal(country);
+                const planned = calculatePlannedTotal(country, data);
                 const actual = calculateActualTotal(country);
 
                 return (
@@ -89,14 +89,30 @@ export default function CountriesList({
                       {formatDateRange(country.startDate, country.endDate)}
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
-                      {getStatusLabel(country.status)}
+                      {getCountryStatusLabel(country.status)}
                     </td>
                     <td className="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-gray-100 text-right">
-                      {formatCurrency(planned)} zł
+                      {formatCurrency(planned, baseCurrency, 2)}
                     </td>
                     <td className="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-gray-100 text-right">
-                      {actual > 0 ? `${formatCurrency(actual)} zł` : "—"}
+                      {actual > 0 ? formatCurrency(actual, baseCurrency, 2) : "—"}
                     </td>
+                    {onEditCountry && (
+                      <td className="px-4 py-3 text-right">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            onEditCountry(country);
+                          }}
+                          className="inline-flex items-center gap-1.5 text-sm text-blue-600 dark:text-blue-400 hover:underline"
+                        >
+                          <Edit className="w-4 h-4" />
+                          Edytuj
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 );
               })}
